@@ -44,8 +44,7 @@ fun MangaListItem(
                     .width(100.dp)
                     .aspectRatio(
                         if (manga.thumbnailWidth > 0) manga.thumbnailWidth.toFloat() / manga.thumbnailHeight
-                        else 0.7f,
-                        matchHeight = true
+                        else 0.7f
                     ),
                 contentScale = ContentScale.Crop
             )

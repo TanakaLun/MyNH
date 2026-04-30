@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -88,9 +91,9 @@ fun ReaderScreen(
                     TopAppBar(
                         title = { Text(state.title) },
                         navigationIcon = {
-                            androidx.compose.material3.IconButton(onClick = onBack) {
-                                androidx.compose.material3.Icon(
-                                    androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }
