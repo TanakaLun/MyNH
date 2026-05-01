@@ -3,6 +3,9 @@ package io.tl.mynhentai.ui.reader
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.size.Size as CoilSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -127,38 +130,44 @@ fun ReaderScreen(
                     resolveImageUrl = viewModel::resolveImageUrl
                 )
 
-                if (showControls) {
-                    TopAppBar(
-                        title = { Text(state.title, fontSize = 16.sp) },
-                        navigationIcon = {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color(0x99000000),
-                            titleContentColor = Color.White,
-                            navigationIconContentColor = Color.White
-                        ),
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
+                AnimatedVisibility(
+                    visible = showControls,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        TopAppBar(
+                            title = { Text(state.title, fontSize = 16.sp) },
+                            navigationIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color(0x99000000),
+                                titleContentColor = Color.White,
+                                navigationIconContentColor = Color.White
+                            ),
+                            modifier = Modifier.align(Alignment.TopCenter)
+                        )
 
-                    Text(
-                        text = "Page $currentPage / ${state.pages.size}",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 24.dp)
-                            .background(
-                                Color(0x99000000),
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                        Text(
+                            text = "Page $currentPage / ${state.pages.size}",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 24.dp)
+                                .background(
+                                    Color(0x99000000),
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
             }
 

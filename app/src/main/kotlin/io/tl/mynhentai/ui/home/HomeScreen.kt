@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,22 +67,25 @@ fun HomeScreen(
     val currentSort by viewModel.currentSort.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    var previousScrollIndex by remember { mutableStateOf(0) }
-    var previousScrollOffset by remember { mutableStateOf(0) }
+    var previousIndex by remember { mutableIntStateOf(0) }
+    var previousScrollOffset by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(listState) {
         snapshotFlow {
-            Pair(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
         }.collect { (index, offset) ->
             val isAtTop = index == 0 && offset == 0
             if (isAtTop) {
                 onScroll(false)
             } else {
-                val scrollingForward = index > previousScrollIndex ||
-                    (index == previousScrollIndex && offset > previousScrollOffset)
-                onScroll(scrollingForward)
+                val scrollingDown = if (index != previousIndex) {
+                    index > previousIndex
+                } else {
+                    offset > previousScrollOffset
+                }
+                onScroll(scrollingDown)
             }
-            previousScrollIndex = index
+            previousIndex = index
             previousScrollOffset = offset
         }
     }

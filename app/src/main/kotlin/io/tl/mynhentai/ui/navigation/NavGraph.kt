@@ -4,6 +4,9 @@ import androidx.compose.animation.AnimatedVisibility
 import java.net.URLDecoder
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateBottomPadding
+import androidx.compose.foundation.layout.calculateTopPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -73,6 +77,7 @@ fun MainNavGraph() {
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
+                                bottomBarHidden = false
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
@@ -89,10 +94,14 @@ fun MainNavGraph() {
             }
         }
     ) { innerPadding ->
+        val bottomPadding = if (bottomBarHidden) 0.dp else innerPadding.calculateBottomPadding()
         NavHost(
             navController = navController,
             startDestination = Routes.HOME,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(
+                top = innerPadding.calculateTopPadding(),
+                bottom = bottomPadding
+            )
         ) {
             composable(Routes.HOME) {
                 HomeScreen(

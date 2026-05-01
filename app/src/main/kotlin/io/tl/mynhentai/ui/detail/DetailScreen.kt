@@ -200,11 +200,6 @@ fun DetailScreen(
                             }
                         }
 
-                        Text(
-                            text = "Pages Preview",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
                             maxItemsInEachRow = 2,
@@ -213,7 +208,7 @@ fun DetailScreen(
                         ) {
                             detail.pages.take(20).forEach { page ->
                                 AsyncImage(
-                                    model = viewModel.resolveThumbnailUrl(page.path),
+                                    model = viewModel.resolveImageUrl(page.path),
                                     contentDescription = "Page ${page.number}",
                                     modifier = Modifier
                                         .fillMaxWidth()
