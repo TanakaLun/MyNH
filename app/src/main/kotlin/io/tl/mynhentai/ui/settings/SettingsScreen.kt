@@ -73,11 +73,12 @@ fun SettingsScreen(
     val languageFilter by viewModel.languageFilter.collectAsState()
     val languageFilterEnabled by viewModel.languageFilterEnabled.collectAsState()
     val blacklistedTags by viewModel.blacklistedTags.collectAsState()
-    val cacheSize by viewModel.cacheSize.collectAsState()
+    val coilCacheSize by viewModel.coilCacheSize.collectAsState()
+    val offlineCacheSize by viewModel.offlineCacheSize.collectAsState()
     var languageExpanded by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.refreshCacheSize() }
+    LaunchedEffect(Unit) { viewModel.refreshCacheSizes() }
 
     fun Long.formatSize(): String {
         if (this <= 0) return "0 B"
@@ -241,10 +242,19 @@ fun SettingsScreen(
             }
 
             Button(
-                onClick = { viewModel.clearCache() },
+                onClick = { viewModel.clearCoilCache() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Clear Image Cache (${cacheSize.formatSize()})")
+                Text("清除图片缓存 (${coilCacheSize.formatSize()})")
+            }
+
+            if (offlineCacheSize > 0L) {
+                Button(
+                    onClick = { viewModel.clearOfflineCache() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("清除离线缓存 (${offlineCacheSize.formatSize()})")
+                }
             }
 
             Box(

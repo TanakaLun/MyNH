@@ -21,8 +21,11 @@ class SettingsHelper(private val appContext: Context) {
         get() = prefs.getBoolean(KEY_LANG_FILTER_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_LANG_FILTER_ENABLED, value).apply()
 
-    val cacheDir: java.io.File
+    val coilCacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")
+
+    val offlineCacheDir: java.io.File
+        get() = java.io.File(appContext.cacheDir, "offline")
 
     private val searchHistoryFile: java.io.File
         get() = java.io.File(appContext.filesDir, "search_history.json")
@@ -46,14 +49,31 @@ class SettingsHelper(private val appContext: Context) {
         } catch (_: Exception) { }
     }
 
-    fun cacheSize(): Long {
-        return if (cacheDir.exists()) {
-            cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    fun coilCacheSize(): Long {
+        return if (coilCacheDir.exists()) {
+            coilCacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
         } else 0L
     }
 
-    fun clearCache() {
-        cacheDir.deleteRecursively()
+    fun offlineCacheSize(): Long {
+        return if (offlineCacheDir.exists()) {
+            offlineCacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        } else 0L
+    }
+
+    fun totalCacheSize(): Long = coilCacheSize() + offlineCacheSize()
+
+    fun clearCoilCache() {
+        coilCacheDir.deleteRecursively()
+    }
+
+    fun clearOfflineCache() {
+        offlineCacheDir.deleteRecursively()
+    }
+
+    fun clearAllCache() {
+        clearCoilCache()
+        clearOfflineCache()
     }
 
     @Serializable

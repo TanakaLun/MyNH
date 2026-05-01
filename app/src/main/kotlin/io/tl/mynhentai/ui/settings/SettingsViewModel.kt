@@ -50,15 +50,24 @@ class SettingsViewModel(
         }
     }
 
-    private val _cacheSize = MutableStateFlow(settings.cacheSize())
-    val cacheSize: StateFlow<Long> = _cacheSize.asStateFlow()
+    private val _coilCacheSize = MutableStateFlow(0L)
+    val coilCacheSize: StateFlow<Long> = _coilCacheSize.asStateFlow()
 
-    fun clearCache() {
-        settings.clearCache()
-        _cacheSize.value = 0L
+    private val _offlineCacheSize = MutableStateFlow(0L)
+    val offlineCacheSize: StateFlow<Long> = _offlineCacheSize.asStateFlow()
+
+    fun clearCoilCache() {
+        settings.clearCoilCache()
+        _coilCacheSize.value = 0L
     }
 
-    fun refreshCacheSize() {
-        _cacheSize.value = settings.cacheSize()
+    fun clearOfflineCache() {
+        settings.clearOfflineCache()
+        _offlineCacheSize.value = 0L
+    }
+
+    fun refreshCacheSizes() {
+        _coilCacheSize.value = settings.coilCacheSize()
+        _offlineCacheSize.value = settings.offlineCacheSize()
     }
 }
