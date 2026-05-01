@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,7 +36,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -54,11 +54,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.model.TagDictionary
-import io.tl.mynhentai.ui.detail.DownloadState
+import io.tl.mynhentai.ui.components.DownloadManager
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -71,7 +72,7 @@ fun DetailScreen(
     viewModel: DetailViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val downloadState by viewModel.downloadState.collectAsState()
+    val context = LocalContext.current
     var blacklistTag by remember { mutableStateOf<Tag?>(null) }
     var showDownloadDialog by remember { mutableStateOf(false) }
 
@@ -105,13 +106,14 @@ fun DetailScreen(
         if (state is DetailUiState.Success) {
             DownloadDialog(
                 detail = state.detail,
-                downloadState = downloadState,
                 onDismiss = { showDownloadDialog = false },
                 onDownload = { filename, path ->
-                    viewModel.downloadGallery(state.detail, filename, path)
+                    viewModel.startDownload(context, state.detail, filename, path)
+                    showDownloadDialog = false
                 },
                 onCache = {
-                    viewModel.cacheGallery(state.detail)
+                    viewModel.startCache(context, state.detail)
+                    showDownloadDialog = false
                 }
             )
         }
@@ -205,7 +207,8 @@ fun DetailScreen(
                                     onLongClick = { showDownloadDialog = true }
                                 )
                                 .background(MaterialTheme.colorScheme.primary)
-                                .padding(vertical = 12.dp),
+                                .defaultMinSize(minHeight = 40.dp)
+                                .padding(horizontal = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Row(
@@ -376,7 +379,6 @@ private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
 @Composable
 private fun DownloadDialog(
     detail: io.tl.mynhentai.data.model.MangaDetail,
-    downloadState: DownloadState,
     onDismiss: () -> Unit,
     onDownload: (filename: String, path: String) -> Unit,
     onCache: () -> Unit
@@ -403,42 +405,27 @@ private fun DownloadDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                when (downloadState) {
-                    is DownloadState.Idle -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    onDownload(filename, io.tl.mynhentai.ui.components.DownloadManager.defaultDownloadPath)
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("下载 (Zip)")
-                            }
-                            FilledTonalButton(
-                                onClick = { onCache() },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("缓存")
-                            }
-                        }
+                Text(
+                    text = "下载将在后台进行，可通过通知查看进度",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("下载 (Zip)")
                     }
-                    is DownloadState.Downloading -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("${downloadState.progress} / ${downloadState.total}")
-                            LinearProgressIndicator(
-                                progress = { if (downloadState.total > 0) downloadState.progress.toFloat() / downloadState.total else 0f },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                    is DownloadState.Success -> {
-                        Text("完成！", color = MaterialTheme.colorScheme.primary)
-                    }
-                    is DownloadState.Error -> {
-                        Text(downloadState.message, color = MaterialTheme.colorScheme.error)
+                    FilledTonalButton(
+                        onClick = { onCache() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("缓存")
                     }
                 }
             }
