@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -206,12 +207,14 @@ fun DetailScreen(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
+                                .fillMaxHeight()
                                 .combinedClickable(
                                     onClick = { onReaderClick(detail.id) },
                                     onLongClick = { showDownloadDialog = true }
                                 ),
                             shape = shape,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            tonalElevation = 3.dp
                         ) {
                             Box(
                                 modifier = Modifier.padding(ButtonDefaults.ContentPadding),
