@@ -102,7 +102,7 @@ val repositoryModule = module {
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { SearchViewModel(get(), get()) }
-    viewModel { DetailViewModel(get(), get(), get()) }
+    viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }
     viewModel { SettingsViewModel(get(), get()) }
