@@ -167,7 +167,9 @@ fun MainNavGraph() {
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it })
         ) {
-            NavigationBar {
+            NavigationBar(
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
                 bottomNavItems.forEach { item ->
                     val selected = currentDestination?.hierarchy?.any {
                         it.route == item.route
