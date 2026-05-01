@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -18,19 +20,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,12 +66,23 @@ fun HomeScreen(
     val currentSort by viewModel.currentSort.collectAsState()
     var showSortMenu by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    var previousScrollIndex by remember { mutableStateOf(0) }
+    var previousScrollOffset by remember { mutableStateOf(0) }
 
     LaunchedEffect(listState) {
         snapshotFlow {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
-        }.collect { hasScrolled ->
-            onScroll(hasScrolled)
+            Pair(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+        }.collect { (index, offset) ->
+            val isAtTop = index == 0 && offset == 0
+            if (isAtTop) {
+                onScroll(false)
+            } else {
+                val scrollingForward = index > previousScrollIndex ||
+                    (index == previousScrollIndex && offset > previousScrollOffset)
+                onScroll(scrollingForward)
+            }
+            previousScrollIndex = index
+            previousScrollOffset = offset
         }
     }
 
@@ -79,28 +96,55 @@ fun HomeScreen(
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 actions = {
                     Box {
-                        FilledTonalButton(
+                        FilterChip(
+                            selected = true,
                             onClick = { showSortMenu = true },
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            modifier = Modifier.height(32.dp),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Text(
-                                currentSort.replace("-", " "),
-                                fontSize = 12.sp
-                            )
-                        }
+                            label = {
+                                Text(
+                                    currentSort.replace("-", " "),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.ArrowDropDown,
+                                    null,
+                                    Modifier.size(16.dp)
+                                )
+                            },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
                         DropdownMenu(
                             expanded = showSortMenu,
                             onDismissRequest = { showSortMenu = false }
                         ) {
                             sortOptions.forEach { option ->
+                                val isSelected = currentSort == option
                                 DropdownMenuItem(
-                                    text = { Text(option.replace("-", " ")) },
+                                    text = {
+                                        Text(
+                                            option.replace("-", " "),
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
                                     onClick = {
                                         viewModel.setSort(option)
                                         showSortMenu = false
-                                    }
+                                    },
+                                    modifier = Modifier
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                            else Color.Transparent
+                                        ),
+                                    colors = MenuDefaults.itemColors(
+                                        textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
                             }
                         }

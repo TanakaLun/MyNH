@@ -83,4 +83,6 @@ class DetailViewModel(
     }
 
     fun resolveImageUrl(path: String): String = cdnRepository.resolveImageUrl(path)
+
+    fun resolveThumbnailUrl(path: String): String = cdnRepository.resolveThumbnailUrl(path)
 }

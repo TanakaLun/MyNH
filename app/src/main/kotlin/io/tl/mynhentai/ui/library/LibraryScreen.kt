@@ -18,6 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,12 +37,23 @@ fun LibraryScreen(
 ) {
     val favorites by viewModel.favorites.collectAsState()
     val listState = rememberLazyListState()
+    var previousScrollIndex by remember { mutableStateOf(0) }
+    var previousScrollOffset by remember { mutableStateOf(0) }
 
     LaunchedEffect(listState) {
         snapshotFlow {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
-        }.collect { hasScrolled ->
-            onScroll(hasScrolled)
+            Pair(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+        }.collect { (index, offset) ->
+            val isAtTop = index == 0 && offset == 0
+            if (isAtTop) {
+                onScroll(false)
+            } else {
+                val scrollingForward = index > previousScrollIndex ||
+                    (index == previousScrollIndex && offset > previousScrollOffset)
+                onScroll(scrollingForward)
+            }
+            previousScrollIndex = index
+            previousScrollOffset = offset
         }
     }
 
