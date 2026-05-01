@@ -1,18 +1,19 @@
 package io.tl.mynhentai.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,13 +32,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,12 +47,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.tl.mynhentai.ui.components.MangaListItem
 import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
+private val bottomNavHeight = 80.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +64,7 @@ fun HomeScreen(
     onSearchClick: () -> Unit,
     onItemClick: (Long) -> Unit,
     onScroll: (Boolean) -> Unit = {},
+    isBottomNavVisible: Boolean = true,
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -70,6 +73,7 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     var previousIndex by remember { mutableIntStateOf(0) }
     var previousScrollOffset by remember { mutableIntStateOf(0) }
+    var isBarVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -77,6 +81,7 @@ fun HomeScreen(
         }.collect { (index, offset) ->
             val isAtTop = index == 0 && offset == 0
             if (isAtTop) {
+                isBarVisible = true
                 onScroll(false)
             } else {
                 val scrollingDown = if (index != previousIndex) {
@@ -84,6 +89,7 @@ fun HomeScreen(
                 } else {
                     offset > previousScrollOffset
                 }
+                isBarVisible = !scrollingDown
                 onScroll(scrollingDown)
             }
             previousIndex = index
@@ -91,8 +97,103 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    val fabOffset by animateDpAsState(
+        targetValue = if (isBottomNavVisible) bottomNavHeight + 3.dp else 3.dp,
+        animationSpec = tween(300)
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (val state = uiState) {
+            is HomeUiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            is HomeUiState.Success -> {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 12.dp, end = 12.dp,
+                        top = 72.dp,
+                        bottom = bottomNavHeight + 64.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(state.items, key = { it.id }) { manga ->
+                        MangaListItem(
+                            manga = manga,
+                            imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
+                            onItemClick = { onItemClick(manga.id) }
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = fabOffset),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SmallFloatingActionButton(
+                        onClick = { viewModel.previousPage() },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Previous page"
+                        )
+                    }
+
+                    Text(
+                        text = "${state.currentPage} / ${state.numPages}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    )
+
+                    SmallFloatingActionButton(
+                        onClick = { viewModel.nextPage() },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Next page"
+                        )
+                    }
+                }
+            }
+
+            is HomeUiState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isBarVisible,
+            enter = slideInVertically { -it },
+            exit = slideOutVertically { -it }
+        ) {
             TopAppBar(
                 title = { Text("Browse", fontSize = 18.sp) },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -160,95 +261,6 @@ fun HomeScreen(
                     }
                 }
             )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when (val state = uiState) {
-                is HomeUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                is HomeUiState.Success -> {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(state.items, key = { it.id }) { manga ->
-                                MangaListItem(
-                                    manga = manga,
-                                    imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
-                                    onItemClick = { onItemClick(manga.id) }
-                                )
-                            }
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 3.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            SmallFloatingActionButton(
-                                onClick = { viewModel.previousPage() },
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Previous page"
-                                )
-                            }
-
-                            Text(
-                                text = "${state.currentPage} / ${state.numPages}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
-                                        RoundedCornerShape(20.dp)
-                                    )
-                                    .padding(horizontal = 16.dp, vertical = 6.dp)
-                            )
-
-                            SmallFloatingActionButton(
-                                onClick = { viewModel.nextPage() },
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Next page"
-                                )
-                            }
-                        }
-                    }
-                }
-
-                is HomeUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
         }
     }
 }

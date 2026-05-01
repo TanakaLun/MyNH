@@ -106,7 +106,8 @@ fun MainNavGraph() {
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
                     },
-                    onScroll = { hidden -> bottomBarHidden = hidden }
+                    onScroll = { hidden -> bottomBarHidden = hidden },
+                    isBottomNavVisible = !bottomBarHidden
                 )
             }
 
