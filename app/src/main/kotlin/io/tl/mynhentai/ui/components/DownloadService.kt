@@ -1,6 +1,5 @@
 package io.tl.mynhentai.ui.components
 
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
@@ -42,21 +41,23 @@ class DownloadService : android.app.Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_DOWNLOAD -> {
-                @Suppress("UNCHECKED_CAST")
-                val pages = intent.getSerializableExtra(EXTRA_PAGES) as? List<Pair<Int, String>> ?: return START_NOT_STICKY
+                val pageNumbers = intent.getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return START_NOT_STICKY
+                val pageUrls = intent.getStringArrayExtra(EXTRA_PAGE_URLS) ?: return START_NOT_STICKY
                 val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0)
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
                 val targetDir = intent.getStringExtra(EXTRA_TARGET_DIR) ?: return START_NOT_STICKY
+                val pages = pageNumbers.zip(pageUrls.toList())
                 scope.launch {
                     doDownload(pages, galleryId, title, targetDir)
                     stopSelf()
                 }
             }
             ACTION_CACHE -> {
-                @Suppress("UNCHECKED_CAST")
-                val pages = intent.getSerializableExtra(EXTRA_PAGES) as? List<Pair<Int, String>> ?: return START_NOT_STICKY
+                val pageNumbers = intent.getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return START_NOT_STICKY
+                val pageUrls = intent.getStringArrayExtra(EXTRA_PAGE_URLS) ?: return START_NOT_STICKY
                 val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0)
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
+                val pages = pageNumbers.zip(pageUrls.toList())
                 scope.launch {
                     doCache(pages, galleryId, title)
                     stopSelf()
@@ -178,7 +179,8 @@ class DownloadService : android.app.Service() {
     companion object {
         const val ACTION_DOWNLOAD = "io.tl.mynhentai.action.DOWNLOAD"
         const val ACTION_CACHE = "io.tl.mynhentai.action.CACHE"
-        const val EXTRA_PAGES = "pages"
+        const val EXTRA_PAGE_NUMBERS = "page_numbers"
+        const val EXTRA_PAGE_URLS = "page_urls"
         const val EXTRA_GALLERY_ID = "gallery_id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_TARGET_DIR = "target_dir"
@@ -192,7 +194,8 @@ class DownloadService : android.app.Service() {
         ) {
             val intent = Intent(context, DownloadService::class.java).apply {
                 action = ACTION_DOWNLOAD
-                putExtra(EXTRA_PAGES, ArrayList(pages))
+                putExtra(EXTRA_PAGE_NUMBERS, pages.map { it.first }.toIntArray())
+                putExtra(EXTRA_PAGE_URLS, pages.map { it.second }.toTypedArray())
                 putExtra(EXTRA_GALLERY_ID, galleryId)
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_TARGET_DIR, targetDir)
@@ -208,7 +211,8 @@ class DownloadService : android.app.Service() {
         ) {
             val intent = Intent(context, DownloadService::class.java).apply {
                 action = ACTION_CACHE
-                putExtra(EXTRA_PAGES, ArrayList(pages))
+                putExtra(EXTRA_PAGE_NUMBERS, pages.map { it.first }.toIntArray())
+                putExtra(EXTRA_PAGE_URLS, pages.map { it.second }.toTypedArray())
                 putExtra(EXTRA_GALLERY_ID, galleryId)
                 putExtra(EXTRA_TITLE, title)
             }
