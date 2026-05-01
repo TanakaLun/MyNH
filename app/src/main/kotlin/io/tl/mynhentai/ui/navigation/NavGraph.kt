@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -36,7 +37,8 @@ data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem("Home", Icons.Default.Home, Routes.HOME),
-    BottomNavItem("Favorites", Icons.Default.Bookmark, Routes.LIBRARY)
+    BottomNavItem("Favorites", Icons.Default.Bookmark, Routes.LIBRARY),
+    BottomNavItem("Settings", Icons.Default.Settings, Routes.SETTINGS)
 )
 
 @Composable
@@ -84,9 +86,6 @@ fun MainNavGraph() {
                 HomeScreen(
                     onSearchClick = {
                         navController.navigate(Routes.SEARCH)
-                    },
-                    onSettingsClick = {
-                        navController.navigate(Routes.SETTINGS)
                     },
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))

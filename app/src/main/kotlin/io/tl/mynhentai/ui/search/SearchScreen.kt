@@ -49,30 +49,36 @@ fun SearchScreen(
 
     Scaffold(
         topBar = {
-            SearchBar(
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = query,
-                        onQueryChange = { query = it },
-                        onSearch = {
-                            viewModel.search(query)
-                            isActive = false
-                        },
-                        expanded = isActive && query.isBlank(),
-                        onExpandedChange = { isActive = it },
-                        placeholder = { Text("Search...") },
-                        trailingIcon = {
-                            if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+            ) {
+                SearchBar(
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = query,
+                            onQueryChange = { query = it },
+                            onSearch = {
+                                viewModel.search(query)
+                                isActive = false
+                            },
+                            expanded = isActive && query.isBlank(),
+                            onExpandedChange = { isActive = it },
+                            placeholder = { Text("Search...") },
+                            trailingIcon = {
+                                if (query.isNotEmpty()) {
+                                    IconButton(onClick = { query = "" }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Clear")
+                                    }
                                 }
                             }
-                        }
-                    )
-                },
-                expanded = isActive && query.isBlank(),
-                onExpandedChange = { isActive = it }
-            ) {
+                        )
+                    },
+                    expanded = isActive && query.isBlank(),
+                    onExpandedChange = { isActive = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                 searchHistory.forEach { historyItem ->
                     Row(
                         modifier = Modifier
@@ -105,6 +111,7 @@ fun SearchScreen(
                     }
                 }
             }
+        }
         }
     ) { innerPadding ->
         Box(

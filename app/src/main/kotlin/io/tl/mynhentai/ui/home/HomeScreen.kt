@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -40,7 +39,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun HomeScreen(
     onSearchClick: () -> Unit,
-    onSettingsClick: () -> Unit,
     onItemClick: (Long) -> Unit,
     viewModel: HomeViewModel = koinViewModel()
 ) {
@@ -57,9 +55,6 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = onSearchClick) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
             )
@@ -81,9 +76,9 @@ fun HomeScreen(
                 }
 
                 is HomeUiState.Success -> {
-                    Column(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize()) {
                         LazyColumn(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -98,9 +93,9 @@ fun HomeScreen(
 
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 24.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             SmallFloatingActionButton(
@@ -113,15 +108,11 @@ fun HomeScreen(
                                 )
                             }
 
-                            FilledTonalButton(
-                                onClick = { /* current page indicator */ },
-                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = "${state.currentPage} / ${state.numPages}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            Text(
+                                text = "${state.currentPage} / ${state.numPages}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
 
                             SmallFloatingActionButton(
                                 onClick = { viewModel.nextPage() },
