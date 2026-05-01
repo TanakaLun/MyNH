@@ -3,29 +3,16 @@ package io.tl.mynhentai.ui.reader
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.size.Size as CoilSize
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +27,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -48,7 +34,6 @@ import coil.compose.SubcomposeAsyncImage
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreen(
     galleryId: Long,
@@ -56,7 +41,6 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val showControls by viewModel.showControls.collectAsState()
     val listState = rememberLazyListState()
 
     LaunchedEffect(galleryId) {
@@ -85,7 +69,6 @@ fun ReaderScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable { viewModel.toggleControls() }
     ) {
         when (val state = uiState) {
             is ReaderUiState.Loading -> {
@@ -129,46 +112,6 @@ fun ReaderScreen(
                     currentPage = currentPage,
                     resolveImageUrl = viewModel::resolveImageUrl
                 )
-
-                AnimatedVisibility(
-                    visible = showControls,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        TopAppBar(
-                            title = { Text(state.title, fontSize = 16.sp) },
-                            navigationIcon = {
-                                IconButton(onClick = onBack) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "Back"
-                                    )
-                                }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color(0x99000000),
-                                titleContentColor = Color.White,
-                                navigationIconContentColor = Color.White
-                            ),
-                            modifier = Modifier.align(Alignment.TopCenter)
-                        )
-
-                        Text(
-                            text = "Page $currentPage / ${state.pages.size}",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 24.dp)
-                                .background(
-                                    Color(0x99000000),
-                                    shape = MaterialTheme.shapes.small
-                                )
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-                }
             }
 
             is ReaderUiState.Error -> {

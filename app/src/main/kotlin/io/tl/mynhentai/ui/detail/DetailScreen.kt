@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -119,106 +121,144 @@ fun DetailScreen(
 
             is DetailUiState.Success -> {
                 val detail = state.detail
+                val shape = RoundedCornerShape(12.dp)
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
                         .verticalScroll(rememberScrollState())
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    AsyncImage(
-                        model = viewModel.resolveThumbnailUrl(detail.cover.path),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = detail.title.pretty ?: detail.title.english ?: "Untitled",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-
-                        Text(
-                            text = "${detail.numPages} pages · ${detail.numFavorites} favorites",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = { onReaderClick(detail.id) }
-                            ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                                Text("Read")
-                            }
-
-                            FilledTonalButton(
-                                onClick = {
-                                    viewModel.toggleFavorite(detail, state.isFavorite)
-                                }
-                            ) {
-                                Icon(
-                                    if (state.isFavorite) Icons.Default.Favorite
-                                    else Icons.Default.FavoriteBorder,
-                                    contentDescription = null
+                        AsyncImage(
+                            model = viewModel.resolveThumbnailUrl(detail.cover.path),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .width(120.dp)
+                                .aspectRatio(
+                                    if (detail.cover.width > 0) detail.cover.width.toFloat() / detail.cover.height
+                                    else 0.7f
                                 )
-                                Text(if (state.isFavorite) "Favorited" else "Favorite")
+                                .clip(shape),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = detail.title.pretty ?: detail.title.english ?: "Untitled",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+
+                            Text(
+                                text = "${detail.numPages} pages · ${detail.numFavorites} favorites",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { onReaderClick(detail.id) },
+                                    shape = shape
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                    Text("Read")
+                                }
+
+                                FilledTonalButton(
+                                    onClick = {
+                                        viewModel.toggleFavorite(detail, state.isFavorite)
+                                    },
+                                    shape = shape
+                                ) {
+                                    Icon(
+                                        if (state.isFavorite) Icons.Default.Favorite
+                                        else Icons.Default.FavoriteBorder,
+                                        contentDescription = null
+                                    )
+                                    Text(if (state.isFavorite) "Favorited" else "Favorite")
+                                }
                             }
                         }
+                    }
 
-                        val tagsByType = detail.tags.groupBy { it.type }
-                        tagsByType.forEach { (type, tags) ->
-                            Column {
-                                Text(
-                                    text = type.replaceFirstChar { it.uppercase() },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    tags.forEach { tag ->
-                                        TagChip(
-                                            tag = tag,
-                                            onClick = {
-                                                onTagClick("${tag.type}:${tag.name}")
-                                            },
-                                            onLongClick = {
-                                                blacklistTag = tag
-                                            }
-                                        )
+                    Card(
+                        shape = shape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            val tagsByType = detail.tags.groupBy { it.type }
+                            tagsByType.forEach { (type, tags) ->
+                                Column {
+                                    Text(
+                                        text = type.replaceFirstChar { it.uppercase() },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        tags.forEach { tag ->
+                                            TagChip(
+                                                tag = tag,
+                                                onClick = {
+                                                    onTagClick("${tag.type}:${tag.name}")
+                                                },
+                                                onLongClick = {
+                                                    blacklistTag = tag
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
+                    }
 
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            maxItemsInEachRow = 2,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Card(shape = shape) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            detail.pages.take(20).forEach { page ->
-                                AsyncImage(
-                                    model = viewModel.resolveImageUrl(page.path),
-                                    contentDescription = "Page ${page.number}",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(
-                                            if (page.width > 0) page.width.toFloat() / page.height
-                                            else 0.7f
-                                        )
-                                        .clip(RoundedCornerShape(4.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
+                            Text(
+                                text = "Pages Preview",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                maxItemsInEachRow = 2,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                detail.pages.take(20).forEach { page ->
+                                    AsyncImage(
+                                        model = viewModel.resolveImageUrl(page.path),
+                                        contentDescription = "Page ${page.number}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .aspectRatio(
+                                                if (page.width > 0) page.width.toFloat() / page.height
+                                                else 0.7f
+                                            )
+                                            .clip(RoundedCornerShape(4.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             }
                         }
                     }

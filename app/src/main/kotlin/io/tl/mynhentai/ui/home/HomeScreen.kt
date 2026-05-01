@@ -122,7 +122,8 @@ fun HomeScreen(
 
                         DropdownMenu(
                             expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
+                            onDismissRequest = { showSortMenu = false },
+                            modifier = Modifier.clip(RoundedCornerShape(12.dp))
                         ) {
                             sortOptions.forEach { option ->
                                 val isSelected = currentSort == option
