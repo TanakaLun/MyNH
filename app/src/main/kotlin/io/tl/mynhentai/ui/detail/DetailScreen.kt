@@ -126,7 +126,7 @@ fun DetailScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     AsyncImage(
-                        model = viewModel.resolveImageUrl(detail.cover.path),
+                        model = viewModel.resolveThumbnailUrl(detail.cover.path),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxWidth()
