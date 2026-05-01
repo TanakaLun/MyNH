@@ -164,34 +164,35 @@ fun DetailScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
 
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Button(
-                                    onClick = { onReaderClick(detail.id) },
-                                    shape = shape,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                                    Text("Read")
-                                }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(
+                            onClick = { onReaderClick(detail.id) },
+                            shape = shape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                            Text("Read")
+                        }
 
-                                FilledTonalButton(
-                                    onClick = {
-                                        viewModel.toggleFavorite(detail, state.isFavorite)
-                                    },
-                                    shape = shape,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        if (state.isFavorite) Icons.Default.Favorite
-                                        else Icons.Default.FavoriteBorder,
-                                        contentDescription = null
-                                    )
-                                    Text(if (state.isFavorite) "Favorited" else "Favorite")
-                                }
-                            }
+                        FilledTonalButton(
+                            onClick = {
+                                viewModel.toggleFavorite(detail, state.isFavorite)
+                            },
+                            shape = shape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                if (state.isFavorite) Icons.Default.Favorite
+                                else Icons.Default.FavoriteBorder,
+                                contentDescription = null
+                            )
+                            Text(if (state.isFavorite) "Favorited" else "Favorite")
                         }
                     }
 
@@ -207,27 +208,34 @@ fun DetailScreen(
                         ) {
                             val tagsByType = detail.tags.groupBy { it.type }
                             tagsByType.forEach { (type, tags) ->
-                                Column {
-                                    Text(
-                                        text = type.replaceFirstChar { it.uppercase() },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    FlowRow(
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .height(28.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
-                                        tags.forEach { tag ->
-                                            TagChip(
-                                                tag = tag,
-                                                onClick = {
-                                                    onTagClick("${tag.type}:${tag.name}")
-                                                },
-                                                onLongClick = {
-                                                    blacklistTag = tag
-                                                }
-                                            )
-                                        }
+                                        Text(
+                                            text = type.replaceFirstChar { it.uppercase() },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                    tags.forEach { tag ->
+                                        TagChip(
+                                            tag = tag,
+                                            onClick = {
+                                                onTagClick("${tag.type}:${tag.name}")
+                                            },
+                                            onLongClick = {
+                                                blacklistTag = tag
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -267,7 +275,7 @@ fun DetailScreen(
                                                         if (page.width > 0) page.width.toFloat() / page.height
                                                         else 0.7f
                                                     )
-                                                    .clip(RoundedCornerShape(4.dp)),
+                                                    .clip(RoundedCornerShape(12.dp)),
                                                 contentScale = ContentScale.Crop
                                             )
                                         }
@@ -312,7 +320,7 @@ private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = tag.name,
+            text = TagDictionary.getDisplayName(tag),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSecondaryContainer
         )
