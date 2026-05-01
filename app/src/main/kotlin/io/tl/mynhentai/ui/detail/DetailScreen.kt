@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -198,35 +197,18 @@ fun DetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(
+                        Button(
+                            onClick = {},
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(shape)
                                 .combinedClickable(
                                     onClick = { onReaderClick(detail.id) },
                                     onLongClick = { showDownloadDialog = true }
-                                )
-                                .background(MaterialTheme.colorScheme.primary)
-                                .defaultMinSize(minHeight = 40.dp)
-                                .padding(horizontal = 24.dp),
-                            contentAlignment = Alignment.Center
+                                ),
+                            shape = shape
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Text(
-                                    "Read",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Read")
                         }
 
                         FilledTonalButton(

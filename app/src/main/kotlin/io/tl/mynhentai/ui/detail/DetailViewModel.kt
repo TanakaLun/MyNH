@@ -95,7 +95,7 @@ class DetailViewModel(
     }
 
     fun startCache(context: Context, detail: MangaDetail) {
-        val pages = detail.pages.map { it.number to it.path }
+        val pages = detail.pages.map { it.number to cdnRepository.resolveImageUrl(it.path) }
         val title = detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}"
         DownloadService.startCache(context, pages, detail.id, title)
     }
