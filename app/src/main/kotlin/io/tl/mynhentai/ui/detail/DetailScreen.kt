@@ -27,8 +27,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Surface
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,8 +57,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.data.model.Tag
-import io.tl.mynhentai.data.model.TagDictionary
-import io.tl.mynhentai.ui.components.DownloadManager
+import io.tl.mynhentai.ui.components.DownloadDialog
+import io.tl.mynhentai.ui.components.TagChip
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
@@ -197,18 +197,24 @@ fun DetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
-                            onClick = {},
+                        Surface(
                             modifier = Modifier
                                 .weight(1f)
                                 .combinedClickable(
                                     onClick = { onReaderClick(detail.id) },
                                     onLongClick = { showDownloadDialog = true }
                                 ),
-                            shape = shape
+                            shape = shape,
+                            color = MaterialTheme.colorScheme.primary
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Text("Read")
+                            Row(
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
+                                Text("Read", color = MaterialTheme.colorScheme.onPrimary)
+                            }
                         }
 
                         FilledTonalButton(
@@ -333,87 +339,4 @@ fun DetailScreen(
             }
         }
     }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .height(28.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = TagDictionary.getDisplayName(tag),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    }
-}
-
-@Composable
-private fun DownloadDialog(
-    detail: io.tl.mynhentai.data.model.MangaDetail,
-    onDismiss: () -> Unit,
-    onDownload: (filename: String, path: String) -> Unit,
-    onCache: () -> Unit
-) {
-    var filename by remember { mutableStateOf(detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("下载漫画") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = filename,
-                    onValueChange = { filename = it },
-                    label = { Text("文件名") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    text = "保存至: ${io.tl.mynhentai.ui.components.DownloadManager.defaultDownloadPath}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "下载将在后台进行，可通过通知查看进度",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("下载 (Zip)")
-                    }
-                    FilledTonalButton(
-                        onClick = { onCache() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("缓存")
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
-        }
-    )
 }

@@ -34,12 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import coil.ImageLoader
 import coil.compose.SubcomposeAsyncImage
-import coil.request.ImageRequest
-import coil.size.Size as CoilSize
+import io.tl.mynhentai.ui.components.PreloadPages
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @Composable
 fun ReaderScreen(
@@ -153,25 +150,4 @@ fun ReaderScreen(
     }
 }
 
-@Composable
-private fun PreloadPages(
-    pages: List<io.tl.mynhentai.data.model.MangaPage>,
-    currentPage: Int,
-    resolveImageUrl: (String) -> String
-) {
-    val context = LocalContext.current
-    val imageLoader: ImageLoader = koinInject()
-    LaunchedEffect(currentPage) {
-        val preloadCount = 5
-        val start = currentPage.coerceAtMost(pages.size - 1)
-        val end = (currentPage + preloadCount).coerceAtMost(pages.size)
-        for (i in start until end) {
-            val url = resolveImageUrl(pages[i].path)
-            val request = ImageRequest.Builder(context)
-                .data(url)
-                .size(CoilSize.ORIGINAL)
-                .build()
-            imageLoader.enqueue(request)
-        }
-    }
-}
+
