@@ -30,8 +30,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,14 +94,14 @@ fun DetailScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = { Text("Detail") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
                 windowInsets = WindowInsets(0, 0, 0, 0)
@@ -115,7 +116,9 @@ fun DetailScreen(
                         .padding(innerPadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Loading...")
+                    CircularProgressIndicator(
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
@@ -162,12 +165,13 @@ fun DetailScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Button(
                                     onClick = { onReaderClick(detail.id) },
-                                    shape = shape
+                                    shape = shape,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                                     Text("Read")
@@ -177,7 +181,8 @@ fun DetailScreen(
                                     onClick = {
                                         viewModel.toggleFavorite(detail, state.isFavorite)
                                     },
-                                    shape = shape
+                                    shape = shape,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(
                                         if (state.isFavorite) Icons.Default.Favorite
@@ -229,7 +234,12 @@ fun DetailScreen(
                         }
                     }
 
-                    Card(shape = shape) {
+                    Card(
+                        shape = shape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                        )
+                    ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -239,25 +249,29 @@ fun DetailScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                maxItemsInEachRow = 2,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                detail.pages.take(20).forEach { page ->
-                                    AsyncImage(
-                                        model = viewModel.resolveImageUrl(page.path),
-                                        contentDescription = "Page ${page.number}",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .aspectRatio(
-                                                if (page.width > 0) page.width.toFloat() / page.height
-                                                else 0.7f
+                                detail.pages.take(20).chunked(2).forEach { pair ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        pair.forEach { page ->
+                                            AsyncImage(
+                                                model = viewModel.resolveImageUrl(page.path),
+                                                contentDescription = "Page ${page.number}",
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .aspectRatio(
+                                                        if (page.width > 0) page.width.toFloat() / page.height
+                                                        else 0.7f
+                                                    )
+                                                    .clip(RoundedCornerShape(4.dp)),
+                                                contentScale = ContentScale.Crop
                                             )
-                                            .clip(RoundedCornerShape(4.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                        }
+                                    }
                                 }
                             }
                         }
