@@ -70,5 +70,5 @@ data class Tag(
 
 @Serializable
 data class CdnResponse(
-    val servers: List<String>
+    val servers: List<String> = emptyList()
 )
