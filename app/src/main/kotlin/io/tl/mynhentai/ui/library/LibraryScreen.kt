@@ -73,7 +73,7 @@ fun LibraryScreen(
                                 thumbnailHeight = fav.thumbnailHeight,
                                 numPages = fav.numPages
                             ),
-                            imageUrl = "https://i.nhentai.net/${fav.thumbnail}",
+                            imageUrl = viewModel.resolveImageUrl(fav.thumbnail),
                             onItemClick = { onItemClick(fav.id) }
                         )
                     }

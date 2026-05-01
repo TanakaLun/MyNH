@@ -30,6 +30,8 @@ class HomeViewModel(
         viewModelScope.launch { repository.refreshCdn() }
     }
 
+    fun resolveImageUrl(path: String): String = repository.resolveImageUrl(path)
+
     fun loadPopular(page: Int = 1) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading

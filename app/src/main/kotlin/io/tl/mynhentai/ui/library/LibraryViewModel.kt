@@ -12,6 +12,8 @@ class LibraryViewModel(
     private val repository: MangaRepository
 ) : ViewModel() {
 
+    fun resolveImageUrl(path: String): String = repository.resolveImageUrl(path)
+
     val favorites: StateFlow<List<FavoriteEntity>> = repository.getAllFavorites()
         .stateIn(
             scope = viewModelScope,

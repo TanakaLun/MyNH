@@ -74,7 +74,7 @@ fun HomeScreen(
                         items(state.items, key = { it.id }) { manga ->
                             MangaListItem(
                                 manga = manga,
-                                imageUrl = "https://i.nhentai.net/${manga.thumbnail}",
+                                imageUrl = viewModel.resolveImageUrl(manga.thumbnail),
                                 onItemClick = { onItemClick(manga.id) }
                             )
                         }
