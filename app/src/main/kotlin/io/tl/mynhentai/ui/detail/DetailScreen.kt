@@ -195,6 +195,7 @@ fun DetailScreen(
                                                 blacklistTag = tag
                                             }
                                         )
+                                    }
                                 }
                             }
                         }
