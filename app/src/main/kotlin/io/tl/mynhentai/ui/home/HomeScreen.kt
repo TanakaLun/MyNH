@@ -1,8 +1,5 @@
 package io.tl.mynhentai.ui.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,7 +66,6 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     var previousIndex by remember { mutableIntStateOf(0) }
     var previousScrollOffset by remember { mutableIntStateOf(0) }
-    var isBarVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -77,7 +73,6 @@ fun HomeScreen(
         }.collect { (index, offset) ->
             val isAtTop = index == 0 && offset == 0
             if (isAtTop) {
-                isBarVisible = true
                 onScroll(false)
             } else {
                 val scrollingDown = if (index != previousIndex) {
@@ -85,7 +80,6 @@ fun HomeScreen(
                 } else {
                     offset > previousScrollOffset
                 }
-                isBarVisible = !scrollingDown
                 onScroll(scrollingDown)
             }
             previousIndex = index
@@ -180,78 +174,72 @@ fun HomeScreen(
             }
         }
 
-        AnimatedVisibility(
-            visible = isBarVisible,
-            enter = slideInVertically { -it },
-            exit = slideOutVertically { -it }
-        ) {
-            TopAppBar(
-                title = { Text("Browse", fontSize = 18.sp) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                actions = {
-                    Box {
-                        FilterChip(
-                            selected = true,
-                            onClick = { showSortMenu = true },
-                            label = {
-                                Text(
-                                    currentSort.replace("-", " "),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Default.ArrowDropDown,
-                                    null,
-                                    Modifier.size(16.dp)
-                                )
-                            },
-                            shape = RoundedCornerShape(12.dp)
-                        )
+        TopAppBar(
+            title = { Text("Browse", fontSize = 18.sp) },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            windowInsets = WindowInsets(0, 0, 0, 0),
+            actions = {
+                Box {
+                    FilterChip(
+                        selected = true,
+                        onClick = { showSortMenu = true },
+                        label = {
+                            Text(
+                                currentSort.replace("-", " "),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.ArrowDropDown,
+                                null,
+                                Modifier.size(16.dp)
+                            )
+                        },
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false },
-                            modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                        ) {
-                            sortOptions.forEach { option ->
-                                val isSelected = currentSort == option
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            option.replace("-", " "),
-                                            fontSize = 13.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.setSort(option)
-                                        showSortMenu = false
-                                    },
-                                    modifier = Modifier
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                                            else Color.Transparent
-                                        ),
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                                        else MaterialTheme.colorScheme.onSurface
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
+                    ) {
+                        sortOptions.forEach { option ->
+                            val isSelected = currentSort == option
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        option.replace("-", " "),
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
+                                },
+                                onClick = {
+                                    viewModel.setSort(option)
+                                    showSortMenu = false
+                                },
+                                modifier = Modifier
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                        else Color.Transparent
+                                    ),
+                                colors = MenuDefaults.itemColors(
+                                    textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                                    else MaterialTheme.colorScheme.onSurface
                                 )
-                            }
+                            )
                         }
                     }
-                    IconButton(onClick = onSearchClick) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
                 }
-            )
-        }
+                IconButton(onClick = onSearchClick) {
+                    Icon(Icons.Default.Search, contentDescription = "Search")
+                }
+            }
+        )
     }
 }

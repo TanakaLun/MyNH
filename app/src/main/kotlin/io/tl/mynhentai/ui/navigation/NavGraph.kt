@@ -165,11 +165,10 @@ fun MainNavGraph() {
         AnimatedVisibility(
             visible = navBarVisible,
             enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it })
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            NavigationBar(
-                modifier = Modifier.align(Alignment.BottomCenter)
-            ) {
+            NavigationBar {
                 bottomNavItems.forEach { item ->
                     val selected = currentDestination?.hierarchy?.any {
                         it.route == item.route
