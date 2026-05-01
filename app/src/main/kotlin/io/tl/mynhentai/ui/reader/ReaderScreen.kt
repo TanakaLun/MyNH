@@ -1,20 +1,21 @@
 package io.tl.mynhentai.ui.reader
 
-import coil.ImageLoader
-import coil.request.ImageRequest
-import coil.size.Size as CoilSize
+import android.os.Build
+import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -26,16 +27,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import android.os.Build
-import android.view.WindowManager
+import coil.ImageLoader
 import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
+import coil.size.Size as CoilSize
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -62,17 +64,26 @@ fun ReaderScreen(
     val view = LocalView.current
     DisposableEffect(Unit) {
         val window = (view.context as? android.app.Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        controller?.hide(WindowInsetsCompat.Type.systemBars())
-        controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (window != null) {
+            val controller = WindowCompat.getInsetsController(window, view)
+            
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && window != null) {
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                window.attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
         }
 
         onDispose {
-            controller?.show(WindowInsetsCompat.Type.systemBars())
+            window?.let {
+                val controller = WindowCompat.getInsetsController(it, view)
+                WindowCompat.setDecorFitsSystemWindows(it, true)
+                controller.show(WindowInsetsCompat.Type.systemBars())
+            }
         }
     }
 
@@ -105,7 +116,7 @@ fun ReaderScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color.Black),
-                            contentScale = ContentScale.Fit,
+                            contentScale = ContentScale.FillWidth,
                             loading = {
                                 Box(
                                     modifier = Modifier
