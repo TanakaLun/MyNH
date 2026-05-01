@@ -34,9 +34,9 @@ class HomeViewModel(
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val response = repository.getPopular(page)
+                val items = repository.getPopular(page)
                 _uiState.value = HomeUiState.Success(
-                    items = response.result,
+                    items = items,
                     currentPage = page
                 )
             } catch (e: Exception) {

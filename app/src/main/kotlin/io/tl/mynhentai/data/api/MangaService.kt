@@ -11,7 +11,7 @@ import retrofit2.http.Query
 interface MangaService {
 
     @GET("api/v2/galleries/popular")
-    suspend fun getPopular(@Query("page") page: Int = 1): ApiResponse<MangaSummary>
+    suspend fun getPopular(@Query("page") page: Int = 1): List<MangaSummary>
 
     @GET("api/v2/galleries")
     suspend fun getGalleries(

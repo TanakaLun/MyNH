@@ -13,7 +13,7 @@ class MangaRepository(
     private val cdnRepository: CdnRepository,
     private val dao: MangaDao
 ) {
-    suspend fun getPopular(page: Int = 1) = api.getPopular(page)
+    suspend fun getPopular(page: Int = 1): List<MangaSummary> = api.getPopular(page)
 
     suspend fun getGalleries(page: Int = 1, sort: String = "date") =
         api.getGalleries(page, sort)
