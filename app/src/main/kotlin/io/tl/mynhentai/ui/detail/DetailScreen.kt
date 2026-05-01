@@ -6,9 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -16,8 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,9 +27,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Surface
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -199,35 +194,27 @@ fun DetailScreen(
                     }
 
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Min),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .combinedClickable(
-                                    onClick = { onReaderClick(detail.id) },
-                                    onLongClick = { showDownloadDialog = true }
-                                ),
-                            shape = shape,
-                            color = MaterialTheme.colorScheme.primary,
-                            tonalElevation = 3.dp
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(ButtonDefaults.ContentPadding),
-                                contentAlignment = Alignment.Center
+                        Box(modifier = Modifier.weight(1f)) {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.fillMaxSize(),
+                                shape = shape
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(ButtonDefaults.IconSpacing)
-                                ) {
-                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(18.dp))
-                                    Text("Read", color = MaterialTheme.colorScheme.onPrimary)
-                                }
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text("Read")
                             }
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(shape)
+                                    .combinedClickable(
+                                        onClick = { onReaderClick(detail.id) },
+                                        onLongClick = { showDownloadDialog = true }
+                                    )
+                            )
                         }
 
                         FilledTonalButton(
