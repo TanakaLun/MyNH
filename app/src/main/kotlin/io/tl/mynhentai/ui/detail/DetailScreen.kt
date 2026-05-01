@@ -60,7 +60,7 @@ import io.tl.mynhentai.data.model.TagDictionary
 import io.tl.mynhentai.ui.detail.DownloadState
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DetailScreen(
     galleryId: Long,
@@ -195,21 +195,34 @@ fun DetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Button(
-                            onClick = { onReaderClick(detail.id) },
-                            shape = shape,
-                            modifier = Modifier.weight(1f)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(shape)
+                                .combinedClickable(
+                                    onClick = { onReaderClick(detail.id) },
+                                    onLongClick = { showDownloadDialog = true }
+                                )
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            Text("Read")
-                        }
-
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = { showDownloadDialog = true },
-                            shape = shape,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("下载")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.PlayArrow,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    "Read",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
 
                         FilledTonalButton(

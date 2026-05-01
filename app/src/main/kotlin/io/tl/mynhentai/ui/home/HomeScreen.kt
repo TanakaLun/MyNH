@@ -22,14 +22,11 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -45,12 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.tl.mynhentai.ui.components.MangaListItem
+import io.tl.mynhentai.ui.components.RoundedDropdownMenu
 import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
@@ -216,39 +212,13 @@ fun HomeScreen(
                         shape = RoundedCornerShape(12.dp)
                     )
 
-                    DropdownMenu(
+                    RoundedDropdownMenu(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false },
-                        modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                    ) {
-                        sortOptions.forEach { option ->
-                            val isSelected = currentSort == option
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        option.replace("-", " "),
-                                        fontSize = 13.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.setSort(option)
-                                    showSortMenu = false
-                                },
-                                modifier = Modifier
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                                        else Color.Transparent
-                                    ),
-                                colors = MenuDefaults.itemColors(
-                                    textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                                    else MaterialTheme.colorScheme.onSurface
-                                )
-                            )
-                        }
-                    }
+                        options = sortOptions,
+                        selectedOption = currentSort,
+                        onOptionSelected = { viewModel.setSort(it) }
+                    )
                 }
                 IconButton(onClick = onSearchClick) {
                     Icon(Icons.Default.Search, contentDescription = "Search")

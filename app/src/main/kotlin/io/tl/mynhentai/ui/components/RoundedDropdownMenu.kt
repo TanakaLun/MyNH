@@ -1,6 +1,9 @@
 package io.tl.mynhentai.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -12,7 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -23,39 +28,48 @@ fun RoundedDropdownMenu(
     options: List<String>,
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    menuShape: Shape = RoundedCornerShape(16.dp),
+    itemShape: Shape = RoundedCornerShape(12.dp),
+    itemHorizontalPadding: Dp = 8.dp
 ) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismissRequest,
-        modifier = modifier.clip(RoundedCornerShape(12.dp))
+    MaterialTheme(
+        shapes = MaterialTheme.shapes.copy(extraSmall = menuShape)
     ) {
-        options.forEach { option ->
-            val isSelected = selectedOption == option
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        option.replace("-", " "),
-                        fontSize = 13.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = onDismissRequest,
+            modifier = modifier.clip(menuShape)
+        ) {
+            Spacer(modifier = Modifier.height(4.dp))
+            options.forEach { option ->
+                val isSelected = selectedOption == option
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            option.replace("-", " "),
+                            fontSize = 13.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    onClick = {
+                        onOptionSelected(option)
+                        onDismissRequest()
+                    },
+                    modifier = Modifier
+                        .padding(horizontal = itemHorizontalPadding, vertical = 2.dp)
+                        .clip(itemShape)
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                            else Color.Transparent
+                        ),
+                    colors = MenuDefaults.itemColors(
+                        textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onSurface
                     )
-                },
-                onClick = {
-                    onOptionSelected(option)
-                    onDismissRequest()
-                },
-                modifier = Modifier
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                        else Color.Transparent
-                    ),
-                colors = MenuDefaults.itemColors(
-                    textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                    else MaterialTheme.colorScheme.onSurface
                 )
-            )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
