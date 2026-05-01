@@ -73,7 +73,7 @@ fun LibraryScreen(
                                 thumbnailHeight = fav.thumbnailHeight,
                                 numPages = fav.numPages
                             ),
-                            imageUrl = viewModel.resolveImageUrl(fav.thumbnail),
+                            imageUrl = viewModel.resolveThumbnailUrl(fav.thumbnail),
                             onItemClick = { onItemClick(fav.id) }
                         )
                     }

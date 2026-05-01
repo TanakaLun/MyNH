@@ -26,7 +26,9 @@ class MangaRepository(
 
     suspend fun refreshCdn() = cdnRepository.refresh()
 
-    fun resolveImageUrl(path: String): String = cdnRepository.resolveUrl(path)
+    fun resolveThumbnailUrl(path: String): String = cdnRepository.resolveThumbnailUrl(path)
+
+    fun resolveImageUrl(path: String): String = cdnRepository.resolveImageUrl(path)
 
     fun getAllFavorites(): Flow<List<FavoriteEntity>> = dao.getAllFavorites()
 

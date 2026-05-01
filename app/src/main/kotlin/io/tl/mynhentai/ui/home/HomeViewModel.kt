@@ -30,7 +30,7 @@ class HomeViewModel(
         viewModelScope.launch { repository.refreshCdn() }
     }
 
-    fun resolveImageUrl(path: String): String = repository.resolveImageUrl(path)
+    fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
     fun loadPopular(page: Int = 1) {
         viewModelScope.launch {

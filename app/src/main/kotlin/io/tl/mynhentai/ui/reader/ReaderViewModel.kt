@@ -49,5 +49,5 @@ class ReaderViewModel(
         _showControls.value = !_showControls.value
     }
 
-    fun resolveImageUrl(path: String): String = cdnRepository.resolveUrl(path)
+    fun resolveImageUrl(path: String): String = cdnRepository.resolveImageUrl(path)
 }

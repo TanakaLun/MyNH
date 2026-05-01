@@ -30,7 +30,7 @@ class SearchViewModel(
     private val _searchHistory = MutableStateFlow<List<String>>(emptyList())
     val searchHistory: StateFlow<List<String>> = _searchHistory.asStateFlow()
 
-    fun resolveImageUrl(path: String): String = repository.resolveImageUrl(path)
+    fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
     fun search(query: String, page: Int = 1) {
         if (query.isBlank()) return

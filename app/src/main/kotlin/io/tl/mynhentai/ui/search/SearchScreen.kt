@@ -142,7 +142,7 @@ fun SearchScreen(
                         items(state.items, key = { it.id }) { manga ->
                             MangaListItem(
                                 manga = manga,
-                                imageUrl = viewModel.resolveImageUrl(manga.thumbnail),
+                                imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
                                 onItemClick = { onItemClick(manga.id) }
                             )
                         }

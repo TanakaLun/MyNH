@@ -2,14 +2,22 @@ package io.tl.mynhentai.data.api
 
 class CdnRepository(private val mangaService: MangaService) {
 
-    private var cdnServers: List<String> = emptyList()
+    private var thumbServers: List<String> = emptyList()
+    private var imageServers: List<String> = emptyList()
 
     suspend fun refresh() {
-        cdnServers = mangaService.getCdnServers().servers
+        val all = mangaService.getCdnServers().servers
+        thumbServers = all.filter { it.startsWith("t") }
+        imageServers = all.filter { it.startsWith("i") }
     }
 
-    fun resolveUrl(path: String): String {
-        if (cdnServers.isEmpty()) return "https://i.nhentai.net/$path"
-        return "https://${cdnServers.first()}/$path"
+    fun resolveThumbnailUrl(path: String): String {
+        if (thumbServers.isEmpty()) return "https://t3.nhentai.net/$path"
+        return "https://${thumbServers.first()}/$path"
+    }
+
+    fun resolveImageUrl(path: String): String {
+        if (imageServers.isEmpty()) return "https://i.nhentai.net/$path"
+        return "https://${imageServers.first()}/$path"
     }
 }
