@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,18 +26,21 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -66,7 +69,9 @@ fun DetailScreen(
     viewModel: DetailViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val downloadState by viewModel.downloadState.collectAsState()
     var blacklistTag by remember { mutableStateOf<Tag?>(null) }
+    var showDownloadDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(galleryId) {
         viewModel.load(galleryId)
@@ -91,6 +96,23 @@ fun DetailScreen(
                 }
             }
         )
+    }
+
+    if (showDownloadDialog) {
+        val state = uiState
+        if (state is DetailUiState.Success) {
+            DownloadDialog(
+                detail = state.detail,
+                downloadState = downloadState,
+                onDismiss = { showDownloadDialog = false },
+                onDownload = { filename, path ->
+                    viewModel.downloadGallery(state.detail, filename, path)
+                },
+                onCache = {
+                    viewModel.cacheGallery(state.detail)
+                }
+            )
+        }
     }
 
     Scaffold(
@@ -179,6 +201,14 @@ fun DetailScreen(
                         ) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                             Text("Read")
+                        }
+
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = { showDownloadDialog = true },
+                            shape = shape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("下载")
                         }
 
                         FilledTonalButton(
@@ -326,4 +356,80 @@ private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
+}
+
+@Composable
+private fun DownloadDialog(
+    detail: io.tl.mynhentai.data.model.MangaDetail,
+    downloadState: DetailViewModel.DownloadState,
+    onDismiss: () -> Unit,
+    onDownload: (filename: String, path: String) -> Unit,
+    onCache: () -> Unit
+) {
+    var filename by remember { mutableStateOf(detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("下载漫画") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = filename,
+                    onValueChange = { filename = it },
+                    label = { Text("文件名") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text(
+                    text = "保存至: ${io.tl.mynhentai.ui.components.DownloadManager.defaultDownloadPath}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                when (downloadState) {
+                    is DetailViewModel.DownloadState.Idle -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    onDownload(filename, io.tl.mynhentai.ui.components.DownloadManager.defaultDownloadPath)
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("下载 (Zip)")
+                            }
+                            FilledTonalButton(
+                                onClick = { onCache() },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("缓存")
+                            }
+                        }
+                    }
+                    is DetailViewModel.DownloadState.Downloading -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("${downloadState.progress} / ${downloadState.total}")
+                            LinearProgressIndicator(
+                                progress = { if (downloadState.total > 0) downloadState.progress.toFloat() / downloadState.total else 0f },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    is DetailViewModel.DownloadState.Success -> {
+                        Text("完成！", color = MaterialTheme.colorScheme.primary)
+                    }
+                    is DetailViewModel.DownloadState.Error -> {
+                        Text(downloadState.message, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
 }

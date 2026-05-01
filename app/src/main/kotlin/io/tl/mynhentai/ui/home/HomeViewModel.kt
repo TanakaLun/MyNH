@@ -38,6 +38,10 @@ class HomeViewModel(
 
     fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
+    fun retry() {
+        loadPage(1)
+    }
+
     fun loadPage(page: Int, sort: String = _currentSort.value) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading

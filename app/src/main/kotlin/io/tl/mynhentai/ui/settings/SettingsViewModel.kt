@@ -23,6 +23,9 @@ class SettingsViewModel(
     private val _languageFilter = MutableStateFlow(settings.languageFilter)
     val languageFilter: StateFlow<String> = _languageFilter.asStateFlow()
 
+    private val _languageFilterEnabled = MutableStateFlow(settings.languageFilterEnabled)
+    val languageFilterEnabled: StateFlow<Boolean> = _languageFilterEnabled.asStateFlow()
+
     val blacklistedTags: StateFlow<List<BlacklistedTagEntity>> = repository.getAllBlacklistedTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -34,6 +37,11 @@ class SettingsViewModel(
     fun setLanguageFilter(value: String) {
         settings.languageFilter = value
         _languageFilter.value = value
+    }
+
+    fun setLanguageFilterEnabled(enabled: Boolean) {
+        settings.languageFilterEnabled = enabled
+        _languageFilterEnabled.value = enabled
     }
 
     fun removeBlacklistedTag(tagId: Long) {
