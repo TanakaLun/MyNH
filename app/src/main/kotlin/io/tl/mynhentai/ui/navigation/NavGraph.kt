@@ -88,13 +88,6 @@ fun MainNavGraph() {
                 }
             }
         }
-    }
-}
-
-private fun String.decodeQueryParam(): String {
-    return URLDecoder.decode(this, "UTF-8")
-}
-        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -180,4 +173,8 @@ private fun String.decodeQueryParam(): String {
             }
         }
     }
+}
+
+private fun String.decodeQueryParam(): String {
+    return URLDecoder.decode(this, "UTF-8")
 }

@@ -2,12 +2,8 @@ package io.tl.mynhentai.ui.reader
 
 import coil.ImageLoader
 import coil.request.ImageRequest
-import coil.size.Size
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import coil.size.Size as CoilSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -165,6 +162,7 @@ private fun PreloadPages(
     currentPage: Int,
     resolveImageUrl: (String) -> String
 ) {
+    val context = LocalContext.current
     val imageLoader: ImageLoader = koinInject()
     LaunchedEffect(currentPage) {
         val preloadCount = 5
@@ -172,9 +170,9 @@ private fun PreloadPages(
         val end = (currentPage + preloadCount).coerceAtMost(pages.size)
         for (i in start until end) {
             val url = resolveImageUrl(pages[i].path)
-            val request = ImageRequest.Builder(imageLoader.context)
+            val request = ImageRequest.Builder(context)
                 .data(url)
-                .size(Size.ORIGINAL)
+                .size(CoilSize.ORIGINAL)
                 .build()
             imageLoader.enqueue(request)
         }
