@@ -1,17 +1,24 @@
 package io.tl.mynhentai.di
 
+import android.content.Context
 import androidx.room.Room
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.api.MangaService
 import io.tl.mynhentai.data.local.MangaDatabase
+import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.repository.MangaRepository
 import io.tl.mynhentai.ui.detail.DetailViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
 import io.tl.mynhentai.ui.library.LibraryViewModel
 import io.tl.mynhentai.ui.reader.ReaderViewModel
 import io.tl.mynhentai.ui.search.SearchViewModel
+import io.tl.mynhentai.ui.settings.SettingsViewModel
 import kotlinx.serialization.json.Json
+import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -22,6 +29,10 @@ import org.koin.dsl.module
 val networkModule = module {
     single {
         OkHttpClient.Builder()
+            .dispatcher(Dispatcher().apply {
+                maxRequestsPerHost = 20
+                maxRequests = 100
+            })
             .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
@@ -51,6 +62,26 @@ val networkModule = module {
     single { CdnRepository(get()) }
 }
 
+val imageModule = module {
+    single {
+        val context: Context = androidContext()
+        ImageLoader.Builder(context)
+            .okHttpClient(get())
+            .memoryCache {
+                MemoryCache.Builder()
+                    .maxSizePercent(0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(context.cacheDir.resolve("coil_cache"))
+                    .maxSizeBytes(250 * 1024 * 1024)
+                    .build()
+            }
+            .build()
+    }
+}
+
 val databaseModule = module {
     single {
         Room.databaseBuilder(
@@ -64,6 +95,7 @@ val databaseModule = module {
 
 val repositoryModule = module {
     single { MangaRepository(get(), get(), get()) }
+    single { SettingsHelper(androidContext()) }
 }
 
 val viewModelModule = module {
@@ -72,4 +104,5 @@ val viewModelModule = module {
     viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }
+    viewModel { SettingsViewModel(get()) }
 }

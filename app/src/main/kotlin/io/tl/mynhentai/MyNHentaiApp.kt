@@ -2,6 +2,7 @@ package io.tl.mynhentai
 
 import android.app.Application
 import io.tl.mynhentai.di.databaseModule
+import io.tl.mynhentai.di.imageModule
 import io.tl.mynhentai.di.networkModule
 import io.tl.mynhentai.di.repositoryModule
 import io.tl.mynhentai.di.viewModelModule
@@ -15,6 +16,7 @@ class MyNHentaiApp : Application() {
             androidContext(this@MyNHentaiApp)
             modules(
                 networkModule,
+                imageModule,
                 databaseModule,
                 repositoryModule,
                 viewModelModule

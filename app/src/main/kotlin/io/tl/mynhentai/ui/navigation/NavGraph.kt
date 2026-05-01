@@ -3,10 +3,8 @@ package io.tl.mynhentai.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -28,6 +26,7 @@ import io.tl.mynhentai.ui.home.HomeScreen
 import io.tl.mynhentai.ui.library.LibraryScreen
 import io.tl.mynhentai.ui.reader.ReaderScreen
 import io.tl.mynhentai.ui.search.SearchScreen
+import io.tl.mynhentai.ui.settings.SettingsScreen
 
 data class BottomNavItem(
     val label: String,
@@ -37,7 +36,6 @@ data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem("Home", Icons.Default.Home, Routes.HOME),
-    BottomNavItem("Search", Icons.Default.Search, Routes.SEARCH),
     BottomNavItem("Favorites", Icons.Default.Bookmark, Routes.LIBRARY)
 )
 
@@ -87,6 +85,9 @@ fun MainNavGraph() {
                     onSearchClick = {
                         navController.navigate(Routes.SEARCH)
                     },
+                    onSettingsClick = {
+                        navController.navigate(Routes.SETTINGS)
+                    },
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
                     }
@@ -135,6 +136,12 @@ fun MainNavGraph() {
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
                     }
+                )
+            }
+
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
         }
