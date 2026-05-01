@@ -13,11 +13,11 @@ class CdnRepository(private val mangaService: MangaService) {
 
     fun resolveThumbnailUrl(path: String): String {
         if (thumbServers.isEmpty()) return "https://t3.nhentai.net/$path"
-        return "https://${thumbServers.random()}/$path"
+        return "${thumbServers.random()}/$path"
     }
 
     fun resolveImageUrl(path: String): String {
         if (imageServers.isEmpty()) return "https://i.nhentai.net/$path"
-        return "https://${imageServers.random()}/$path"
+        return "${imageServers.random()}/$path"
     }
 }
