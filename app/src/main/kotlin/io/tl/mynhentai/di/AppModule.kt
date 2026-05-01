@@ -87,7 +87,7 @@ val databaseModule = module {
             androidContext(),
             MangaDatabase::class.java,
             "mynhentai.db"
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
     single { get<MangaDatabase>().mangaDao() }
 }
@@ -98,7 +98,7 @@ val repositoryModule = module {
 }
 
 val viewModelModule = module {
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
     viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }

@@ -1,12 +1,14 @@
 package io.tl.mynhentai.ui.reader
 
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.size.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,6 +103,12 @@ fun ReaderScreen(
                     }
                 }
 
+                PreloadPages(
+                    pages = state.pages,
+                    currentPage = currentPage,
+                    resolveImageUrl = viewModel::resolveImageUrl
+                )
+
                 if (showControls) {
                     TopAppBar(
                         title = { Text(state.title, fontSize = 16.sp) },
@@ -146,6 +155,28 @@ fun ReaderScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PreloadPages(
+    pages: List<io.tl.mynhentai.data.model.MangaPage>,
+    currentPage: Int,
+    resolveImageUrl: (String) -> String
+) {
+    val imageLoader: ImageLoader = koinInject()
+    LaunchedEffect(currentPage) {
+        val preloadCount = 5
+        val start = currentPage.coerceAtMost(pages.size - 1)
+        val end = (currentPage + preloadCount).coerceAtMost(pages.size)
+        for (i in start until end) {
+            val url = resolveImageUrl(pages[i].path)
+            val request = ImageRequest.Builder(imageLoader.context)
+                .data(url)
+                .size(Size.ORIGINAL)
+                .build()
+            imageLoader.enqueue(request)
         }
     }
 }

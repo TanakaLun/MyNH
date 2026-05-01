@@ -1,5 +1,9 @@
 package io.tl.mynhentai.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import java.net.URLDecoder
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -12,6 +16,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -48,10 +55,15 @@ fun MainNavGraph() {
     val currentDestination = navBackStackEntry?.destination
 
     val showBottomBar = currentDestination?.route in bottomNavItems.map { it.route }
+    var bottomBarHidden by remember { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
+            AnimatedVisibility(
+                visible = showBottomBar && !bottomBarHidden,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
                         val selected = currentDestination?.hierarchy?.any {
@@ -76,6 +88,13 @@ fun MainNavGraph() {
                 }
             }
         }
+    }
+}
+
+private fun String.decodeQueryParam(): String {
+    return URLDecoder.decode(this, "UTF-8")
+}
+        }
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -89,12 +108,27 @@ fun MainNavGraph() {
                     },
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
-                    }
+                    },
+                    onScroll = { hidden -> bottomBarHidden = hidden }
                 )
             }
 
             composable(Routes.SEARCH) {
                 SearchScreen(
+                    onBack = { navController.popBackStack() },
+                    onItemClick = { id ->
+                        navController.navigate(Routes.detail(id))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.SEARCH_QUERY,
+                arguments = listOf(navArgument("query") { type = NavType.StringType; defaultValue = "" })
+            ) { backStackEntry ->
+                val query = backStackEntry.arguments?.getString("query")?.decodeQueryParam() ?: ""
+                SearchScreen(
+                    initialQuery = query,
                     onBack = { navController.popBackStack() },
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
@@ -114,7 +148,7 @@ fun MainNavGraph() {
                         navController.navigate(Routes.reader(readerId))
                     },
                     onTagClick = { tagQuery ->
-                        navController.navigate(Routes.SEARCH)
+                        navController.navigate(Routes.search(tagQuery))
                     }
                 )
             }
@@ -134,7 +168,8 @@ fun MainNavGraph() {
                 LibraryScreen(
                     onItemClick = { id ->
                         navController.navigate(Routes.detail(id))
-                    }
+                    },
+                    onScroll = { hidden -> bottomBarHidden = hidden }
                 )
             }
 

@@ -2,6 +2,7 @@ package io.tl.mynhentai.data.repository
 
 import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.api.MangaService
+import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.FavoriteEntity
 import io.tl.mynhentai.data.local.MangaDao
 import io.tl.mynhentai.data.model.MangaDetail
@@ -39,4 +40,14 @@ class MangaRepository(
     suspend fun addFavorite(favorite: FavoriteEntity) = dao.insert(favorite)
 
     suspend fun removeFavorite(id: Long) = dao.deleteById(id)
+
+    fun getAllBlacklistedTags(): Flow<List<BlacklistedTagEntity>> = dao.getAllBlacklistedTags()
+
+    suspend fun isTagBlacklisted(tagId: Long): Boolean = dao.isTagBlacklisted(tagId)
+
+    suspend fun addBlacklistedTag(tag: BlacklistedTagEntity) = dao.insertBlacklistedTag(tag)
+
+    suspend fun removeBlacklistedTag(tagId: Long) = dao.removeBlacklistedTag(tagId)
+
+    suspend fun getAllBlacklistedTagIds(): List<Long> = dao.getAllBlacklistedTagIds()
 }

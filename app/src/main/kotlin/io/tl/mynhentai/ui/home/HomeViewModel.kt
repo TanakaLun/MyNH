@@ -2,6 +2,7 @@ package io.tl.mynhentai.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.repository.MangaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,8 @@ sealed interface HomeUiState {
 }
 
 class HomeViewModel(
-    private val repository: MangaRepository
+    private val repository: MangaRepository,
+    private val settings: SettingsHelper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -31,13 +33,22 @@ class HomeViewModel(
         viewModelScope.launch { repository.refreshCdn() }
     }
 
+    private val _currentSort = MutableStateFlow("popular")
+    val currentSort: StateFlow<String> = _currentSort.asStateFlow()
+
     fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
-    fun loadPage(page: Int) {
+    fun loadPage(page: Int, sort: String = _currentSort.value) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val response = repository.getGalleries(page = page, sort = "popular")
+                _currentSort.value = sort
+                val language = settings.languageFilter
+                val response = if (language.isNotBlank()) {
+                    repository.search(query = "language:$language", page = page)
+                } else {
+                    repository.getGalleries(page = page, sort = sort)
+                }
                 _uiState.value = HomeUiState.Success(
                     items = response.result,
                     currentPage = page,
@@ -47,6 +58,10 @@ class HomeViewModel(
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
             }
         }
+    }
+
+    fun setSort(sort: String) {
+        loadPage(1, sort)
     }
 
     fun nextPage() {

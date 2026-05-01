@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
@@ -13,15 +15,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.data.model.MangaSummary
+import io.tl.mynhentai.data.model.TagHelper
 
 @Composable
 fun MangaListItem(
@@ -30,6 +37,8 @@ fun MangaListItem(
     onItemClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val language = TagHelper.getLanguage(manga.tagIds)
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
@@ -63,11 +72,29 @@ fun MangaListItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Text(
-                    text = "${manga.numPages} pages",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "${manga.numPages} pages",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    if (language != null) {
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(language, fontSize = 11.sp) },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            border = null,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
             }
         }
     }

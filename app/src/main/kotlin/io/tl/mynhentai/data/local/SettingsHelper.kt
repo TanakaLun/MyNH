@@ -10,6 +10,10 @@ class SettingsHelper(private val appContext: Context) {
         get() = prefs.getInt(KEY_CONCURRENCY, 10)
         set(value) = prefs.edit().putInt(KEY_CONCURRENCY, value).apply()
 
+    var languageFilter: String
+        get() = prefs.getString(KEY_LANGUAGE, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_LANGUAGE, value).apply()
+
     val cacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")
 
@@ -19,5 +23,6 @@ class SettingsHelper(private val appContext: Context) {
 
     companion object {
         private const val KEY_CONCURRENCY = "max_concurrency"
+        private const val KEY_LANGUAGE = "language_filter"
     }
 }
