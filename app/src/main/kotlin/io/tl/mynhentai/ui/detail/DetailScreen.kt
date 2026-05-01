@@ -228,6 +228,7 @@ fun DetailScreen(
                         }
                     }
                 }
+            }
 
             is DetailUiState.Error -> {
                 Box(
