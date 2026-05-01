@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.model.TagDictionary
+import io.tl.mynhentai.ui.detail.DownloadState
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -361,7 +362,7 @@ private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
 @Composable
 private fun DownloadDialog(
     detail: io.tl.mynhentai.data.model.MangaDetail,
-    downloadState: DetailViewModel.DownloadState,
+    downloadState: DownloadState,
     onDismiss: () -> Unit,
     onDownload: (filename: String, path: String) -> Unit,
     onCache: () -> Unit
@@ -389,7 +390,7 @@ private fun DownloadDialog(
                 )
 
                 when (downloadState) {
-                    is DetailViewModel.DownloadState.Idle -> {
+                    is DownloadState.Idle -> {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -410,7 +411,7 @@ private fun DownloadDialog(
                             }
                         }
                     }
-                    is DetailViewModel.DownloadState.Downloading -> {
+                    is DownloadState.Downloading -> {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("${downloadState.progress} / ${downloadState.total}")
                             LinearProgressIndicator(
@@ -419,10 +420,10 @@ private fun DownloadDialog(
                             )
                         }
                     }
-                    is DetailViewModel.DownloadState.Success -> {
+                    is DownloadState.Success -> {
                         Text("完成！", color = MaterialTheme.colorScheme.primary)
                     }
-                    is DetailViewModel.DownloadState.Error -> {
+                    is DownloadState.Error -> {
                         Text(downloadState.message, color = MaterialTheme.colorScheme.error)
                     }
                 }
