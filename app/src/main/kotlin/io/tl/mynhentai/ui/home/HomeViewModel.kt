@@ -45,7 +45,7 @@ class HomeViewModel(
                 _currentSort.value = sort
                 val language = settings.languageFilter
                 val response = if (language.isNotBlank()) {
-                    repository.search(query = "language:$language", page = page)
+                    repository.search(query = "language:$language", page = page, sort = sort)
                 } else {
                     repository.getGalleries(page = page, sort = sort)
                 }

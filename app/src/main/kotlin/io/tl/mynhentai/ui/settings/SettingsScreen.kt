@@ -1,5 +1,6 @@
 package io.tl.mynhentai.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,10 +17,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -28,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,7 +41,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.koin.androidx.compose.koinViewModel
@@ -102,15 +109,34 @@ fun SettingsScreen(
                 )
                 ExposedDropdownMenu(
                     expanded = languageExpanded,
-                    onDismissRequest = { languageExpanded = false }
+                    onDismissRequest = { languageExpanded = false },
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp))
                 ) {
                     languageOptions.forEach { option ->
+                        val isSelected = languageFilter == option
                         DropdownMenuItem(
-                            text = { Text(languageLabels[option] ?: option) },
+                            text = {
+                                Text(
+                                    languageLabels[option] ?: option,
+                                    fontWeight = if (isSelected) FontWeight.Bold
+                                    else FontWeight.Normal
+                                )
+                            },
                             onClick = {
                                 viewModel.setLanguageFilter(option)
                                 languageExpanded = false
-                            }
+                            },
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                    else Color.Transparent
+                                ),
+                            colors = MenuDefaults.itemColors(
+                                textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
+                                else MaterialTheme.colorScheme.onSurface
+                            )
                         )
                     }
                 }
@@ -130,7 +156,6 @@ fun SettingsScreen(
                     value = concurrency.toFloat(),
                     onValueChange = { viewModel.setConcurrency(it.toInt()) },
                     valueRange = 1f..30f,
-                    steps = 28,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -154,27 +179,35 @@ fun SettingsScreen(
                     text = "Blacklisted Tags (${blacklistedTags.size})",
                     style = MaterialTheme.typography.titleMedium
                 )
-                LazyColumn(
+                Card(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    )
                 ) {
-                    items(blacklistedTags, key = { it.tagId }) { tag ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.removeBlacklistedTag(tag.tagId) }
-                                .padding(vertical = 8.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = tag.tagName,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "tap to remove",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                    LazyColumn(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        items(blacklistedTags, key = { it.tagId }) { tag ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.removeBlacklistedTag(tag.tagId) }
+                                    .padding(vertical = 8.dp, horizontal = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = tag.tagName,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "tap to remove",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }

@@ -21,7 +21,8 @@ class MangaRepository(
 
     suspend fun getDetail(id: Long): MangaDetail = api.getGalleryDetail(id)
 
-    suspend fun search(query: String, page: Int = 1) = api.search(query, page)
+    suspend fun search(query: String, page: Int = 1, sort: String = "date") =
+        api.search(query, page, sort)
 
     suspend fun getRandom(): MangaSummary = api.getRandom()
 
