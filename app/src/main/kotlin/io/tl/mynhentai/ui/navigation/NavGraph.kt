@@ -57,6 +57,9 @@ fun MainNavGraph() {
     val showBottomBar = currentDestination?.route in bottomNavItems.map { it.route }
     var bottomBarHidden by remember { mutableStateOf(false) }
 
+    val currentRoute = currentDestination?.route
+    val isReader = currentRoute == Routes.READER
+
     Scaffold(
         bottomBar = {
             AnimatedVisibility(
@@ -93,7 +96,7 @@ fun MainNavGraph() {
         NavHost(
             navController = navController,
             startDestination = Routes.HOME,
-            modifier = Modifier.padding(innerPadding)
+            modifier = if (isReader) Modifier else Modifier.padding(innerPadding)
         ) {
             composable(Routes.HOME) {
                 HomeScreen(

@@ -5,6 +5,9 @@ import coil.request.ImageRequest
 import coil.size.Size as CoilSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -30,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import android.os.Build
+import android.view.WindowManager
 import coil.compose.SubcomposeAsyncImage
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -60,6 +65,12 @@ fun ReaderScreen(
         val controller = window?.let { WindowCompat.getInsetsController(it, view) }
         controller?.hide(WindowInsetsCompat.Type.systemBars())
         controller?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && window != null) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+
         onDispose {
             controller?.show(WindowInsetsCompat.Type.systemBars())
         }
@@ -69,6 +80,7 @@ fun ReaderScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .consumeWindowInsets(WindowInsets(0, 0, 0, 0))
     ) {
         when (val state = uiState) {
             is ReaderUiState.Loading -> {
@@ -83,7 +95,8 @@ fun ReaderScreen(
             is ReaderUiState.Success -> {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     items(state.pages, key = { it.number }) { page ->
                         SubcomposeAsyncImage(
