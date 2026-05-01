@@ -6,18 +6,18 @@ class CdnRepository(private val mangaService: MangaService) {
     private var imageServers: List<String> = emptyList()
 
     suspend fun refresh() {
-        val all = mangaService.getCdnServers().servers
-        thumbServers = all.filter { it.startsWith("t") }
-        imageServers = all.filter { it.startsWith("i") }
+        val response = mangaService.getCdnServers()
+        thumbServers = response.thumbServers
+        imageServers = response.imageServers
     }
 
     fun resolveThumbnailUrl(path: String): String {
         if (thumbServers.isEmpty()) return "https://t3.nhentai.net/$path"
-        return "https://${thumbServers.first()}/$path"
+        return "https://${thumbServers.random()}/$path"
     }
 
     fun resolveImageUrl(path: String): String {
         if (imageServers.isEmpty()) return "https://i.nhentai.net/$path"
-        return "https://${imageServers.first()}/$path"
+        return "https://${imageServers.random()}/$path"
     }
 }

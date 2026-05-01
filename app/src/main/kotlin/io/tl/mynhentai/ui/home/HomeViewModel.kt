@@ -13,7 +13,8 @@ sealed interface HomeUiState {
     data object Loading : HomeUiState
     data class Success(
         val items: List<MangaSummary>,
-        val currentPage: Int = 1
+        val currentPage: Int = 1,
+        val numPages: Int = 1
     ) : HomeUiState
     data class Error(val message: String) : HomeUiState
 }
@@ -26,24 +27,39 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadPopular()
+        loadPage(1)
         viewModelScope.launch { repository.refreshCdn() }
     }
 
     fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
-    fun loadPopular(page: Int = 1) {
+    fun loadPage(page: Int) {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val items = repository.getPopular(page)
+                val response = repository.getGalleries(page = page, sort = "popular")
                 _uiState.value = HomeUiState.Success(
-                    items = items,
-                    currentPage = page
+                    items = response.result,
+                    currentPage = page,
+                    numPages = response.numPages
                 )
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
             }
+        }
+    }
+
+    fun nextPage() {
+        val state = _uiState.value
+        if (state is HomeUiState.Success && state.currentPage < state.numPages) {
+            loadPage(state.currentPage + 1)
+        }
+    }
+
+    fun previousPage() {
+        val state = _uiState.value
+        if (state is HomeUiState.Success && state.currentPage > 1) {
+            loadPage(state.currentPage - 1)
         }
     }
 }

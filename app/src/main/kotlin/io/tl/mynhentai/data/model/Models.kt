@@ -70,5 +70,6 @@ data class Tag(
 
 @Serializable
 data class CdnResponse(
-    val servers: List<String> = emptyList()
+    @SerialName("image_servers") val imageServers: List<String> = emptyList(),
+    @SerialName("thumb_servers") val thumbServers: List<String> = emptyList()
 )

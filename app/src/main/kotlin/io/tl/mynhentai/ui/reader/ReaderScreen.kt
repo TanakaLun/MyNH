@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,7 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,7 +68,7 @@ fun ReaderScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Loading...", color = Color.White)
+                    CircularProgressIndicator(color = Color.White)
                 }
             }
 
@@ -76,13 +78,23 @@ fun ReaderScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(state.pages, key = { it.number }) { page ->
-                        AsyncImage(
+                        SubcomposeAsyncImage(
                             model = viewModel.resolveImageUrl(page.path),
                             contentDescription = "Page ${page.number}",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(Color.Black),
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
+                            loading = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .size(400.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(color = Color.White)
+                                }
+                            }
                         )
                     }
                 }
