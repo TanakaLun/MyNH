@@ -2,10 +2,16 @@ package io.tl.mynhentai.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
 import java.net.URLDecoder
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Bookmark
@@ -59,57 +65,40 @@ fun MainNavGraph() {
 
     val currentRoute = currentDestination?.route
     val isReader = currentRoute == Routes.READER
+    val navBarVisible = showBottomBar && !bottomBarHidden
 
-    Scaffold(
-        bottomBar = {
-            AnimatedVisibility(
-                visible = showBottomBar && !bottomBarHidden,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it })
-            ) {
-                NavigationBar {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentDestination?.hierarchy?.any {
-                            it.route == item.route
-                        } == true
+    val bottomPadding by animateDpAsState(
+        targetValue = if (navBarVisible) 80.dp else 0.dp,
+        animationSpec = tween(300)
+    )
 
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                bottomBarHidden = false
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
-                        )
-                    }
+    Scaffold { innerPadding ->
+        Box(Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                modifier = if (isReader) {
+                    Modifier
+                } else {
+                    Modifier.padding(
+                        top = innerPadding.top,
+                        start = innerPadding.start,
+                        end = innerPadding.end,
+                        bottom = innerPadding.bottom + bottomPadding
+                    )
                 }
-            }
-        }
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.HOME,
-            modifier = if (isReader) Modifier else Modifier.padding(innerPadding)
-        ) {
-            composable(Routes.HOME) {
-                HomeScreen(
-                    onSearchClick = {
-                        navController.navigate(Routes.SEARCH)
-                    },
-                    onItemClick = { id ->
-                        navController.navigate(Routes.detail(id))
-                    },
-                    onScroll = { hidden -> bottomBarHidden = hidden },
-                    isBottomNavVisible = !bottomBarHidden
-                )
-            }
+            ) {
+                composable(Routes.HOME) {
+                    HomeScreen(
+                        onSearchClick = {
+                            navController.navigate(Routes.SEARCH)
+                        },
+                        onItemClick = { id ->
+                            navController.navigate(Routes.detail(id))
+                        },
+                        onScroll = { hidden -> bottomBarHidden = hidden }
+                    )
+                }
 
             composable(Routes.SEARCH) {
                 SearchScreen(
@@ -173,6 +162,36 @@ fun MainNavGraph() {
 
             composable(Routes.SETTINGS) {
                 SettingsScreen()
+            }
+        }
+
+        AnimatedVisibility(
+            visible = navBarVisible,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it })
+        ) {
+            NavigationBar {
+                bottomNavItems.forEach { item ->
+                    val selected = currentDestination?.hierarchy?.any {
+                        it.route == item.route
+                    } == true
+
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = {
+                            bottomBarHidden = false
+                            navController.navigate(item.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(item.icon, contentDescription = item.label) },
+                        label = { Text(item.label) }
+                    )
+                }
             }
         }
     }

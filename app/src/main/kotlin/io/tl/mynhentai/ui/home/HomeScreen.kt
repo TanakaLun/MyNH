@@ -1,8 +1,6 @@
 package io.tl.mynhentai.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -56,7 +54,6 @@ import io.tl.mynhentai.ui.components.MangaListItem
 import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
-private val bottomNavHeight = 80.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +61,6 @@ fun HomeScreen(
     onSearchClick: () -> Unit,
     onItemClick: (Long) -> Unit,
     onScroll: (Boolean) -> Unit = {},
-    isBottomNavVisible: Boolean = true,
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -97,11 +93,6 @@ fun HomeScreen(
         }
     }
 
-    val fabOffset by animateDpAsState(
-        targetValue = if (isBottomNavVisible) bottomNavHeight + 3.dp else 3.dp,
-        animationSpec = tween(300)
-    )
-
     Box(modifier = Modifier.fillMaxSize()) {
         when (val state = uiState) {
             is HomeUiState.Loading -> {
@@ -122,7 +113,7 @@ fun HomeScreen(
                     contentPadding = PaddingValues(
                         start = 12.dp, end = 12.dp,
                         top = 72.dp,
-                        bottom = bottomNavHeight + 64.dp
+                        bottom = 144.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -138,7 +129,7 @@ fun HomeScreen(
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = fabOffset),
+                        .padding(bottom = 3.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -158,7 +149,7 @@ fun HomeScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .background(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                MaterialTheme.colorScheme.surfaceVariant,
                                 RoundedCornerShape(20.dp)
                             )
                             .padding(horizontal = 16.dp, vertical = 6.dp)
