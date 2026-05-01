@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -213,9 +214,7 @@ fun DetailScreen(
                             color = MaterialTheme.colorScheme.primary
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .defaultMinSize(minHeight = 40.dp)
-                                    .padding(ButtonDefaults.ContentPadding),
+                                modifier = Modifier.padding(ButtonDefaults.ContentPadding),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Row(
