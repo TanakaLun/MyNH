@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -29,8 +28,8 @@ fun RoundedDropdownMenu(
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    menuShape: Shape = RoundedCornerShape(16.dp),
-    itemShape: Shape = RoundedCornerShape(12.dp),
+    menuShape: androidx.compose.foundation.shape.CornerBasedShape = RoundedCornerShape(16.dp),
+    itemShape: androidx.compose.foundation.shape.CornerBasedShape = RoundedCornerShape(12.dp),
     itemHorizontalPadding: Dp = 8.dp
 ) {
     MaterialTheme(

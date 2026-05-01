@@ -1,6 +1,5 @@
 package io.tl.mynhentai.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -40,9 +38,8 @@ fun MangaListItem(
     val language = TagHelper.getLanguage(manga.tagIds)
 
     ElevatedCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onItemClick)
+        onClick = onItemClick,
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(8.dp),
