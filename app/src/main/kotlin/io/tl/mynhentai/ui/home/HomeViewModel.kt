@@ -25,6 +25,9 @@ class HomeViewModel(
     private val settings: SettingsHelper
 ) : ViewModel() {
 
+    private val _currentSort = MutableStateFlow("popular")
+    val currentSort: StateFlow<String> = _currentSort.asStateFlow()
+
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -32,9 +35,6 @@ class HomeViewModel(
         loadPage(1)
         viewModelScope.launch { repository.refreshCdn() }
     }
-
-    private val _currentSort = MutableStateFlow("popular")
-    val currentSort: StateFlow<String> = _currentSort.asStateFlow()
 
     fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
 
