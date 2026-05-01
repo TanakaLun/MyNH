@@ -17,6 +17,12 @@ class SettingsHelper(private val appContext: Context) {
     val cacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")
 
+    fun cacheSize(): Long {
+        return if (cacheDir.exists()) {
+            cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        } else 0L
+    }
+
     fun clearCache() {
         cacheDir.deleteRecursively()
     }

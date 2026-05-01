@@ -42,7 +42,15 @@ class SettingsViewModel(
         }
     }
 
+    private val _cacheSize = MutableStateFlow(settings.cacheSize())
+    val cacheSize: StateFlow<Long> = _cacheSize.asStateFlow()
+
     fun clearCache() {
         settings.clearCache()
+        _cacheSize.value = 0L
+    }
+
+    fun refreshCacheSize() {
+        _cacheSize.value = settings.cacheSize()
     }
 }
