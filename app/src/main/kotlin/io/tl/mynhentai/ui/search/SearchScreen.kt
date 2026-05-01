@@ -35,6 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.ui.components.MangaListItem
 import org.koin.androidx.compose.koinViewModel
@@ -82,13 +85,13 @@ fun SearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                keyboardActions = KeyboardActions(
                     onSearch = {
                         if (query.isNotBlank()) viewModel.search(query)
                     }
                 ),
-                keyboardOptions = androidx.compose.ui.text.input.ImeOptions(
-                    imeAction = androidx.compose.ui.text.input.ImeAction.Search
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
                 )
             )
 

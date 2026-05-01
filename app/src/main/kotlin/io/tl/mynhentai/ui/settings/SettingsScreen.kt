@@ -30,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -77,7 +78,7 @@ fun SettingsScreen(
         return String.format(
             java.util.Locale.getDefault(),
             "%.1f %s",
-            this / kotlin.math.pow(1024.0, digitGroups.toDouble()),
+            this / 1024.0.pow(digitGroups.toDouble()),
             units[digitGroups]
         )
     }
