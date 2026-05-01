@@ -80,12 +80,9 @@ fun MainNavGraph() {
                 modifier = if (isReader) {
                     Modifier
                 } else {
-                    Modifier.padding(
-                        top = innerPadding.top,
-                        start = innerPadding.start,
-                        end = innerPadding.end,
-                        bottom = innerPadding.bottom + bottomPadding
-                    )
+                    Modifier
+                        .padding(innerPadding)
+                        .padding(bottom = bottomPadding)
                 }
             ) {
                 composable(Routes.HOME) {
@@ -194,6 +191,7 @@ fun MainNavGraph() {
                 }
             }
         }
+    }
     }
 }
 
