@@ -63,21 +63,20 @@ val networkModule = module {
 }
 
 val imageModule = module {
-    single {
+    single<ImageLoader> {
         val ctx: Context = androidContext()
+        val client: OkHttpClient = get()
+        val memCache = MemoryCache.Builder(ctx)
+            .maxSizePercent(0.25)
+            .build()
+        val diskCache = DiskCache.Builder()
+            .directory(ctx.cacheDir.resolve("coil_cache"))
+            .maxSizeBytes(250L * 1024 * 1024)
+            .build()
         ImageLoader.Builder(ctx)
-            .okHttpClient(get())
-            .memoryCache(
-                MemoryCache.Builder(ctx)
-                    .maxSizePercent(0.25)
-                    .build()
-            )
-            .diskCache(
-                DiskCache.Builder()
-                    .directory(ctx.cacheDir.resolve("coil_cache"))
-                    .maxSizeBytes(250L * 1024 * 1024)
-                    .build()
-            )
+            .okHttpClient(client)
+            .memoryCache(memCache)
+            .diskCache(diskCache)
             .build()
     }
 }
