@@ -49,8 +49,16 @@ class HomeViewModel(
                 } else {
                     repository.getGalleries(page = page, sort = sort)
                 }
+                val blacklistedTagIds = repository.getAllBlacklistedTagIds()
+                val filteredItems = if (blacklistedTagIds.isEmpty()) {
+                    response.result
+                } else {
+                    response.result.filter { manga ->
+                        manga.tagIds.none { it.toLong() in blacklistedTagIds }
+                    }
+                }
                 _uiState.value = HomeUiState.Success(
-                    items = response.result,
+                    items = filteredItems,
                     currentPage = page,
                     numPages = response.numPages
                 )

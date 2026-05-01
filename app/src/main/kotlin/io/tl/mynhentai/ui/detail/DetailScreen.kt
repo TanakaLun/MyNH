@@ -1,5 +1,8 @@
 package io.tl.mynhentai.ui.detail
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,6 +43,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -56,9 +64,31 @@ fun DetailScreen(
     viewModel: DetailViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var blacklistTag by remember { mutableStateOf<Tag?>(null) }
 
     LaunchedEffect(galleryId) {
         viewModel.load(galleryId)
+    }
+
+    if (blacklistTag != null) {
+        AlertDialog(
+            onDismissRequest = { blacklistTag = null },
+            title = { Text("Blacklist Tag") },
+            text = { Text("Are you sure you want to blacklist \"${blacklistTag?.name}\"? Galleries containing this tag will be hidden.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    blacklistTag?.let { viewModel.blacklistTag(it) }
+                    blacklistTag = null
+                }) {
+                    Text("Blacklist")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { blacklistTag = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -184,9 +214,15 @@ fun DetailScreen(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     tags.forEach { tag ->
-                                        TagChip(tag = tag, onClick = {
-                                            onTagClick("${tag.type}:${tag.name}")
-                                        })
+                                        TagChip(
+                                            tag = tag,
+                                            onClick = {
+                                                onTagClick("${tag.type}:${tag.name}")
+                                            },
+                                            onLongClick = {
+                                                blacklistTag = tag
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -212,17 +248,25 @@ fun DetailScreen(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TagChip(tag: Tag, onClick: () -> Unit) {
-    FilledTonalButton(
-        onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-        modifier = Modifier.height(28.dp)
+private fun TagChip(tag: Tag, onClick: () -> Unit, onLongClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(28.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = tag.name,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }

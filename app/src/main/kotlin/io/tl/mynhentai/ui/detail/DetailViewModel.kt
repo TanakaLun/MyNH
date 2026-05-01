@@ -2,8 +2,10 @@ package io.tl.mynhentai.ui.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.FavoriteEntity
 import io.tl.mynhentai.data.model.MangaDetail
+import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +62,23 @@ class DetailViewModel(
                     )
                 )
             }
+        }
+    }
+
+    fun blacklistTag(tag: Tag) {
+        viewModelScope.launch {
+            repository.addBlacklistedTag(
+                BlacklistedTagEntity(
+                    tagId = tag.id,
+                    tagName = tag.name
+                )
+            )
+        }
+    }
+
+    fun unblacklistTag(tagId: Long) {
+        viewModelScope.launch {
+            repository.removeBlacklistedTag(tagId)
         }
     }
 

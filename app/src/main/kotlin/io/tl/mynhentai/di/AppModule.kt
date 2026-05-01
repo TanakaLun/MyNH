@@ -103,5 +103,5 @@ val viewModelModule = module {
     viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }
-    viewModel { SettingsViewModel(get()) }
+    viewModel { SettingsViewModel(get(), get()) }
 }

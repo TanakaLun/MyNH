@@ -1,5 +1,6 @@
 package io.tl.mynhentai.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -51,6 +54,7 @@ fun SettingsScreen(
 ) {
     val concurrency by viewModel.concurrency.collectAsState()
     val languageFilter by viewModel.languageFilter.collectAsState()
+    val blacklistedTags by viewModel.blacklistedTags.collectAsState()
     var languageExpanded by remember { mutableStateOf(false) }
 
     val languageLabels = mapOf(
@@ -151,6 +155,37 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Clear Image Cache")
+            }
+
+            if (blacklistedTags.isNotEmpty()) {
+                Text(
+                    text = "Blacklisted Tags (${blacklistedTags.size})",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(blacklistedTags, key = { it.tagId }) { tag ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.removeBlacklistedTag(tag.tagId) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = tag.tagName,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "tap to remove",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
             }
         }
     }
