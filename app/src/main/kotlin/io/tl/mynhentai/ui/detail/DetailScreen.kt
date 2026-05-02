@@ -202,7 +202,7 @@ fun DetailScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(40.dp)
                         ) {
                             Button(
                                 onClick = { },
