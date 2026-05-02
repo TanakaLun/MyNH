@@ -197,11 +197,11 @@ fun DetailScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalAlignment = Alignment.CenterVertically 
                     ) {
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxWidth()
                                 .height(40.dp)
                         ) {
                             Button(
@@ -231,12 +231,17 @@ fun DetailScreen(
                             },
                             shape = shape,
                             modifier = Modifier.weight(1f)
+                            height(40.dp),
+        contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Icon(
                                 if (state.isFavorite) Icons.Default.Favorite
                                 else Icons.Default.FavoriteBorder,
                                 contentDescription = null
+                                modifier = Modifier.size(18.dp)
+
                             )
+                            Spacer(Modifier.width(8.dp))
                             Text(if (state.isFavorite) "Favorited" else "Favorite")
                         }
                     }
