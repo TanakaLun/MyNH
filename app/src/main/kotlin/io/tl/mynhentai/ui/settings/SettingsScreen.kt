@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.pow
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
+import io.tl.mynhentai.ui.components.RoundedDropdownMenu
 import org.koin.androidx.compose.koinViewModel
 
 private val languageOptions = listOf("", "chinese", "english", "japanese")
@@ -154,53 +155,31 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.titleMedium
             )
 
-            ExposedDropdownMenuBox(
-                expanded = languageExpanded,
-                onExpandedChange = { languageExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = languageLabels[languageFilter] ?: "All",
-                    onValueChange = {},
-                    readOnly = true,
-                    textStyle = TextStyle(fontSize = 14.sp),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
+            Box {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
-                    shape = RoundedCornerShape(14.dp)
-                )
-                ExposedDropdownMenu(
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                        .clickable { languageExpanded = true }
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = languageLabels[languageFilter] ?: "All",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                RoundedDropdownMenu(
                     expanded = languageExpanded,
                     onDismissRequest = { languageExpanded = false },
-                    modifier = Modifier.clip(RoundedCornerShape(12.dp))
-                ) {
-                    languageOptions.forEach { option ->
-                        val isSelected = languageFilter == option
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    languageLabels[option] ?: option,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            onClick = {
-                                viewModel.setLanguageFilter(option)
-                                languageExpanded = false
-                            },
-                            modifier = Modifier
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.secondaryContainer
-                                    else Color.Transparent
-                                ),
-                            colors = MenuDefaults.itemColors(
-                                textColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer
-                                else MaterialTheme.colorScheme.onSurface
-                            )
-                        )
+                    options = languageLabels.values.toList(),
+                    selectedOption = languageLabels[languageFilter] ?: "All",
+                    onOptionSelected = { selectedLabel ->
+                        val key = languageLabels.entries.find { it.value == selectedLabel }?.key ?: ""
+                        viewModel.setLanguageFilter(key)
+                        languageExpanded = false
                     }
-                }
+                )
             }
 
             Row(
