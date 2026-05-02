@@ -196,8 +196,8 @@ fun DetailScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        verticalAlignment = Alignment.CenterVertically 
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
@@ -230,16 +230,16 @@ fun DetailScreen(
                                 viewModel.toggleFavorite(detail, state.isFavorite)
                             },
                             shape = shape,
-                            modifier = Modifier.weight(1f)
-                            height(40.dp),
-        contentPadding = ButtonDefaults.ContentPadding
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            contentPadding = ButtonDefaults.ContentPadding
                         ) {
                             Icon(
                                 if (state.isFavorite) Icons.Default.Favorite
                                 else Icons.Default.FavoriteBorder,
-                                contentDescription = null
+                                contentDescription = null,
                                 modifier = Modifier.size(18.dp)
-
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(if (state.isFavorite) "Favorited" else "Favorite")
