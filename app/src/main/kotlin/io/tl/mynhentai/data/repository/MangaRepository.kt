@@ -51,4 +51,8 @@ class MangaRepository(
     suspend fun removeBlacklistedTag(tagId: Long) = dao.removeBlacklistedTag(tagId)
 
     suspend fun getAllBlacklistedTagIds(): List<Long> = dao.getAllBlacklistedTagIds()
+
+    suspend fun getReadProgress(galleryId: Long) = dao.getReadProgress(galleryId)
+    suspend fun saveReadProgress(progress: io.tl.mynhentai.data.local.ReadProgressEntity) = dao.saveReadProgress(progress)
+    suspend fun deleteReadProgress(galleryId: Long) = dao.deleteReadProgress(galleryId)
 }

@@ -42,4 +42,13 @@ interface MangaDao {
 
     @Query("SELECT tagId FROM blacklisted_tags")
     suspend fun getAllBlacklistedTagIds(): List<Long>
+
+    @Query("SELECT * FROM read_progress WHERE galleryId = :galleryId")
+    suspend fun getReadProgress(galleryId: Long): ReadProgressEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun saveReadProgress(progress: ReadProgressEntity)
+
+    @Query("DELETE FROM read_progress WHERE galleryId = :galleryId")
+    suspend fun deleteReadProgress(galleryId: Long)
 }

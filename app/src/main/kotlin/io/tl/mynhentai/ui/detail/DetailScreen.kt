@@ -1,25 +1,24 @@
 package io.tl.mynhentai.ui.detail
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +29,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -54,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -63,7 +64,7 @@ import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.TagChip
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun DetailScreen(
     galleryId: Long,
@@ -199,24 +200,32 @@ fun DetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            Button(
-                                onClick = {},
-                                modifier = Modifier.fillMaxSize(),
-                                shape = shape
-                            ) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Text("Read")
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clip(shape)
-                                    .combinedClickable(
-                                        onClick = { onReaderClick(detail.id) },
-                                        onLongClick = { showDownloadDialog = true }
+                        val interactionSource = remember { MutableInteractionSource() }
+                        Button(
+                            onClick = { },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onPress = { offset ->
+                                            val press = PressInteraction.Press(offset)
+                                            interactionSource.emit(press)
+                                            tryAwaitRelease()
+                                            interactionSource.emit(PressInteraction.Release(press))
+                                        },
+                                        onTap = { onReaderClick(detail.id) },
+                                        onLongPress = { showDownloadDialog = true }
                                     )
-                            )
+                                },
+                            shape = shape,
+                            interactionSource = interactionSource,
+                            contentPadding = ButtonDefaults.ContentPadding
+                        ) {
+                            Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Read")
                         }
 
                         FilledTonalButton(
