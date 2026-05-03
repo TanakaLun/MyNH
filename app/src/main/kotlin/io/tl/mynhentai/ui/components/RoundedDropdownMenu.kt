@@ -40,7 +40,6 @@ fun RoundedDropdownMenu(
             onDismissRequest = onDismissRequest,
             modifier = modifier.clip(menuShape)
         ) {
-            // Spacer(modifier = Modifier.height(1.dp))
             options.forEach { option ->
                 val isSelected = selectedOption == option
                 DropdownMenuItem(
@@ -68,7 +67,6 @@ fun RoundedDropdownMenu(
                     )
                 )
             }
-            // Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
