@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">MyNHentai</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_history">历史</string>
+    <string name="nav_favorites">收藏</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- Common -->
+    <string name="untitled">无标题</string>
+    <string name="retry">重试</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="close">关闭</string>
+    <string name="remove">移除</string>
+    <string name="back">返回</string>
+
+    <!-- Home -->
+    <string name="browse">浏览</string>
+    <string name="pages_format">%d 页</string>
+    <string name="previous_page">上一页</string>
+    <string name="next_page">下一页</string>
+
+    <!-- Favorites -->
+    <string name="favorites">收藏</string>
+    <string name="no_favorites">暂无收藏</string>
+
+    <!-- History -->
+    <string name="history">历史</string>
+    <string name="no_history">暂无历史记录</string>
+
+    <!-- Detail -->
+    <string name="detail">详情</string>
+    <string name="read">阅读</string>
+    <string name="favorite">收藏</string>
+    <string name="favorited">已收藏</string>
+    <string name="pages_preview">页面预览</string>
+    <string name="pages_favorites_format">%d 页 · %d 次收藏</string>
+
+    <!-- Blacklist -->
+    <string name="blacklist_tag">黑名单标签</string>
+    <string name="blacklist_tag_confirm">确定要将 \"%s\" 加入黑名单吗？包含此标签的漫画将被隐藏。</string>
+    <string name="blacklist">黑名单</string>
+    <string name="blacklist_management">黑名单管理</string>
+    <string name="blacklist_management_count">黑名单管理 (%d)</string>
+    <string name="no_blacklisted_tags">暂无黑名单标签</string>
+
+    <!-- Settings -->
+    <string name="settings">设置</string>
+    <string name="language_preference">语言偏好</string>
+    <string name="language_filter">语言</string>
+    <string name="sync_language_to_search">同步语言偏好至搜索</string>
+    <string name="downloads">下载</string>
+    <string name="max_concurrent_downloads">最大并发下载数</string>
+    <string name="cache">缓存</string>
+    <string name="clear_image_cache">清除图片缓存 (%s)</string>
+    <string name="clear_offline_cache">清除离线缓存 (%s)</string>
+
+    <!-- Selection -->
+    <string name="selected_count">已选择 %d 项</string>
+</resources>

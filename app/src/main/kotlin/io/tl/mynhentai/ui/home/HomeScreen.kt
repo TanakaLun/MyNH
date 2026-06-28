@@ -42,11 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.RoundedDropdownMenu
+import io.tl.mynhentai.R
 import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
@@ -177,7 +179,7 @@ fun HomeScreen(
                             onClick = { viewModel.retry() }
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
-                            Text("重试")
+                            Text(stringResource(R.string.retry))
                         }
                     }
                 }
@@ -185,7 +187,7 @@ fun HomeScreen(
         }
 
         TopAppBar(
-            title = { Text("Browse", fontSize = 18.sp) },
+            title = { Text(stringResource(R.string.browse), fontSize = 18.sp) },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),

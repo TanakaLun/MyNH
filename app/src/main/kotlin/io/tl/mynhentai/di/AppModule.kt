@@ -13,6 +13,7 @@ import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.repository.MangaRepository
 import io.tl.mynhentai.ui.components.DownloadManager
 import io.tl.mynhentai.ui.detail.DetailViewModel
+import io.tl.mynhentai.ui.history.HistoryViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
 import io.tl.mynhentai.ui.library.LibraryViewModel
 import io.tl.mynhentai.ui.reader.ReaderViewModel
@@ -105,5 +106,6 @@ val viewModelModule = module {
     viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }
+    viewModel { HistoryViewModel(get()) }
     viewModel { SettingsViewModel(get(), get()) }
 }

@@ -1,3 +1,61 @@
 <resources>
     <string name="app_name">MyNHentai</string>
-</resources>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_history">History</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Common -->
+    <string name="untitled">Untitled</string>
+    <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="close">Close</string>
+    <string name="remove">Remove</string>
+    <string name="back">Back</string>
+
+    <!-- Home -->
+    <string name="browse">Browse</string>
+    <string name="pages_format">%d pages</string>
+    <string name="previous_page">Previous page</string>
+    <string name="next_page">Next page</string>
+
+    <!-- Favorites -->
+    <string name="favorites">Favorites</string>
+    <string name="no_favorites">No favorites yet</string>
+
+    <!-- History -->
+    <string name="history">History</string>
+    <string name="no_history">No history yet</string>
+
+    <!-- Detail -->
+    <string name="detail">Detail</string>
+    <string name="read">Read</string>
+    <string name="favorite">Favorite</string>
+    <string name="favorited">Favorited</string>
+    <string name="pages_preview">Pages Preview</string>
+    <string name="pages_favorites_format">%d pages · %d favorites</string>
+
+    <!-- Blacklist -->
+    <string name="blacklist_tag">Blacklist Tag</string>
+    <string name="blacklist_tag_confirm">Are you sure you want to blacklist \"%s\"? Galleries containing this tag will be hidden.</string>
+    <string name="blacklist">Blacklist</string>
+    <string name="blacklist_management">Blacklist Management</string>
+    <string name="blacklist_management_count">Blacklist Management (%d)</string>
+    <string name="no_blacklisted_tags">No blacklisted tags</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="language_preference">Language Preference</string>
+    <string name="language_filter">Language</string>
+    <string name="sync_language_to_search">Sync language preference to search</string>
+    <string name="downloads">Downloads</string>
+    <string name="max_concurrent_downloads">Max Concurrent Downloads</string>
+    <string name="cache">Cache</string>
+    <string name="clear_image_cache">Clear Image Cache (%s)</string>
+    <string name="clear_offline_cache">Clear Offline Cache (%s)</string>
+
+    <!-- Selection -->
+    <string name="selected_count">%d selected</string>

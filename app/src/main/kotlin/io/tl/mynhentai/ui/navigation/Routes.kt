@@ -9,6 +9,7 @@ object Routes {
     const val DETAIL = "gallery/{id}"
     const val READER = "reader/{id}"
     const val LIBRARY = "favorites"
+    const val HISTORY = "history"
     const val SETTINGS = "settings"
 
     fun detail(id: Long) = "gallery/$id"

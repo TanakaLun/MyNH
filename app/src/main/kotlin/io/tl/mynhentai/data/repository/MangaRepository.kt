@@ -4,6 +4,7 @@ import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.api.MangaService
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.FavoriteEntity
+import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.local.MangaDao
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.MangaSummary
@@ -55,4 +56,12 @@ class MangaRepository(
     suspend fun getReadProgress(galleryId: Long) = dao.getReadProgress(galleryId)
     suspend fun saveReadProgress(progress: io.tl.mynhentai.data.local.ReadProgressEntity) = dao.saveReadProgress(progress)
     suspend fun deleteReadProgress(galleryId: Long) = dao.deleteReadProgress(galleryId)
+
+    fun getAllHistory(): Flow<List<HistoryEntity>> = dao.getAllHistory()
+
+    suspend fun addHistory(history: HistoryEntity) = dao.insertHistory(history)
+
+    suspend fun removeHistory(id: Long) = dao.deleteHistoryById(id)
+
+    suspend fun removeHistoryByIds(ids: List<Long>) = dao.deleteHistoryByIds(ids)
 }

@@ -55,8 +55,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.TagChip
@@ -83,19 +85,19 @@ fun DetailScreen(
     if (blacklistTag != null) {
         AlertDialog(
             onDismissRequest = { blacklistTag = null },
-            title = { Text("Blacklist Tag") },
-            text = { Text("Are you sure you want to blacklist \"${blacklistTag?.name}\"? Galleries containing this tag will be hidden.") },
+            title = { Text(stringResource(R.string.blacklist_tag)) },
+            text = { Text(stringResource(R.string.blacklist_tag_confirm, blacklistTag?.name ?: "")) },
             confirmButton = {
                 TextButton(onClick = {
                     blacklistTag?.let { viewModel.blacklistTag(it) }
                     blacklistTag = null
                 }) {
-                    Text("Blacklist")
+                    Text(stringResource(R.string.blacklist))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { blacklistTag = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -122,10 +124,10 @@ fun DetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detail") },
+                title = { Text(stringResource(R.string.detail)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -187,7 +189,7 @@ fun DetailScreen(
                             )
 
                             Text(
-                                text = "${detail.numPages} pages · ${detail.numFavorites} favorites",
+                                text = stringResource(R.string.pages_favorites_format, detail.numPages, detail.numFavorites),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -212,7 +214,7 @@ fun DetailScreen(
                             ) {
                                 Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Read")
+                                Text(stringResource(R.string.read))
                             }
                             Box(
                                 modifier = Modifier
@@ -242,7 +244,7 @@ fun DetailScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(Modifier.width(8.dp))
-                            Text(if (state.isFavorite) "Favorited" else "Favorite")
+                            Text(if (state.isFavorite) stringResource(R.string.favorited) else stringResource(R.string.favorite))
                         }
                     }
 
@@ -303,7 +305,7 @@ fun DetailScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Pages Preview",
+                                text = stringResource(R.string.pages_preview),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )

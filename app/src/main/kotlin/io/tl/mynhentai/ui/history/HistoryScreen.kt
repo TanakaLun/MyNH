@@ -1,4 +1,4 @@
-package io.tl.mynhentai.ui.library
+package io.tl.mynhentai.ui.history
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,20 +28,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.tl.mynhentai.R
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.SelectionToolbar
 import io.tl.mynhentai.data.model.MangaSummary
-import io.tl.mynhentai.R
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(
+fun HistoryScreen(
     onItemClick: (Long) -> Unit,
     onScroll: (Boolean) -> Unit = {},
-    viewModel: LibraryViewModel = koinViewModel()
+    viewModel: HistoryViewModel = koinViewModel()
 ) {
-    val favorites by viewModel.favorites.collectAsState()
+    val history by viewModel.history.collectAsState()
     val listState = rememberLazyListState()
     var previousIndex by remember { mutableIntStateOf(0) }
     var previousScrollOffset by remember { mutableIntStateOf(0) }
@@ -75,7 +75,7 @@ fun LibraryScreen(
                 title = {
                     Text(
                         if (selectionMode) "Selected ${selectedIds.size}"
-                        else stringResource(R.string.favorites)
+                        else stringResource(R.string.history)
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -90,13 +90,13 @@ fun LibraryScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (favorites.isEmpty()) {
+            if (history.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stringResource(R.string.no_favorites),
+                        text = stringResource(R.string.no_history),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -107,37 +107,37 @@ fun LibraryScreen(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(favorites, key = { it.id }) { fav ->
+                    items(history, key = { it.id }) { item ->
                         MangaListItem(
                             manga = MangaSummary(
-                                id = fav.id,
+                                id = item.id,
                                 mediaId = "",
-                                englishTitle = fav.title,
-                                thumbnail = fav.thumbnail,
-                                thumbnailWidth = fav.thumbnailWidth,
-                                thumbnailHeight = fav.thumbnailHeight,
-                                numPages = fav.numPages
+                                englishTitle = item.title,
+                                thumbnail = item.thumbnail,
+                                thumbnailWidth = item.thumbnailWidth,
+                                thumbnailHeight = item.thumbnailHeight,
+                                numPages = item.numPages
                             ),
-                            imageUrl = viewModel.resolveThumbnailUrl(fav.thumbnail),
+                            imageUrl = viewModel.resolveThumbnailUrl(item.thumbnail),
                             onItemClick = {
                                 if (selectionMode) {
-                                    selectedIds = if (fav.id in selectedIds) {
-                                        selectedIds - fav.id
+                                    selectedIds = if (item.id in selectedIds) {
+                                        selectedIds - item.id
                                     } else {
-                                        selectedIds + fav.id
+                                        selectedIds + item.id
                                     }
                                     if (selectedIds.isEmpty()) {
                                         selectionMode = false
                                     }
                                 } else {
-                                    onItemClick(fav.id)
+                                    onItemClick(item.id)
                                 }
                             },
                             onLongClick = {
                                 selectionMode = true
-                                selectedIds = setOf(fav.id)
+                                selectedIds = setOf(item.id)
                             },
-                            isSelected = fav.id in selectedIds
+                            isSelected = item.id in selectedIds
                         )
                     }
                 }
@@ -147,7 +147,7 @@ fun LibraryScreen(
                 visible = selectionMode,
                 selectedCount = selectedIds.size,
                 onConfirm = {
-                    viewModel.removeFavoritesByIds(selectedIds.toList())
+                    viewModel.removeHistoryByIds(selectedIds.toList())
                     selectionMode = false
                     selectedIds = emptySet()
                 },

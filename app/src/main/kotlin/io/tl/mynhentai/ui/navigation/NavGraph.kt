@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -36,6 +37,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.tl.mynhentai.ui.detail.DetailScreen
+import io.tl.mynhentai.ui.history.HistoryScreen
 import io.tl.mynhentai.ui.home.HomeScreen
 import io.tl.mynhentai.ui.library.LibraryScreen
 import io.tl.mynhentai.ui.reader.ReaderScreen
@@ -50,6 +52,7 @@ data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem("Home", Icons.Default.Home, Routes.HOME),
+    BottomNavItem("History", Icons.Default.History, Routes.HISTORY),
     BottomNavItem("Favorites", Icons.Default.Bookmark, Routes.LIBRARY),
     BottomNavItem("Settings", Icons.Default.Settings, Routes.SETTINGS)
 )
@@ -90,6 +93,15 @@ fun MainNavGraph() {
                         onSearchClick = {
                             navController.navigate(Routes.SEARCH)
                         },
+                        onItemClick = { id ->
+                            navController.navigate(Routes.detail(id))
+                        },
+                        onScroll = { hidden -> bottomBarHidden = hidden }
+                    )
+                }
+
+                composable(Routes.HISTORY) {
+                    HistoryScreen(
                         onItemClick = { id ->
                             navController.navigate(Routes.detail(id))
                         },

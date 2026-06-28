@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.FavoriteEntity
+import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
@@ -13,6 +14,7 @@ import io.tl.mynhentai.ui.components.DownloadService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed interface DetailUiState {
@@ -37,12 +39,21 @@ class DetailViewModel(
             _uiState.value = DetailUiState.Loading
             try {
                 val detail = repository.getDetail(id)
-                repository.isFavorite(id).collect { isFav ->
-                    _uiState.value = DetailUiState.Success(
-                        detail = detail,
-                        isFavorite = isFav
+                val isFav = repository.isFavorite(id).first()
+                _uiState.value = DetailUiState.Success(
+                    detail = detail,
+                    isFavorite = isFav
+                )
+                repository.addHistory(
+                    HistoryEntity(
+                        id = detail.id,
+                        title = detail.title.pretty ?: detail.title.english ?: "",
+                        thumbnail = detail.cover.path,
+                        thumbnailWidth = detail.cover.width,
+                        thumbnailHeight = detail.cover.height,
+                        numPages = detail.numPages
                     )
-                }
+                )
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(e.message ?: "Failed to load")
             }

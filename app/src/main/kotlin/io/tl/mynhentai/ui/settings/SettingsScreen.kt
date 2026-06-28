@@ -1,10 +1,11 @@
 package io.tl.mynhentai.ui.settings
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,19 +20,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -47,14 +39,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlin.math.pow
-import io.tl.mynhentai.data.local.BlacklistedTagEntity
-import io.tl.mynhentai.ui.components.RoundedDropdownMenu
+import io.tl.mynhentai.R
+import io.tl.mynhentai.ui.components.BasePreference
+import io.tl.mynhentai.ui.components.ConfigToggle
+import io.tl.mynhentai.ui.components.SectionTitle
+import io.tl.mynhentai.ui.components.SettingsDropdownMenuInline
+import io.tl.mynhentai.ui.components.SliderPreference
+import io.tl.mynhentai.ui.components.SplicedColumnGroup
+import io.tl.mynhentai.ui.components.SplicedItem
 import org.koin.androidx.compose.koinViewModel
 
 private val languageOptions = listOf("", "chinese", "english", "japanese")
@@ -65,7 +60,7 @@ private val languageLabels = mapOf(
     "japanese" to "日本語"
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel()
@@ -76,7 +71,6 @@ fun SettingsScreen(
     val blacklistedTags by viewModel.blacklistedTags.collectAsState()
     val coilCacheSize by viewModel.coilCacheSize.collectAsState()
     val offlineCacheSize by viewModel.offlineCacheSize.collectAsState()
-    var languageExpanded by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.refreshCacheSizes() }
@@ -96,29 +90,42 @@ fun SettingsScreen(
     if (showBlacklistDialog) {
         AlertDialog(
             onDismissRequest = { showBlacklistDialog = false },
-            title = { Text("黑名单管理") },
+            title = { Text(stringResource(R.string.blacklist_management)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (blacklistedTags.isEmpty()) {
-                        Text("暂无黑名单标签", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
+                if (blacklistedTags.isEmpty()) {
+                    Text(
+                        stringResource(R.string.no_blacklisted_tags),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         blacklistedTags.forEach { tag ->
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(MaterialTheme.colorScheme.errorContainer)
+                                    .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                Text(
+                                    tag.tagName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                IconButton(
+                                    onClick = { viewModel.removeBlacklistedTag(tag.tagId) },
+                                    modifier = Modifier.size(24.dp)
                                 ) {
-                                    Text(tag.tagName, style = MaterialTheme.typography.bodyMedium)
-                                }
-                                IconButton(onClick = { viewModel.removeBlacklistedTag(tag.tagId) }) {
-                                    Icon(Icons.Default.Close, "Remove", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.remove),
+                                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.size(14.dp)
+                                    )
                                 }
                             }
                         }
@@ -126,7 +133,9 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showBlacklistDialog = false }) { Text("关闭") }
+                TextButton(onClick = { showBlacklistDialog = false }) {
+                    Text(stringResource(R.string.close))
+                }
             }
         )
     }
@@ -134,7 +143,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 ),
@@ -147,107 +156,72 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Language Preference",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Box {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                        .clickable { languageExpanded = true }
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = languageLabels[languageFilter] ?: "All",
-                        style = MaterialTheme.typography.bodyLarge
+            SplicedColumnGroup(title = stringResource(R.string.language_preference)) {
+                SplicedItem(isFirst = true) {
+                    SettingsDropdownMenuInline(
+                        label = stringResource(R.string.language_filter),
+                        currentValue = languageLabels[languageFilter] ?: "All",
+                        options = languageLabels.values.toList(),
+                        onSelected = { selectedLabel ->
+                            val key = languageLabels.entries.find { it.value == selectedLabel }?.key ?: ""
+                            viewModel.setLanguageFilter(key)
+                        }
                     )
                 }
-                RoundedDropdownMenu(
-                    expanded = languageExpanded,
-                    onDismissRequest = { languageExpanded = false },
-                    options = languageLabels.values.toList(),
-                    selectedOption = languageLabels[languageFilter] ?: "All",
-                    onOptionSelected = { selectedLabel ->
-                        val key = languageLabels.entries.find { it.value == selectedLabel }?.key ?: ""
-                        viewModel.setLanguageFilter(key)
-                        languageExpanded = false
-                    }
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "同步语言偏好至搜索",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Switch(
-                    checked = languageFilterEnabled,
-                    onCheckedChange = { viewModel.setLanguageFilterEnabled(it) }
-                )
-            }
-
-            Text(
-                text = "Max Concurrent Downloads",
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Slider(
-                    value = concurrency.toFloat(),
-                    onValueChange = { viewModel.setConcurrency(it.toInt()) },
-                    valueRange = 1f..30f,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "$concurrency",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-            }
-
-            Button(
-                onClick = { viewModel.clearCoilCache() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("清除图片缓存 (${coilCacheSize.formatSize()})")
-            }
-
-            if (offlineCacheSize > 0L) {
-                Button(
-                    onClick = { viewModel.clearOfflineCache() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("清除离线缓存 (${offlineCacheSize.formatSize()})")
+                SplicedItem(isLast = true) {
+                    ConfigToggle(
+                        label = stringResource(R.string.sync_language_to_search),
+                        checked = languageFilterEnabled,
+                        onCheckedChange = { viewModel.setLanguageFilterEnabled(it) }
+                    )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    .clickable { showBlacklistDialog = true }
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "黑名单管理 (${blacklistedTags.size})",
-                    style = MaterialTheme.typography.titleMedium
-                )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SplicedColumnGroup(title = stringResource(R.string.downloads)) {
+                SplicedItem(isFirst = true, isLast = true) {
+                    SliderPreference(
+                        label = stringResource(R.string.max_concurrent_downloads),
+                        value = concurrency,
+                        onValueChange = { viewModel.setConcurrency(it) },
+                        valueRange = 1f..30f,
+                        steps = 29
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SplicedColumnGroup(title = stringResource(R.string.cache)) {
+                SplicedItem(isFirst = true) {
+                    BasePreference(
+                        title = stringResource(R.string.clear_image_cache, coilCacheSize.formatSize()),
+                        onClick = { viewModel.clearCoilCache() }
+                    )
+                }
+                if (offlineCacheSize > 0L) {
+                    SplicedItem(isLast = true) {
+                        BasePreference(
+                            title = stringResource(R.string.clear_offline_cache, offlineCacheSize.formatSize()),
+                            onClick = { viewModel.clearOfflineCache() }
+                        )
+                    }
+                } else {
+                    SplicedItem(isLast = true) {}
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SplicedColumnGroup(title = stringResource(R.string.blacklist)) {
+                SplicedItem(isFirst = true, isLast = true) {
+                    BasePreference(
+                        title = stringResource(R.string.blacklist_management_count, blacklistedTags.size),
+                        onClick = { showBlacklistDialog = true }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
