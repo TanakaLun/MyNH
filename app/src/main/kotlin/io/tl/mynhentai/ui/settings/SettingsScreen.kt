@@ -2,21 +2,18 @@ package io.tl.mynhentai.ui.settings
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
@@ -45,11 +42,9 @@ import kotlin.math.pow
 import io.tl.mynhentai.R
 import io.tl.mynhentai.ui.components.BasePreference
 import io.tl.mynhentai.ui.components.ConfigToggle
-import io.tl.mynhentai.ui.components.SectionTitle
 import io.tl.mynhentai.ui.components.SettingsDropdownMenuInline
 import io.tl.mynhentai.ui.components.SliderPreference
 import io.tl.mynhentai.ui.components.SplicedColumnGroup
-import io.tl.mynhentai.ui.components.SplicedItem
 import org.koin.androidx.compose.koinViewModel
 
 private val languageOptions = listOf("", "chinese", "english", "japanese")
@@ -151,80 +146,79 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
         ) {
-            SplicedColumnGroup(title = stringResource(R.string.language_preference)) {
-                SplicedItem(isFirst = true) {
-                    SettingsDropdownMenuInline(
-                        label = stringResource(R.string.language_filter),
-                        currentValue = languageLabels[languageFilter] ?: "All",
-                        options = languageLabels.values.toList(),
-                        onSelected = { selectedLabel ->
-                            val key = languageLabels.entries.find { it.value == selectedLabel }?.key ?: ""
-                            viewModel.setLanguageFilter(key)
-                        }
-                    )
-                }
-                SplicedItem(isLast = true) {
-                    ConfigToggle(
-                        label = stringResource(R.string.sync_language_to_search),
-                        checked = languageFilterEnabled,
-                        onCheckedChange = { viewModel.setLanguageFilterEnabled(it) }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SplicedColumnGroup(title = stringResource(R.string.downloads)) {
-                SplicedItem(isFirst = true, isLast = true) {
-                    SliderPreference(
-                        label = stringResource(R.string.max_concurrent_downloads),
-                        value = concurrency,
-                        onValueChange = { viewModel.setConcurrency(it) },
-                        valueRange = 1f..30f,
-                        steps = 29
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SplicedColumnGroup(title = stringResource(R.string.cache)) {
-                SplicedItem(isFirst = true) {
-                    BasePreference(
-                        title = stringResource(R.string.clear_image_cache, coilCacheSize.formatSize()),
-                        onClick = { viewModel.clearCoilCache() }
-                    )
-                }
-                if (offlineCacheSize > 0L) {
-                    SplicedItem(isLast = true) {
-                        BasePreference(
-                            title = stringResource(R.string.clear_offline_cache, offlineCacheSize.formatSize()),
-                            onClick = { viewModel.clearOfflineCache() }
+            item {
+                SplicedColumnGroup(title = stringResource(R.string.language_preference)) {
+                    item {
+                        SettingsDropdownMenuInline(
+                            label = stringResource(R.string.language_filter),
+                            currentValue = languageLabels[languageFilter] ?: "All",
+                            options = languageLabels.values.toList(),
+                            onSelected = { selectedLabel ->
+                                val key = languageLabels.entries.find { it.value == selectedLabel }?.key ?: ""
+                                viewModel.setLanguageFilter(key)
+                            }
                         )
                     }
-                } else {
-                    SplicedItem(isLast = true) {}
+                    item {
+                        ConfigToggle(
+                            label = stringResource(R.string.sync_language_to_search),
+                            checked = languageFilterEnabled,
+                            onCheckedChange = { viewModel.setLanguageFilterEnabled(it) }
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            SplicedColumnGroup(title = stringResource(R.string.blacklist)) {
-                SplicedItem(isFirst = true, isLast = true) {
-                    BasePreference(
-                        title = stringResource(R.string.blacklist_management_count, blacklistedTags.size),
-                        onClick = { showBlacklistDialog = true }
-                    )
+            item {
+                SplicedColumnGroup(title = stringResource(R.string.downloads)) {
+                    item {
+                        SliderPreference(
+                            label = stringResource(R.string.max_concurrent_downloads),
+                            value = concurrency,
+                            onValueChange = { viewModel.setConcurrency(it) },
+                            valueRange = 1f..30f,
+                            steps = 29
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                SplicedColumnGroup(title = stringResource(R.string.cache)) {
+                    item {
+                        BasePreference(
+                            title = stringResource(R.string.clear_image_cache, coilCacheSize.formatSize()),
+                            onClick = { viewModel.clearCoilCache() }
+                        )
+                    }
+                    if (offlineCacheSize > 0L) {
+                        item {
+                            BasePreference(
+                                title = stringResource(R.string.clear_offline_cache, offlineCacheSize.formatSize()),
+                                onClick = { viewModel.clearOfflineCache() }
+                            )
+                        }
+                    }
+                }
+            }
+
+            item {
+                SplicedColumnGroup(title = stringResource(R.string.blacklist)) {
+                    item {
+                        BasePreference(
+                            title = stringResource(R.string.blacklist_management_count, blacklistedTags.size),
+                            onClick = { showBlacklistDialog = true }
+                        )
+                    }
+                }
+            }
         }
     }
 }

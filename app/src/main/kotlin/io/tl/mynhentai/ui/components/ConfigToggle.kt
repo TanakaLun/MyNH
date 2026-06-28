@@ -1,10 +1,8 @@
 package io.tl.mynhentai.ui.components
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
@@ -21,12 +19,12 @@ fun ConfigToggle(
         description = description,
         enabled = enabled,
         onClick = { if (enabled) onCheckedChange(!checked) },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         trailing = {
             Switch(
                 checked = checked,
-                onCheckedChange = onCheckedChange,
-                enabled = enabled
+                enabled = enabled,
+                onCheckedChange = { onCheckedChange(it) },
             )
         }
     )
