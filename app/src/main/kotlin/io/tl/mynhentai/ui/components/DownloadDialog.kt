@@ -18,7 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaDetail
 
 @Composable
@@ -32,26 +34,26 @@ fun DownloadDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("下载漫画") },
+        title = { Text(stringResource(R.string.download_manga)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = filename,
                     onValueChange = { filename = it },
-                    label = { Text("文件名") },
+                    label = { Text(stringResource(R.string.filename)) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Text(
-                    text = "保存至: ${DownloadManager.defaultDownloadPath}",
+                    text = stringResource(R.string.save_to, DownloadManager.defaultDownloadPath),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
-                    text = "下载将在后台进行，可通过通知查看进度",
+                    text = stringResource(R.string.download_bg_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -64,19 +66,19 @@ fun DownloadDialog(
                         onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("下载 (Zip)")
+                        Text(stringResource(R.string.download_zip))
                     }
                     FilledTonalButton(
                         onClick = { onCache() },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("缓存")
+                        Text(stringResource(R.string.cache_download))
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
         }
     )
 }

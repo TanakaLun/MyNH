@@ -185,7 +185,7 @@ fun SettingsScreen(
                             value = concurrency,
                             onValueChange = { viewModel.setConcurrency(it) },
                             valueRange = 1f..30f,
-                            steps = 29
+                            steps = 9
                         )
                     }
                 }
