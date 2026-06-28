@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.FavoriteEntity
-import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
@@ -44,16 +43,6 @@ class DetailViewModel(
                     detail = detail,
                     isFavorite = isFav
                 )
-                repository.addHistory(
-                    HistoryEntity(
-                        id = detail.id,
-                        title = detail.title.pretty ?: detail.title.english ?: "",
-                        thumbnail = detail.cover.path,
-                        thumbnailWidth = detail.cover.width,
-                        thumbnailHeight = detail.cover.height,
-                        numPages = detail.numPages
-                    )
-                )
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(e.message ?: "Failed to load")
             }
@@ -61,6 +50,11 @@ class DetailViewModel(
     }
 
     fun toggleFavorite(detail: MangaDetail, currentState: Boolean) {
+        val currentStateValue = _uiState.value
+        if (currentStateValue !is DetailUiState.Success) return
+
+        _uiState.value = currentStateValue.copy(isFavorite = !currentState)
+
         viewModelScope.launch {
             if (currentState) {
                 repository.removeFavorite(detail.id)

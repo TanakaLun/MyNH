@@ -2,6 +2,7 @@ package io.tl.mynhentai.ui.reader
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.local.ReadProgressEntity
 import io.tl.mynhentai.data.model.MangaPage
 import io.tl.mynhentai.data.repository.MangaRepository
@@ -45,6 +46,16 @@ class ReaderViewModel(
                     title = detail.title.pretty ?: detail.title.english ?: "",
                     pages = detail.pages.sortedBy { it.number },
                     initialPage = savedProgress?.pageNumber?.coerceIn(1, detail.pages.size) ?: 1
+                )
+                repository.addHistory(
+                    HistoryEntity(
+                        id = detail.id,
+                        title = detail.title.pretty ?: detail.title.english ?: "",
+                        thumbnail = detail.cover.path,
+                        thumbnailWidth = detail.cover.width,
+                        thumbnailHeight = detail.cover.height,
+                        numPages = detail.numPages
+                    )
                 )
             } catch (e: Exception) {
                 _uiState.value = ReaderUiState.Error(e.message ?: "Failed to load")
