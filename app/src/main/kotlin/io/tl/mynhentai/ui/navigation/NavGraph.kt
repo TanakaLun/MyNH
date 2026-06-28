@@ -114,8 +114,10 @@ fun MainNavGraph() {
         }
     }
 
-    BackHandler(isOnSubPage) {
-        navController.popBackStack()
+    if (backAnimStyle != "none") {
+        BackHandler(isOnSubPage) {
+            navController.popBackStack()
+        }
     }
 
     val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
