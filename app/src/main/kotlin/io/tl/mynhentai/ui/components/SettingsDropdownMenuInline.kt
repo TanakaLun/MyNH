@@ -75,10 +75,10 @@ fun SettingsDropdownMenuInline(
                         }
                     } else null,
                     colors = MenuDefaults.itemColors(
-                        containerColor = if (isSelected) {
-                            MaterialTheme.colorScheme.secondaryContainer
+                        textColor = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.colorScheme.surface
+                            MaterialTheme.colorScheme.onSurface
                         }
                     )
                 )
