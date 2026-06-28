@@ -1,7 +1,5 @@
 package io.tl.mynhentai.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -56,17 +54,13 @@ fun SplicedItem(
 ) {
     var isPressed by remember { mutableStateOf(false) }
 
-    val shape by animateDpAsState(
-        targetValue = if (isPressed) 16.dp else 0.dp,
-        animationSpec = spring(dampingRatio = 0.6f),
-        label = "shape"
-    )
+    val cornerRadius = if (isPressed) 16.dp else 0.dp
 
     val cornerShape = RoundedCornerShape(
-        topStart = if (isFirst || isPressed) shape else 0.dp,
-        topEnd = if (isFirst || isPressed) shape else 0.dp,
-        bottomStart = if (isLast || isPressed) shape else 0.dp,
-        bottomEnd = if (isLast || isPressed) shape else 0.dp
+        topStart = if (isFirst || isPressed) cornerRadius else 0.dp,
+        topEnd = if (isFirst || isPressed) cornerRadius else 0.dp,
+        bottomStart = if (isLast || isPressed) cornerRadius else 0.dp,
+        bottomEnd = if (isLast || isPressed) cornerRadius else 0.dp
     )
 
     Box(
