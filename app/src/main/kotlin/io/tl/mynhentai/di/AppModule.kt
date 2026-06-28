@@ -2,6 +2,8 @@ package io.tl.mynhentai.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
@@ -83,13 +85,19 @@ val imageModule = module {
     }
 }
 
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `history` (`id` INTEGER NOT NULL, `title` TEXT NOT NULL, `thumbnail` TEXT NOT NULL, `thumbnailWidth` INTEGER NOT NULL, `thumbnailHeight` INTEGER NOT NULL, `numPages` INTEGER NOT NULL, `viewedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))")
+    }
+}
+
 val databaseModule = module {
     single {
         Room.databaseBuilder(
             androidContext(),
             MangaDatabase::class.java,
             "mynhentai.db"
-        ).fallbackToDestructiveMigration().build()
+        ).addMigrations(MIGRATION_3_4).build()
     }
     single { get<MangaDatabase>().mangaDao() }
 }
