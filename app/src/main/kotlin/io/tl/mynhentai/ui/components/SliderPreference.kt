@@ -1,5 +1,6 @@
 package io.tl.mynhentai.ui.components
 
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
