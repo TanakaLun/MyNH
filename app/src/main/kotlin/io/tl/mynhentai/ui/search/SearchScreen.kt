@@ -47,9 +47,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.RoundedDropdownMenu
+import io.tl.mynhentai.R
+import androidx.compose.ui.res.stringResource
 import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("date", "popular", "popular-week", "popular-today")
+
+@Composable
+private fun sortOptionLabel(option: String): String {
+    return when (option) {
+        "popular" -> stringResource(R.string.sort_popular)
+        "popular-today" -> stringResource(R.string.sort_popular_today)
+        "popular-week" -> stringResource(R.string.sort_popular_week)
+        "date" -> stringResource(R.string.sort_date)
+        else -> option
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,7 +138,7 @@ fun SearchScreen(
                 FilterChip(
                     selected = true,
                     onClick = { viewModel.setSort("date") },
-                    label = { Text(currentSort.replace("-", " "), fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                    label = { Text(sortOptionLabel(currentSort), fontSize = 12.sp, fontWeight = FontWeight.Bold) },
                     trailingIcon = {
                         Icon(Icons.Default.Close, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     },

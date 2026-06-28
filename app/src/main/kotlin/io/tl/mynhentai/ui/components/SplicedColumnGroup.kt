@@ -58,7 +58,7 @@ fun SplicedColumnGroup(
     val allItems = scope.items
     if (allItems.isEmpty()) return
 
-    Column(modifier = modifier) {
+    Column(modifier = modifier.padding(horizontal = 16.dp)) {
         if (title.isNotEmpty()) {
             Text(
                 text = title,

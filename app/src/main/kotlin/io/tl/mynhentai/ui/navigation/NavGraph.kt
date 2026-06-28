@@ -43,18 +43,20 @@ import io.tl.mynhentai.ui.library.LibraryScreen
 import io.tl.mynhentai.ui.reader.ReaderScreen
 import io.tl.mynhentai.ui.search.SearchScreen
 import io.tl.mynhentai.ui.settings.SettingsScreen
+import io.tl.mynhentai.R
+import androidx.compose.ui.res.stringResource
 
 data class BottomNavItem(
-    val label: String,
+    val labelResId: Int,
     val icon: ImageVector,
     val route: String
 )
 
 private val bottomNavItems = listOf(
-    BottomNavItem("Home", Icons.Default.Home, Routes.HOME),
-    BottomNavItem("History", Icons.Default.History, Routes.HISTORY),
-    BottomNavItem("Favorites", Icons.Default.Bookmark, Routes.LIBRARY),
-    BottomNavItem("Settings", Icons.Default.Settings, Routes.SETTINGS)
+    BottomNavItem(R.string.nav_home, Icons.Default.Home, Routes.HOME),
+    BottomNavItem(R.string.nav_history, Icons.Default.History, Routes.HISTORY),
+    BottomNavItem(R.string.nav_favorites, Icons.Default.Bookmark, Routes.LIBRARY),
+    BottomNavItem(R.string.nav_settings, Icons.Default.Settings, Routes.SETTINGS)
 )
 
 @Composable
@@ -198,8 +200,8 @@ fun MainNavGraph() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
-                        label = { Text(item.label) }
+                        icon = { Icon(item.icon, contentDescription = null) },
+                        label = { Text(stringResource(item.labelResId)) }
                     )
                 }
             }

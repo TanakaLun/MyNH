@@ -53,6 +53,16 @@ import org.koin.androidx.compose.koinViewModel
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
 
+@Composable
+private fun sortOptionLabel(option: String): String {
+    return when (option) {
+        "popular" -> stringResource(R.string.sort_popular)
+        "popular-today" -> stringResource(R.string.sort_popular_today)
+        "popular-week" -> stringResource(R.string.sort_popular_week)
+        else -> option
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -199,7 +209,7 @@ fun HomeScreen(
                         onClick = { showSortMenu = true },
                         label = {
                             Text(
-                                currentSort.replace("-", " "),
+                                sortOptionLabel(currentSort),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
                             )
