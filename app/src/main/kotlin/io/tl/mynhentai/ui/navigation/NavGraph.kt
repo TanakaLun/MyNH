@@ -3,6 +3,8 @@ package io.tl.mynhentai.ui.navigation
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.runtime.mutableFloatStateOf
@@ -151,6 +153,10 @@ fun MainNavGraph() {
             NavHost(
                 navController = navController,
                 startDestination = Routes.HOME,
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None },
                 modifier = contentModifier
                     .then(
                         if (isReader) Modifier
