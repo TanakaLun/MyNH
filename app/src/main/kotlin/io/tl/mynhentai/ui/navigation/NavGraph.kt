@@ -1,16 +1,26 @@
 package io.tl.mynhentai.ui.navigation
 
+import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.runtime.mutableFloatStateOf
 import java.net.URLDecoder
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -18,16 +28,20 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -44,7 +58,10 @@ import io.tl.mynhentai.ui.reader.ReaderScreen
 import io.tl.mynhentai.ui.search.SearchScreen
 import io.tl.mynhentai.ui.settings.SettingsScreen
 import io.tl.mynhentai.R
+import io.tl.mynhentai.data.local.SettingsHelper
 import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.CancellationException
+import org.koin.compose.koinInject
 
 data class BottomNavItem(
     val labelResId: Int,
@@ -59,6 +76,8 @@ private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_settings, Icons.Default.Settings, Routes.SETTINGS)
 )
 
+private val mainRoutes = setOf(Routes.HOME, Routes.HISTORY, Routes.LIBRARY, Routes.SETTINGS)
+
 @Composable
 fun MainNavGraph() {
     val navController = rememberNavController()
@@ -70,6 +89,7 @@ fun MainNavGraph() {
 
     val currentRoute = currentDestination?.route
     val isReader = currentRoute == Routes.READER
+    val isOnSubPage = currentRoute != null && currentRoute !in mainRoutes
     val navBarVisible = showBottomBar && !bottomBarHidden
 
     val bottomPadding by animateDpAsState(
@@ -77,136 +97,192 @@ fun MainNavGraph() {
         animationSpec = tween(300)
     )
 
-    Scaffold { innerPadding ->
-        Box(Modifier.fillMaxSize()) {
-            NavHost(
-                navController = navController,
-                startDestination = Routes.HOME,
-                modifier = if (isReader) {
-                    Modifier
-                } else {
-                    Modifier
-                        .padding(innerPadding)
-                        .padding(bottom = bottomPadding)
+    val settings: SettingsHelper = koinInject()
+    var backAnimStyle by remember { mutableStateOf(settings.backAnimStyle) }
+
+    var currentPredictiveProgress by remember { mutableFloatStateOf(0f) }
+    var isPredictingBack by remember { mutableStateOf(false) }
+
+    if (isOnSubPage && backAnimStyle != "none") {
+        PredictiveBackHandler(enabled = true) { progressFlow ->
+            isPredictingBack = true
+            try {
+                progressFlow.collect { backEvent ->
+                    currentPredictiveProgress = backEvent.progress
                 }
-            ) {
-                composable(Routes.HOME) {
-                    HomeScreen(
-                        onSearchClick = {
-                            navController.navigate(Routes.SEARCH)
-                        },
-                        onItemClick = { id ->
-                            navController.navigate(Routes.detail(id))
-                        },
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-
-                composable(Routes.HISTORY) {
-                    HistoryScreen(
-                        onItemClick = { id ->
-                            navController.navigate(Routes.detail(id))
-                        },
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-
-            composable(Routes.SEARCH) {
-                SearchScreen(
-                    onBack = { navController.popBackStack() },
-                    onItemClick = { id ->
-                        navController.navigate(Routes.detail(id))
-                    }
-                )
-            }
-
-            composable(
-                route = Routes.SEARCH_QUERY,
-                arguments = listOf(navArgument("query") { type = NavType.StringType; defaultValue = "" })
-            ) { backStackEntry ->
-                val query = backStackEntry.arguments?.getString("query")?.decodeQueryParam() ?: ""
-                SearchScreen(
-                    initialQuery = query,
-                    onBack = { navController.popBackStack() },
-                    onItemClick = { id ->
-                        navController.navigate(Routes.detail(id))
-                    }
-                )
-            }
-
-            composable(
-                route = Routes.DETAIL,
-                arguments = listOf(navArgument("id") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val id = backStackEntry.arguments?.getLong("id") ?: return@composable
-                DetailScreen(
-                    galleryId = id,
-                    onBack = { navController.popBackStack() },
-                    onReaderClick = { readerId ->
-                        navController.navigate(Routes.reader(readerId))
-                    },
-                    onTagClick = { tagQuery ->
-                        navController.navigate(Routes.search(tagQuery))
-                    }
-                )
-            }
-
-            composable(
-                route = Routes.READER,
-                arguments = listOf(navArgument("id") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val id = backStackEntry.arguments?.getLong("id") ?: return@composable
-                ReaderScreen(
-                    galleryId = id,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Routes.LIBRARY) {
-                LibraryScreen(
-                    onItemClick = { id ->
-                        navController.navigate(Routes.detail(id))
-                    },
-                    onScroll = { hidden -> bottomBarHidden = hidden }
-                )
-            }
-
-            composable(Routes.SETTINGS) {
-                SettingsScreen()
-            }
-        }
-
-        AnimatedVisibility(
-            visible = navBarVisible,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            NavigationBar {
-                bottomNavItems.forEach { item ->
-                    val selected = currentDestination?.hierarchy?.any {
-                        it.route == item.route
-                    } == true
-
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            bottomBarHidden = false
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Icon(item.icon, contentDescription = null) },
-                        label = { Text(stringResource(item.labelResId)) }
-                    )
-                }
+                navController.popBackStack()
+            } catch (_: CancellationException) {
+            } finally {
+                isPredictingBack = false
+                currentPredictiveProgress = 0f
             }
         }
     }
+
+    BackHandler(isOnSubPage) {
+        navController.popBackStack()
+    }
+
+    val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
+
+    Box(Modifier.fillMaxSize()) {
+        Scaffold { innerPadding ->
+            Box(Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = Routes.HOME,
+                    modifier = if (isReader) {
+                        Modifier
+                    } else {
+                        Modifier
+                            .padding(innerPadding)
+                            .padding(bottom = bottomPadding)
+                    }
+                ) {
+                    composable(Routes.HOME) {
+                        HomeScreen(
+                            onSearchClick = {
+                                navController.navigate(Routes.SEARCH)
+                            },
+                            onItemClick = { id ->
+                                navController.navigate(Routes.detail(id))
+                            },
+                            onScroll = { hidden -> bottomBarHidden = hidden }
+                        )
+                    }
+
+                    composable(Routes.HISTORY) {
+                        HistoryScreen(
+                            onItemClick = { id ->
+                                navController.navigate(Routes.detail(id))
+                            },
+                            onScroll = { hidden -> bottomBarHidden = hidden }
+                        )
+                    }
+
+                    composable(Routes.SEARCH) {
+                        SearchScreen(
+                            onBack = { navController.popBackStack() },
+                            onItemClick = { id ->
+                                navController.navigate(Routes.detail(id))
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = Routes.SEARCH_QUERY,
+                        arguments = listOf(navArgument("query") { type = NavType.StringType; defaultValue = "" })
+                    ) { backStackEntry ->
+                        val query = backStackEntry.arguments?.getString("query")?.decodeQueryParam() ?: ""
+                        SearchScreen(
+                            initialQuery = query,
+                            onBack = { navController.popBackStack() },
+                            onItemClick = { id ->
+                                navController.navigate(Routes.detail(id))
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = Routes.DETAIL,
+                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+                        DetailScreen(
+                            galleryId = id,
+                            onBack = { navController.popBackStack() },
+                            onReaderClick = { readerId ->
+                                navController.navigate(Routes.reader(readerId))
+                            },
+                            onTagClick = { tagQuery ->
+                                navController.navigate(Routes.search(tagQuery))
+                            }
+                        )
+                    }
+
+                    composable(
+                        route = Routes.READER,
+                        arguments = listOf(navArgument("id") { type = NavType.LongType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getLong("id") ?: return@composable
+                        ReaderScreen(
+                            galleryId = id,
+                            onBack = { navController.popBackStack() }
+                        )
+                    }
+
+                    composable(Routes.LIBRARY) {
+                        LibraryScreen(
+                            onItemClick = { id ->
+                                navController.navigate(Routes.detail(id))
+                            },
+                            onScroll = { hidden -> bottomBarHidden = hidden }
+                        )
+                    }
+
+                    composable(Routes.SETTINGS) {
+                        SettingsScreen()
+                    }
+                }
+
+                AnimatedVisibility(
+                    visible = navBarVisible,
+                    enter = slideInVertically(initialOffsetY = { it }),
+                    exit = slideOutVertically(targetOffsetY = { it }),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    NavigationBar {
+                        bottomNavItems.forEach { item ->
+                            val selected = currentDestination?.hierarchy?.any {
+                                it.route == item.route
+                            } == true
+
+                            NavigationBarItem(
+                                selected = selected,
+                                onClick = {
+                                    bottomBarHidden = false
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                icon = { Icon(item.icon, contentDescription = null) },
+                                label = { Text(stringResource(item.labelResId)) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isOnSubPage && backAnimStyle != "none" && isPredictingBack) {
+            val sc = 1f - 0.25f * eased
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(
+                        if (backAnimStyle == "scale") {
+                            Modifier
+                                .graphicsLayer {
+                                    scaleX = sc
+                                    scaleY = sc
+                                    transformOrigin = TransformOrigin(0.5f, 0.5f)
+                                }
+                                .clip(RoundedCornerShape(if (sc < 0.98f) 16.dp else 0.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                        } else {
+                            val slideXDp = 300.dp * eased
+                            Modifier
+                                .graphicsLayer { translationX = slideXDp.toPx() }
+                                .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                        }
+                    )
+            )
+        }
     }
 }
 
