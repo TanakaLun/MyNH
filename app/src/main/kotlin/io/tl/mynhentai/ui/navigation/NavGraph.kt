@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -180,6 +181,7 @@ fun MainNavGraph() {
                                         transformOrigin = TransformOrigin(0.5f, ty)
                                     }
                                     .clip(roundShape)
+                                    .background(MaterialTheme.colorScheme.background)
                             }
                             "slide" -> {
                                 val sideClip = RoundedCornerShape(
@@ -189,14 +191,14 @@ fun MainNavGraph() {
                                 Modifier
                                     .graphicsLayer { translationX = size.width * 0.4f * eased }
                                     .clip(sideClip)
+                                    .background(MaterialTheme.colorScheme.background)
                             }
-                            else -> Modifier
+                            else -> Modifier.background(MaterialTheme.colorScheme.background)
                         }
-                    } else Modifier
+                    } else Modifier.background(MaterialTheme.colorScheme.background)
 
-                    Surface(
-                        modifier = overlayModifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.surface
+                    Box(
+                        modifier = overlayModifier.fillMaxSize()
                     ) {
                         when (subPage) {
                             SubPage.SEARCH -> SearchScreen(
