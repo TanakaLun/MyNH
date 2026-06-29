@@ -3,6 +3,7 @@ package io.tl.mynhentai.ui.components
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +37,8 @@ import coil.compose.AsyncImage
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.model.TagHelper
+
+private val cardShape = RoundedCornerShape(8.dp)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -53,9 +58,11 @@ fun MangaListItem(
                 .fillMaxWidth()
                 .combinedClickable(
                     onClick = onItemClick,
-                    onLongClick = onLongClick
+                    onLongClick = onLongClick,
+                    indication = ripple(boundedShape = cardShape),
+                    interactionSource = remember { MutableInteractionSource() }
                 ),
-            shape = RoundedCornerShape(8.dp)
+            shape = cardShape
         ) {
             MangaListItemContent(manga, imageUrl, language, isSelected)
         }
@@ -63,7 +70,7 @@ fun MangaListItem(
         ElevatedCard(
             onClick = onItemClick,
             modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp)
+            shape = cardShape
         ) {
             MangaListItemContent(manga, imageUrl, language, isSelected)
         }
@@ -91,7 +98,7 @@ private fun MangaListItemContent(
                         if (manga.thumbnailWidth > 0) manga.thumbnailWidth.toFloat() / manga.thumbnailHeight
                         else 0.7f
                     )
-                    .clip(RoundedCornerShape(8.dp)),
+                    .clip(cardShape),
                 contentScale = ContentScale.Crop
             )
 
@@ -103,7 +110,7 @@ private fun MangaListItemContent(
                             if (manga.thumbnailWidth > 0) manga.thumbnailWidth.toFloat() / manga.thumbnailHeight
                             else 0.7f
                         )
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(cardShape)
                         .background(Color.Black.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
                 ) {

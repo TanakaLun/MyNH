@@ -227,7 +227,7 @@ fun MainNavGraph() {
                         )
                         SubPage.READER -> ReaderScreen(
                             galleryId = subPageId,
-                            onBack = { closeSub() }
+                            onBack = { subPage = SubPage.DETAIL }
                         )
                         SubPage.NONE -> {}
                     }
