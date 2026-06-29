@@ -133,9 +133,7 @@ fun MainNavGraph() {
         }
     }
 
-    if (subPage != SubPage.NONE && backAnimStyle != "none") {
-        BackHandler { popSubPage() }
-    }
+    BackHandler(subPage != SubPage.NONE) { popSubPage() }
 
     val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
     val isAnimating = isPredictingBack && currentPredictiveProgress > 0f
