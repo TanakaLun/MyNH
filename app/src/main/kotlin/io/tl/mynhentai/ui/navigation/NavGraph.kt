@@ -29,7 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -94,7 +94,7 @@ fun MainNavGraph() {
     var backAnimStyle by remember { mutableStateOf(settings.backAnimStyle) }
 
     var subPage by remember { mutableStateOf(SubPage.NONE) }
-    var subPageId by remember { mutableLongStateOf(0L) }
+    var subPageId by remember { mutableStateOf(0L) }
     var subPageQuery by remember { mutableStateOf("") }
 
     fun openSub(p: SubPage, id: Long = 0L, q: String = "") {

@@ -43,7 +43,6 @@
     <string name="blacklist_tag_confirm">确定要将 \"%s\" 加入黑名单吗？包含此标签的漫画将被隐藏。</string>
     <string name="blacklist">黑名单</string>
     <string name="blacklist_management">黑名单管理</string>
-    <string name="blacklist_management_count">黑名单管理 (%d)</string>
     <string name="no_blacklisted_tags">暂无黑名单标签</string>
 
     <!-- Settings -->
@@ -54,8 +53,8 @@
     <string name="downloads">下载</string>
     <string name="max_concurrent_downloads">最大并发下载数</string>
     <string name="cache">缓存</string>
-    <string name="clear_image_cache">清除图片缓存 (%s)</string>
-    <string name="clear_offline_cache">清除离线缓存 (%s)</string>
+    <string name="clear_image_cache">清除图片缓存</string>
+    <string name="clear_offline_cache">清除离线缓存</string>
     <string name="back_animation">返回动画</string>
     <string name="back_anim_slide">滑动</string>
     <string name="back_anim_scale">缩放</string>

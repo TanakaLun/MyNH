@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlin.math.pow
 import io.tl.mynhentai.R
@@ -195,15 +196,31 @@ fun SettingsScreen(
                 SplicedColumnGroup(title = stringResource(R.string.cache)) {
                     item {
                         BasePreference(
-                            title = stringResource(R.string.clear_image_cache, coilCacheSize.formatSize()),
-                            onClick = { viewModel.clearCoilCache() }
+                            title = stringResource(R.string.clear_image_cache),
+                            onClick = { viewModel.clearCoilCache() },
+                            trailing = {
+                                Text(
+                                    text = coilCacheSize.formatSize(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         )
                     }
                     if (offlineCacheSize > 0L) {
                         item {
                             BasePreference(
-                                title = stringResource(R.string.clear_offline_cache, offlineCacheSize.formatSize()),
-                                onClick = { viewModel.clearOfflineCache() }
+                                title = stringResource(R.string.clear_offline_cache),
+                                onClick = { viewModel.clearOfflineCache() },
+                                trailing = {
+                                    Text(
+                                        text = offlineCacheSize.formatSize(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
                             )
                         }
                     }
@@ -214,8 +231,16 @@ fun SettingsScreen(
                 SplicedColumnGroup(title = stringResource(R.string.blacklist)) {
                     item {
                         BasePreference(
-                            title = stringResource(R.string.blacklist_management_count, blacklistedTags.size),
-                            onClick = { showBlacklistDialog = true }
+                            title = stringResource(R.string.blacklist_management),
+                            onClick = { showBlacklistDialog = true },
+                            trailing = {
+                                Text(
+                                    text = "${blacklistedTags.size}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         )
                     }
                 }
