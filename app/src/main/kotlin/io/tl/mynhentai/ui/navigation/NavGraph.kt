@@ -1,13 +1,13 @@
 package io.tl.mynhentai.ui.navigation
 
-import android.app.Activity
-import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -24,9 +24,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,10 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,11 +62,7 @@ import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
 import java.net.URLDecoder
 
-data class BottomNavItem(
-    val labelResId: Int,
-    val icon: ImageVector,
-    val route: String
-)
+data class BottomNavItem(val labelResId: Int, val icon: ImageVector, val route: String)
 
 private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_home, Icons.Default.Home, Routes.HOME),
@@ -75,7 +71,7 @@ private val bottomNavItems = listOf(
     BottomNavItem(R.string.nav_settings, Icons.Default.Settings, Routes.SETTINGS)
 )
 
-private val mainRoutes = listOf(Routes.HOME, Routes.HISTORY, Routes.LIBRARY, Routes.SETTINGS)
+private val mainRoutes = setOf(Routes.HOME, Routes.HISTORY, Routes.LIBRARY, Routes.SETTINGS)
 
 enum class SubPage { NONE, SEARCH, SEARCH_QUERY, DETAIL, READER }
 
@@ -86,57 +82,53 @@ fun MainNavGraph() {
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
 
-    val showBottomBar = currentRoute in mainRoutes
     var bottomBarHidden by remember { mutableStateOf(false) }
-    val navBarVisible = showBottomBar && !bottomBarHidden
+    val isOnMainPage = currentRoute in mainRoutes
 
-    val bottomPadding = if (navBarVisible) 80.dp else 0.dp
+    val bottomPadding by animateDpAsState(
+        targetValue = if (isOnMainPage && !bottomBarHidden) 80.dp else 0.dp,
+        animationSpec = tween(300)
+    )
 
     val settings: SettingsHelper = koinInject()
     var backAnimStyle by remember { mutableStateOf(settings.backAnimStyle) }
 
-    var currentPredictiveProgress by remember { mutableStateOf(0f) }
-    var isPredictingBack by remember { mutableStateOf(false) }
-
-    val isOnMainPage = currentRoute in mainRoutes
-    val isReader = currentRoute == Routes.READER
-
     var subPage by remember { mutableStateOf(SubPage.NONE) }
-    var subPageId by remember { mutableStateOf(0L) }
+    var subPageId by remember { mutableLongStateOf(0L) }
     var subPageQuery by remember { mutableStateOf("") }
 
-    fun navigateToSubPage(newSubPage: SubPage, id: Long = 0L, query: String = "") {
-        subPage = newSubPage
-        subPageId = id
-        subPageQuery = query
+    fun openSub(p: SubPage, id: Long = 0L, q: String = "") {
+        subPage = p; subPageId = id; subPageQuery = q
+    }
+    fun closeSub() {
+        subPage = SubPage.NONE; subPageId = 0L; subPageQuery = ""
     }
 
-    fun popSubPage() {
-        subPage = SubPage.NONE
-        subPageId = 0L
-        subPageQuery = ""
-    }
+    var predictiveProgress by remember { mutableFloatStateOf(0f) }
+    var isPredictingBack by remember { mutableStateOf(false) }
 
-    if (subPage != SubPage.NONE && subPage != SubPage.READER && backAnimStyle != "none") {
-        PredictiveBackHandler(enabled = true) { progressFlow ->
+    val hasSubPage = subPage != SubPage.NONE
+
+    if (hasSubPage && backAnimStyle != "none") {
+        PredictiveBackHandler(enabled = true) { flow ->
             isPredictingBack = true
             try {
-                progressFlow.collect { backEvent ->
-                    currentPredictiveProgress = backEvent.progress
-                }
-                popSubPage()
+                flow.collect { ev -> predictiveProgress = ev.progress }
+                closeSub()
             } catch (_: CancellationException) {
             } finally {
                 isPredictingBack = false
-                currentPredictiveProgress = 0f
+                predictiveProgress = 0f
             }
         }
     }
 
-    BackHandler(subPage != SubPage.NONE) { popSubPage() }
+    if (hasSubPage) {
+        BackHandler { closeSub() }
+    }
 
-    val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
-    val isAnimating = isPredictingBack && currentPredictiveProgress > 0f
+    val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(predictiveProgress)
+    val animating = isPredictingBack && predictiveProgress > 0f
 
     Box(Modifier.fillMaxSize()) {
         Scaffold { innerPadding ->
@@ -154,77 +146,71 @@ fun MainNavGraph() {
                 ) {
                     composable(Routes.HOME) {
                         HomeScreen(
-                            onSearchClick = { navigateToSubPage(SubPage.SEARCH) },
-                            onItemClick = { id -> navigateToSubPage(SubPage.DETAIL, id) },
+                            onSearchClick = { openSub(SubPage.SEARCH) },
+                            onItemClick = { id -> openSub(SubPage.DETAIL, id) },
                             onScroll = { hidden -> bottomBarHidden = hidden }
                         )
                     }
-
                     composable(Routes.HISTORY) {
                         HistoryScreen(
-                            onItemClick = { id -> navigateToSubPage(SubPage.DETAIL, id) },
+                            onItemClick = { id -> openSub(SubPage.DETAIL, id) },
                             onScroll = { hidden -> bottomBarHidden = hidden }
                         )
                     }
-
                     composable(Routes.LIBRARY) {
                         LibraryScreen(
-                            onItemClick = { id -> navigateToSubPage(SubPage.DETAIL, id) },
+                            onItemClick = { id -> openSub(SubPage.DETAIL, id) },
                             onScroll = { hidden -> bottomBarHidden = hidden }
                         )
                     }
-
                     composable(Routes.SETTINGS) {
                         SettingsScreen()
                     }
                 }
 
-                if (subPage != SubPage.NONE) {
-                    val subPageModifier = if (isAnimating && subPage != SubPage.READER) {
+                if (hasSubPage) {
+                    val subMod = if (animating) {
                         when (backAnimStyle) {
                             "scale" -> {
                                 val sc = 1f - 0.25f * eased
-                                val cornerRadius = if (sc < 0.98f) 16.dp else 0.dp
                                 Modifier
-                                    .graphicsLayer {
-                                        scaleX = sc
-                                        scaleY = sc
-                                        transformOrigin = TransformOrigin(0.5f, 0.5f)
-                                    }
-                                    .clip(RoundedCornerShape(cornerRadius))
-                                    .background(MaterialTheme.colorScheme.background)
+                                    .graphicsLayer { scaleX = sc; scaleY = sc }
+                                    .clip(RoundedCornerShape(if (sc < 0.98f) 16.dp else 0.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
                             }
                             "slide" -> {
-                                val slideXDp = 300.dp * eased
                                 Modifier
-                                    .graphicsLayer { translationX = slideXDp.toPx() }
+                                    .graphicsLayer { translationX = size.width * 0.4f * eased }
                                     .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
-                                    .background(MaterialTheme.colorScheme.background)
+                                    .background(MaterialTheme.colorScheme.surface)
                             }
                             else -> Modifier
                         }
                     } else Modifier
 
-                    Box(modifier = subPageModifier.fillMaxSize()) {
+                    Surface(
+                        modifier = subMod.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
                         when (subPage) {
                             SubPage.SEARCH -> SearchScreen(
-                                onBack = { popSubPage() },
-                                onItemClick = { id -> navigateToSubPage(SubPage.DETAIL, id) }
+                                onBack = { closeSub() },
+                                onItemClick = { id -> openSub(SubPage.DETAIL, id) }
                             )
                             SubPage.SEARCH_QUERY -> SearchScreen(
                                 initialQuery = subPageQuery,
-                                onBack = { popSubPage() },
-                                onItemClick = { id -> navigateToSubPage(SubPage.DETAIL, id) }
+                                onBack = { closeSub() },
+                                onItemClick = { id -> openSub(SubPage.DETAIL, id) }
                             )
                             SubPage.DETAIL -> DetailScreen(
                                 galleryId = subPageId,
-                                onBack = { popSubPage() },
-                                onReaderClick = { id -> navigateToSubPage(SubPage.READER, id) },
-                                onTagClick = { query -> navigateToSubPage(SubPage.SEARCH_QUERY, query = query) }
+                                onBack = { closeSub() },
+                                onReaderClick = { id -> openSub(SubPage.READER, id) },
+                                onTagClick = { q -> openSub(SubPage.SEARCH_QUERY, q = q) }
                             )
                             SubPage.READER -> ReaderScreen(
                                 galleryId = subPageId,
-                                onBack = { popSubPage() }
+                                onBack = { closeSub() }
                             )
                             SubPage.NONE -> {}
                         }
@@ -233,25 +219,20 @@ fun MainNavGraph() {
             }
 
             AnimatedVisibility(
-                visible = navBarVisible,
+                visible = isOnMainPage && !bottomBarHidden,
                 enter = slideInVertically(initialOffsetY = { it }),
                 exit = slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
-                        val selected = currentDestination?.hierarchy?.any {
-                            it.route == item.route
-                        } == true
-
+                        val sel = currentDestination?.hierarchy?.any { it.route == item.route } == true
                         NavigationBarItem(
-                            selected = selected,
+                            selected = sel,
                             onClick = {
                                 bottomBarHidden = false
                                 navController.navigate(item.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -266,6 +247,4 @@ fun MainNavGraph() {
     }
 }
 
-private fun String.decodeQueryParam(): String {
-    return URLDecoder.decode(this, "UTF-8")
-}
+private fun String.decodeQueryParam(): String = URLDecoder.decode(this, "UTF-8")
