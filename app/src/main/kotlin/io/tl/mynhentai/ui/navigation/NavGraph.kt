@@ -1,9 +1,6 @@
 package io.tl.mynhentai.ui.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
@@ -67,6 +64,7 @@ fun MainNavGraph() {
 
     var bottomBarHidden by remember { mutableStateOf(false) }
     val isMainTab = currentRoute in bottomNavItems.map { it.route }
+    val isReader = currentRoute == Routes.READER
 
     val bottomPadding by animateDpAsState(
         targetValue = if (isMainTab && !bottomBarHidden) 80.dp else 0.dp,
@@ -78,13 +76,13 @@ fun MainNavGraph() {
             NavHost(
                 navController = navController,
                 startDestination = Routes.HOME,
-                enterTransition = { EnterTransition.None },
-                exitTransition = { ExitTransition.None },
-                popEnterTransition = { EnterTransition.None },
-                popExitTransition = { ExitTransition.None },
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(bottom = bottomPadding)
+                modifier = if (isReader) {
+                    Modifier
+                } else {
+                    Modifier
+                        .padding(innerPadding)
+                        .padding(bottom = bottomPadding)
+                }
             ) {
                 composable(Routes.HOME) {
                     HomeScreen(
