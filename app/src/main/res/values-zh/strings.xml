@@ -74,6 +74,12 @@
     <string name="search_hint">搜索…</string>
     <string name="search_empty">输入搜索关键词</string>
 
+    <!-- Back Animation -->
+    <string name="back_animation">返回动画</string>
+    <string name="back_anim_slide">滑动</string>
+    <string name="back_anim_scale">缩放</string>
+    <string name="back_anim_none">无</string>
+
     <!-- Selection -->
     <string name="selected_count">已选择 %d 项</string>
 </resources>

@@ -67,6 +67,7 @@ fun SettingsScreen(
     val blacklistedTags by viewModel.blacklistedTags.collectAsState()
     val coilCacheSize by viewModel.coilCacheSize.collectAsState()
     val offlineCacheSize by viewModel.offlineCacheSize.collectAsState()
+    val backAnimStyle by viewModel.backAnimStyle.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.refreshCacheSizes() }
@@ -239,6 +240,29 @@ fun SettingsScreen(
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.primary
                                 )
+                            }
+                        )
+                    }
+                }
+            }
+
+            item {
+                val animNames = listOf(stringResource(R.string.back_anim_slide), stringResource(R.string.back_anim_scale), stringResource(R.string.back_anim_none))
+                val animValues = listOf("slide", "scale", "none")
+                val currentAnimName = when (backAnimStyle) {
+                    "scale" -> stringResource(R.string.back_anim_scale)
+                    "none" -> stringResource(R.string.back_anim_none)
+                    else -> stringResource(R.string.back_anim_slide)
+                }
+                SplicedColumnGroup(title = stringResource(R.string.back_animation)) {
+                    item {
+                        SettingsDropdownMenuInline(
+                            label = stringResource(R.string.back_animation),
+                            currentValue = currentAnimName,
+                            options = animNames,
+                            onSelected = { selected ->
+                                val value = animValues[animNames.indexOf(selected)]
+                                viewModel.setBackAnimStyle(value)
                             }
                         )
                     }
