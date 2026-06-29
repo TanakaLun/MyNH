@@ -75,11 +75,6 @@ fun MainNavGraph() {
 
     var bottomBarHidden by remember { mutableStateOf(false) }
 
-    val bottomPadding by animateDpAsState(
-        targetValue = if (isOnMainPage && !bottomBarHidden && !hasSubPage) 80.dp else 0.dp,
-        animationSpec = tween(300)
-    )
-
     val settings: SettingsHelper = koinInject()
     val backAnimStyle by settings.backAnimStyleFlow.collectAsState()
 
@@ -95,6 +90,11 @@ fun MainNavGraph() {
     }
 
     val hasSubPage = subPage != SubPage.NONE
+
+    val bottomPadding by animateDpAsState(
+        targetValue = if (isOnMainPage && !bottomBarHidden && !hasSubPage) 80.dp else 0.dp,
+        animationSpec = tween(300)
+    )
 
     var currentPredictiveProgress by remember { mutableFloatStateOf(0f) }
     var isPredictingBack by remember { mutableStateOf(false) }

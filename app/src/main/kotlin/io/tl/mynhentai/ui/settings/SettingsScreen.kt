@@ -182,10 +182,8 @@ fun SettingsScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .overscroll(rememberOverscrollEffect()),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
         ) {
