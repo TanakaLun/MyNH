@@ -21,10 +21,6 @@ class SettingsHelper(private val appContext: Context) {
         get() = prefs.getBoolean(KEY_LANG_FILTER_ENABLED, false)
         set(value) = prefs.edit().putBoolean(KEY_LANG_FILTER_ENABLED, value).apply()
 
-    var backAnimStyle: String
-        get() = prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide"
-        set(value) = prefs.edit().putString(KEY_BACK_ANIM_STYLE, value).apply()
-
     val coilCacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")
 
@@ -87,6 +83,5 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_CONCURRENCY = "max_concurrency"
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
-        private const val KEY_BACK_ANIM_STYLE = "back_anim_style"
     }
 }

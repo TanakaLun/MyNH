@@ -55,28 +55,6 @@
     <string name="cache">Cache</string>
     <string name="clear_image_cache">Clear Image Cache</string>
     <string name="clear_offline_cache">Clear Offline Cache</string>
-    <string name="back_animation">Back Animation</string>
-    <string name="back_anim_slide">Slide</string>
-    <string name="back_anim_scale">Scale</string>
-    <string name="back_anim_none">None</string>
-
-    <!-- Sort options -->
-    <string name="sort_popular">popular</string>
-    <string name="sort_popular_today">popular-today</string>
-    <string name="sort_popular_week">popular-week</string>
-    <string name="sort_date">date</string>
-
-    <!-- Search -->
-    <string name="search_hint">Search…</string>
-    <string name="search_empty">Enter a search query</string>
-
-    <!-- Download Dialog -->
-    <string name="download_manga">Download Manga</string>
-    <string name="filename">Filename</string>
-    <string name="save_to">Save to: %s</string>
-    <string name="download_bg_hint">Download runs in background, check notification for progress</string>
-    <string name="download_zip">Download (Zip)</string>
-    <string name="cache_download">Cache</string>
 
     <!-- Selection -->
     <string name="selected_count">%d selected</string>
