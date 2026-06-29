@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -30,9 +31,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +62,7 @@ private val languageLabels = mapOf(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
+    onScroll: (Boolean) -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val concurrency by viewModel.concurrency.collectAsState()
@@ -69,6 +73,30 @@ fun SettingsScreen(
     val offlineCacheSize by viewModel.offlineCacheSize.collectAsState()
     val backAnimStyle by viewModel.backAnimStyle.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
+
+    val listState = rememberLazyListState()
+    var previousIndex by remember { mutableIntStateOf(0) }
+    var previousScrollOffset by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
+        }.collect { (index, offset) ->
+            val isAtTop = index == 0 && offset == 0
+            if (isAtTop) {
+                onScroll(false)
+            } else {
+                val scrollingDown = if (index != previousIndex) {
+                    index > previousIndex
+                } else {
+                    offset > previousScrollOffset
+                }
+                onScroll(scrollingDown)
+            }
+            previousIndex = index
+            previousScrollOffset = offset
+        }
+    }
 
     LaunchedEffect(Unit) { viewModel.refreshCacheSizes() }
 
