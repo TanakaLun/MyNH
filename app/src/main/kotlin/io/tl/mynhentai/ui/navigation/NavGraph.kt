@@ -76,7 +76,7 @@ fun MainNavGraph() {
     var bottomBarHidden by remember { mutableStateOf(false) }
 
     val bottomPadding by animateDpAsState(
-        targetValue = if (isOnMainPage && !bottomBarHidden) 80.dp else 0.dp,
+        targetValue = if (isOnMainPage && !bottomBarHidden && !hasSubPage) 80.dp else 0.dp,
         animationSpec = tween(300)
     )
 

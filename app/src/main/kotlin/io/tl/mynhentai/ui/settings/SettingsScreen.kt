@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -178,6 +180,9 @@ fun SettingsScreen(
     ) { innerPadding ->
         LazyColumn(
             state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .overscroll(rememberOverscrollEffect()),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
