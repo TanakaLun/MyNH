@@ -1,6 +1,9 @@
 package io.tl.mynhentai.data.local
 
 import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -11,19 +14,31 @@ class SettingsHelper(private val appContext: Context) {
 
     var maxConcurrency: Int
         get() = prefs.getInt(KEY_CONCURRENCY, 10)
-        set(value) = prefs.edit().putInt(KEY_CONCURRENCY, value).apply()
+        set(value) {
+            prefs.edit().putInt(KEY_CONCURRENCY, value).apply()
+        }
 
     var languageFilter: String
         get() = prefs.getString(KEY_LANGUAGE, "") ?: ""
-        set(value) = prefs.edit().putString(KEY_LANGUAGE, value).apply()
+        set(value) {
+            prefs.edit().putString(KEY_LANGUAGE, value).apply()
+        }
 
     var languageFilterEnabled: Boolean
         get() = prefs.getBoolean(KEY_LANG_FILTER_ENABLED, false)
-        set(value) = prefs.edit().putBoolean(KEY_LANG_FILTER_ENABLED, value).apply()
+        set(value) {
+            prefs.edit().putBoolean(KEY_LANG_FILTER_ENABLED, value).apply()
+        }
+
+    private val _backAnimStyleFlow = MutableStateFlow(prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide")
+    val backAnimStyleFlow: StateFlow<String> = _backAnimStyleFlow.asStateFlow()
 
     var backAnimStyle: String
-        get() = prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide"
-        set(value) = prefs.edit().putString(KEY_BACK_ANIM_STYLE, value).apply()
+        get() = _backAnimStyleFlow.value
+        set(value) {
+            prefs.edit().putString(KEY_BACK_ANIM_STYLE, value).apply()
+            _backAnimStyleFlow.value = value
+        }
 
     val coilCacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")

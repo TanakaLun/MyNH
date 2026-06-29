@@ -1,6 +1,5 @@
 package io.tl.mynhentai.ui.navigation
 
-import android.app.Activity
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
@@ -10,7 +9,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -27,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -90,7 +88,7 @@ fun MainNavGraph() {
     )
 
     val settings: SettingsHelper = koinInject()
-    var backAnimStyle by remember { mutableStateOf(settings.backAnimStyle) }
+    val backAnimStyle by settings.backAnimStyleFlow.collectAsState()
 
     var subPage by remember { mutableStateOf(SubPage.NONE) }
     var subPageId by remember { mutableStateOf(0L) }
@@ -128,7 +126,7 @@ fun MainNavGraph() {
 
     BackHandler(hasSubPage) { closeSub() }
 
-    val isOnSubPage = hasSubPage
+    val isAnimating = isPredictingBack && currentPredictiveProgress > 0f
 
     Box(Modifier.fillMaxSize()) {
         Scaffold { innerPadding ->
@@ -164,11 +162,10 @@ fun MainNavGraph() {
                     }
                 }
 
-                if (isOnSubPage) {
+                if (hasSubPage) {
                     val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
-                    val animating = isPredictingBack && currentPredictiveProgress > 0f
 
-                    val overlayModifier = if (animating) {
+                    val overlayModifier = if (isAnimating) {
                         when (backAnimStyle) {
                             "scale" -> {
                                 val sc = 1f - 0.25f * eased
@@ -183,7 +180,6 @@ fun MainNavGraph() {
                                         transformOrigin = TransformOrigin(0.5f, ty)
                                     }
                                     .clip(roundShape)
-                                    .background(MaterialTheme.colorScheme.background)
                             }
                             "slide" -> {
                                 val sideClip = RoundedCornerShape(
@@ -193,7 +189,6 @@ fun MainNavGraph() {
                                 Modifier
                                     .graphicsLayer { translationX = size.width * 0.4f * eased }
                                     .clip(sideClip)
-                                    .background(MaterialTheme.colorScheme.background)
                             }
                             else -> Modifier
                         }
@@ -231,7 +226,7 @@ fun MainNavGraph() {
         }
 
         AnimatedVisibility(
-            visible = isOnMainPage && !bottomBarHidden && !hasSubPage,
+            visible = isOnMainPage && !bottomBarHidden && !hasSubPage && !isAnimating,
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter)

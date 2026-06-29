@@ -55,6 +55,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.SubcomposeAsyncImage
 import io.tl.mynhentai.ui.components.PreloadPages
+import io.tl.mynhentai.R
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -130,8 +132,8 @@ fun ReaderScreen(
         val pageNum = showSaveDialog!!
         AlertDialog(
             onDismissRequest = { showSaveDialog = null },
-            title = { Text("Save Page $pageNum") },
-            text = { Text("Save this page to your device gallery?") },
+            title = { Text(stringResource(R.string.save_page_title, pageNum)) },
+            text = { Text(stringResource(R.string.save_page_confirm)) },
             confirmButton = {
                 TextButton(onClick = {
                     val state = uiState
@@ -143,12 +145,12 @@ fun ReaderScreen(
                     }
                     showSaveDialog = null
                 }) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSaveDialog = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -275,12 +277,13 @@ fun ReaderScreen(
 }
 
 private fun saveImageToGallery(context: Context, imageUrl: String, galleryId: Long, pageNum: Int) {
+    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
         try {
             val client = okhttp3.OkHttpClient()
             val request = okhttp3.Request.Builder().url(imageUrl).build()
             val response = client.newCall(request).execute()
-            val bytes = response.body?.bytes() ?: return@launch
+            val bytes = response.body.bytes()
             val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                 ?: return@launch
 
@@ -314,10 +317,9 @@ private fun saveImageToGallery(context: Context, imageUrl: String, galleryId: Lo
                 java.io.FileOutputStream(file).use { out ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
                 }
-                android.content.Intent(android.content.Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also {
-                    it.data = android.net.Uri.fromFile(file)
-                    context.sendBroadcast(it)
-                }
+                android.media.MediaScannerConnection.scanFile(
+                    context, arrayOf(file.absolutePath), arrayOf("image/jpeg"), null
+                )
             }
         } catch (_: Exception) { }
     }

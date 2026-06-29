@@ -80,6 +80,11 @@
     <string name="back_anim_scale">Scale</string>
     <string name="back_anim_none">None</string>
 
+    <!-- Save Page Dialog -->
+    <string name="save_page_title">Save Page %d</string>
+    <string name="save_page_confirm">Save this page to your device gallery?</string>
+    <string name="save">Save</string>
+
     <!-- Selection -->
     <string name="selected_count">%d selected</string>
 </resources>

@@ -19,7 +19,7 @@ class DownloadManager(
     private suspend fun downloadImage(url: String, dest: File) = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).build()
         val response = client.newCall(request).execute()
-        response.body?.byteStream()?.use { input ->
+        response.body.byteStream().use { input ->
             dest.outputStream().use { output ->
                 input.copyTo(output)
             }
