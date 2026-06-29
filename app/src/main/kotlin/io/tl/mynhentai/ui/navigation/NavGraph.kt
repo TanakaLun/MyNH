@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -66,7 +67,10 @@ private val mainRoutes = setOf(Routes.HOME, Routes.HISTORY, Routes.LIBRARY, Rout
 enum class SubPage { NONE, SEARCH, SEARCH_QUERY, DETAIL, READER }
 
 @Composable
-fun MainNavGraph() {
+fun MainNavGraph(
+    initialDeepLink: String? = null,
+    onDeepLinkConsumed: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -81,6 +85,20 @@ fun MainNavGraph() {
     var subPage by remember { mutableStateOf(SubPage.NONE) }
     var subPageId by remember { mutableStateOf(0L) }
     var subPageQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(initialDeepLink) {
+        if (initialDeepLink != null) {
+            val parts = initialDeepLink.split("/")
+            if (parts.size >= 2 && parts[0] == "gallery") {
+                val id = parts[1].toLongOrNull()
+                if (id != null) {
+                    subPage = SubPage.DETAIL
+                    subPageId = id
+                }
+            }
+            onDeepLinkConsumed()
+        }
+    }
 
     fun openSub(p: SubPage, id: Long = 0L, q: String = "") {
         subPage = p; subPageId = id; subPageQuery = q

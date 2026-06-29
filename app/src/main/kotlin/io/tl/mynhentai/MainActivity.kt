@@ -1,6 +1,7 @@
 package io.tl.mynhentai
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -17,13 +18,54 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { _: Boolean -> }
 
+    var pendingDeepLink: String? = null
+        private set
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         requestNotificationPermission()
+        handleIntent(intent)
         setContent {
             MyNHentaiTheme {
-                MainNavGraph()
+                MainNavGraph(
+                    initialDeepLink = pendingDeepLink,
+                    onDeepLinkConsumed = { pendingDeepLink = null }
+                )
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        when (intent?.action) {
+            Intent.ACTION_VIEW -> {
+                val uri = intent.data
+                if (uri != null) {
+                    val host = uri.host
+                    val path = uri.pathSegments
+                    if (host == "nhentai.net" && path.size >= 2 && path[0] == "g") {
+                        val id = path[1].toLongOrNull()
+                        if (id != null) {
+                            pendingDeepLink = "gallery/$id"
+                        }
+                    }
+                }
+            }
+            Intent.ACTION_SEND -> {
+                val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
+                val regex = Regex("""nhentai\.net/g/(\d+)""")
+                val match = regex.find(text)
+                if (match != null) {
+                    val id = match.groupValues[1].toLongOrNull()
+                    if (id != null) {
+                        pendingDeepLink = "gallery/$id"
+                    }
+                }
             }
         }
     }
