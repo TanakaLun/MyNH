@@ -19,6 +19,7 @@ import io.tl.mynhentai.ui.history.HistoryViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
 import io.tl.mynhentai.ui.library.LibraryViewModel
 import io.tl.mynhentai.ui.reader.ReaderViewModel
+import io.tl.mynhentai.ui.search.SearchResultsViewModel
 import io.tl.mynhentai.ui.search.SearchViewModel
 import io.tl.mynhentai.ui.settings.SettingsViewModel
 import kotlinx.serialization.json.Json
@@ -110,7 +111,8 @@ val repositoryModule = module {
 
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { SearchViewModel(get(), get()) }
+    viewModel { SearchViewModel(get()) }
+    viewModel { SearchResultsViewModel(get(), get()) }
     viewModel { DetailViewModel(get(), get()) }
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }

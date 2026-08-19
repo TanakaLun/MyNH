@@ -12,22 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,211 +21,177 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import io.tl.mynhentai.ui.components.MangaListItem
-import io.tl.mynhentai.ui.components.RoundedDropdownMenu
-import io.tl.mynhentai.R
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import io.tl.mynhentai.R
+import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InputField
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.Close
+import top.yukonga.miuix.kmp.icon.extended.Recent
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
-private val sortOptions = listOf("date", "popular", "popular-week", "popular-today")
-
-@Composable
-private fun sortOptionLabel(option: String): String {
-    return when (option) {
-        "popular" -> stringResource(R.string.sort_popular)
-        "popular-today" -> stringResource(R.string.sort_popular_today)
-        "popular-week" -> stringResource(R.string.sort_popular_week)
-        "date" -> stringResource(R.string.sort_date)
-        else -> option
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
     initialQuery: String = "",
     onBack: () -> Unit,
-    onItemClick: (Long) -> Unit,
+    onSearch: (String) -> Unit,
     viewModel: SearchViewModel = koinViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
     val searchHistory by viewModel.searchHistory.collectAsState()
-    val currentSort by viewModel.currentSort.collectAsState()
     var query by remember { mutableStateOf(initialQuery) }
-    var showSortMenu by remember { mutableStateOf(false) }
+    val topAppBarScrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberBlurBackdrop()
+    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
 
     LaunchedEffect(initialQuery) {
         if (initialQuery.isNotBlank()) {
-            viewModel.search(initialQuery)
+            onSearch(initialQuery)
         }
     }
 
-    Scaffold { innerPadding ->
+    Scaffold(
+        topBar = {
+            BlurredBar(
+                backdrop = backdrop,
+                blurEnabled = true,
+                blurStyle = 1,
+                scrollBehavior = topAppBarScrollBehavior,
+            ) {
+                TopAppBar(
+                    title = stringResource(R.string.search),
+                    defaultWindowInsetsPadding = false,
+                    scrollBehavior = topAppBarScrollBehavior,
+                    color = barColor,
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
+                        }
+                    }
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = { Text("Search...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null)
-                },
-                trailingIcon = {
-                    Row {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear")
+            Row(
+                modifier = Modifier.padding(bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp)
+                ) {
+                    InputField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        onSearch = { q ->
+                            if (q.isNotBlank()) {
+                                onSearch(q)
                             }
-                        }
-                        Box {
-                            IconButton(onClick = { showSortMenu = true }) {
-                                Icon(Icons.Default.FilterList, contentDescription = "Sort")
-                            }
-                            RoundedDropdownMenu(
-                                expanded = showSortMenu,
-                                onDismissRequest = { showSortMenu = false },
-                                options = sortOptions,
-                                selectedOption = currentSort,
-                                onOptionSelected = { viewModel.setSort(it) }
-                            )
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        if (query.isNotBlank()) viewModel.search(query)
-                    }
-                ),
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Search
-                )
-            )
-
-            if (currentSort != "date") {
-                FilterChip(
-                    selected = true,
-                    onClick = { viewModel.setSort("date") },
-                    label = { Text(sortOptionLabel(currentSort), fontSize = 12.sp, fontWeight = FontWeight.Bold) },
-                    trailingIcon = {
-                        Icon(Icons.Default.Close, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                        },
+                        expanded = true,
+                        onExpandedChange = {},
+                        label = stringResource(R.string.search_hint)
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.cancel),
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 16.dp)
+                        .clickable(
+                            interactionSource = null,
+                            indication = null,
+                            onClick = onBack
+                        ),
+                    style = MiuixTheme.textStyles.title4
+                        .copy(fontWeight = FontWeight.Bold),
+                    color = MiuixTheme.colorScheme.primary
                 )
             }
 
-            if (uiState is SearchUiState.Idle && searchHistory.isNotEmpty() && query.isBlank()) {
+            if (searchHistory.isNotEmpty()) {
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                        .scrollEndHaptic(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                 ) {
                     items(searchHistory, key = { it }) { historyItem ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    query = historyItem
-                                    viewModel.search(historyItem)
-                                }
-                                .padding(vertical = 12.dp, horizontal = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Card(
+                            modifier = Modifier.padding(bottom = 4.dp),
+                            insideMargin = PaddingValues(0.dp),
+                            showIndication = true,
+                            onClick = {
+                                query = historyItem
+                                onSearch(historyItem)
+                            }
                         ) {
-                            Icon(
-                                Icons.Default.History,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = historyItem,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { viewModel.removeHistoryItem(historyItem) }) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Remove",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    MiuixIcons.Recent,
+                                    contentDescription = null,
+                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                                Text(
+                                    text = historyItem,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = { viewModel.removeHistoryItem(historyItem) }) {
+                                    Icon(
+                                        MiuixIcons.Close,
+                                        contentDescription = "Remove",
+                                        tint = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                    )
+                                }
                             }
                         }
                     }
                 }
             } else {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(top = 2.dp)
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    when (val state = uiState) {
-                        is SearchUiState.Idle -> {
-                            if (searchHistory.isEmpty()) {
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("Enter a search query")
-                                }
-                            }
-                        }
-
-                        is SearchUiState.Loading -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        is SearchUiState.Success -> {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(state.items, key = { it.id }) { manga ->
-                                    MangaListItem(
-                                        manga = manga,
-                                        imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
-                                        onItemClick = { onItemClick(manga.id) }
-                                    )
-                                }
-                            }
-                        }
-
-                        is SearchUiState.Error -> {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = state.message,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                        }
-                    }
+                    Text(stringResource(R.string.search_empty))
                 }
             }
+        }
         }
     }
 }

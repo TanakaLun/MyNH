@@ -1,6 +1,5 @@
 package io.tl.mynhentai.ui.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,43 +14,50 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import io.tl.mynhentai.ui.components.MangaListItem
-import io.tl.mynhentai.ui.components.RoundedDropdownMenu
 import io.tl.mynhentai.R
+import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.MangaListItem
+import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.DropdownEntry
+import top.yukonga.miuix.kmp.basic.DropdownItem
+import top.yukonga.miuix.kmp.basic.FloatingToolbar
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.PullToRefresh
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.rememberPullToRefreshState
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
+import top.yukonga.miuix.kmp.icon.extended.ChevronForward
+import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.icon.extended.Search
+import top.yukonga.miuix.kmp.icon.extended.Sort
+import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.padding
 
 private val sortOptions = listOf("popular", "popular-today", "popular-week")
 
@@ -65,181 +71,176 @@ private fun sortOptionLabel(option: String): String {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onSearchClick: () -> Unit,
     onItemClick: (Long) -> Unit,
-    onScroll: (Boolean) -> Unit = {},
+    bottomNavPadding: Dp = 0.dp,
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSort by viewModel.currentSort.collectAsState()
-    var showSortMenu by remember { mutableStateOf(false) }
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val listState = rememberLazyListState()
-    var previousIndex by remember { mutableIntStateOf(0) }
-    var previousScrollOffset by remember { mutableIntStateOf(0) }
+    val pullToRefreshState = rememberPullToRefreshState()
+    val topAppBarScrollBehavior = MiuixScrollBehavior()
 
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
-        }.collect { (index, offset) ->
-            val isAtTop = index == 0 && offset == 0
-            if (isAtTop) {
-                onScroll(false)
-            } else {
-                val scrollingDown = if (index != previousIndex) {
-                    index > previousIndex
-                } else {
-                    offset > previousScrollOffset
+    val sortLabels = sortOptions.map { sortOptionLabel(it) }
+    val backdrop = rememberBlurBackdrop()
+    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+
+    val sortMenuEntries = remember(currentSort) {
+        listOf(
+            DropdownEntry(
+                items = sortOptions.mapIndexed { index, option ->
+                    DropdownItem(
+                        text = sortLabels[index],
+                        selected = option == currentSort,
+                        onClick = { viewModel.setSort(option) }
+                    )
                 }
-                onScroll(scrollingDown)
-            }
-            previousIndex = index
-            previousScrollOffset = offset
-        }
+            )
+        )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (val state = uiState) {
-            is HomeUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            BlurredBar(
+                backdrop = backdrop,
+                blurEnabled = true,
+                blurStyle = 1,
+                scrollBehavior = topAppBarScrollBehavior,
+            ) {
+                TopAppBar(
+                    title = stringResource(R.string.browse),
+                    titleColor = MiuixTheme.colorScheme.onBackground,
+                    defaultWindowInsetsPadding = false,
+                    scrollBehavior = topAppBarScrollBehavior,
+                    color = barColor,
+                    actions = {
+                        OverlayIconDropdownMenu(entries = sortMenuEntries) {
+                            Icon(MiuixIcons.Sort, contentDescription = "Sort")
+                        }
+                        IconButton(onClick = onSearchClick) {
+                            Icon(MiuixIcons.Search, contentDescription = "Search")
+                        }
+                    }
+                )
             }
+        }
+    ) { innerPadding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
+        ) {
+            when (val state = uiState) {
+                is HomeUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        InfiniteProgressIndicator()
+                    }
+                }
 
-            is HomeUiState.Success -> {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .overscroll(rememberOverscrollEffect()),
-                    contentPadding = PaddingValues(
+                is HomeUiState.Success -> {
+                    val contentPadding = PaddingValues(
                         start = 12.dp, end = 12.dp,
-                        top = 72.dp,
-                        bottom = 144.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(state.items, key = { it.id }) { manga ->
-                        MangaListItem(
-                            manga = manga,
-                            imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
-                            onItemClick = { onItemClick(manga.id) }
-                        )
-                    }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 3.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SmallFloatingActionButton(
-                        onClick = { viewModel.previousPage() },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Previous page"
-                        )
-                    }
-
-                    Text(
-                        text = "${state.currentPage} / ${state.numPages}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(20.dp)
-                            )
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                        top = innerPadding.calculateTopPadding() + 8.dp,
+                        bottom = innerPadding.calculateBottomPadding() + bottomNavPadding + 80.dp
                     )
-
-                    SmallFloatingActionButton(
-                        onClick = { viewModel.nextPage() },
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    PullToRefresh(
+                        isRefreshing = isRefreshing,
+                        onRefresh = { viewModel.refresh() },
+                        pullToRefreshState = pullToRefreshState,
+                        topAppBarScrollBehavior = topAppBarScrollBehavior,
+                        contentPadding = contentPadding
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next page"
-                        )
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .overscroll(rememberOverscrollEffect())
+                                .scrollEndHaptic(),
+                            contentPadding = contentPadding,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(state.items, key = { it.id }) { manga ->
+                                MangaListItem(
+                                    manga = manga,
+                                    imageUrl = viewModel.resolveThumbnailUrl(manga.thumbnail),
+                                    onItemClick = { onItemClick(manga.id) }
+                                )
+                            }
+                        }
+                    }
+
+                    FloatingToolbar(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = bottomNavPadding)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { viewModel.previousPage() },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    MiuixIcons.ChevronBackward,
+                                    contentDescription = stringResource(R.string.previous_page),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            Text(
+                                text = "${state.currentPage} / ${state.numPages}",
+                                style = MiuixTheme.textStyles.body1,
+                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+
+                            IconButton(
+                                onClick = { viewModel.nextPage() },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    MiuixIcons.ChevronForward,
+                                    contentDescription = stringResource(R.string.next_page),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     }
                 }
-            }
 
-            is HomeUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                is HomeUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(
-                            onClick = { viewModel.retry() }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
-                            Text(stringResource(R.string.retry))
+                            Text(
+                                text = state.message,
+                                color = MiuixTheme.colorScheme.error
+                            )
+                            Button(
+                                onClick = { viewModel.retry() }
+                            ) {
+                                Icon(MiuixIcons.Refresh, contentDescription = null)
+                                Text(stringResource(R.string.retry))
+                            }
                         }
                     }
                 }
             }
         }
-
-        TopAppBar(
-            title = { Text(stringResource(R.string.browse), fontSize = 18.sp) },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            windowInsets = WindowInsets(0, 0, 0, 0),
-            actions = {
-                Box {
-                    FilterChip(
-                        selected = true,
-                        onClick = { showSortMenu = true },
-                        label = {
-                            Text(
-                                sortOptionLabel(currentSort),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.ArrowDropDown,
-                                null,
-                                Modifier.size(16.dp)
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    )
-
-                    RoundedDropdownMenu(
-                        expanded = showSortMenu,
-                        onDismissRequest = { showSortMenu = false },
-                        options = sortOptions,
-                        selectedOption = currentSort,
-                        onOptionSelected = { viewModel.setSort(it) }
-                    )
-                }
-                IconButton(onClick = onSearchClick) {
-                    Icon(Icons.Default.Search, contentDescription = "Search")
-                }
-            }
-        )
     }
 }

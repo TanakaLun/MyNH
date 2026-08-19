@@ -4,14 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +14,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaDetail
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun DownloadDialog(
@@ -32,53 +30,54 @@ fun DownloadDialog(
 ) {
     var filename by remember { mutableStateOf(detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.download_manga)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = filename,
-                    onValueChange = { filename = it },
-                    label = { Text(stringResource(R.string.filename)) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+    OverlayDialog(
+        show = true,
+        title = stringResource(R.string.download_manga),
+        onDismissRequest = onDismiss
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            TextField(
+                value = filename,
+                onValueChange = { filename = it },
+                label = stringResource(R.string.filename),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                Text(
-                    text = stringResource(R.string.save_to, DownloadManager.defaultDownloadPath),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = stringResource(R.string.save_to, DownloadManager.defaultDownloadPath),
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            )
 
-                Text(
-                    text = stringResource(R.string.download_bg_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Text(
+                text = stringResource(R.string.download_bg_hint),
+                style = MiuixTheme.textStyles.body1,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+            )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Button(
-                        onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.download_zip))
-                    }
-                    FilledTonalButton(
-                        onClick = { onCache() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.cache_download))
-                    }
+                    Text(stringResource(R.string.download_zip))
+                }
+                Button(
+                    onClick = { onCache() },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(stringResource(R.string.cache_download))
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+
+            TextButton(
+                text = stringResource(R.string.close),
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-    )
+    }
 }

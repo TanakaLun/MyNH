@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,28 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -53,6 +31,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -60,11 +40,33 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.Tag
+import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.TagChip
+import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Back
+import top.yukonga.miuix.kmp.icon.extended.Favorites
+import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
+import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun DetailScreen(
     galleryId: Long,
@@ -82,85 +84,110 @@ fun DetailScreen(
         viewModel.load(galleryId)
     }
 
-    if (blacklistTag != null) {
-        AlertDialog(
-            onDismissRequest = { blacklistTag = null },
-            title = { Text(stringResource(R.string.blacklist_tag)) },
-            text = { Text(stringResource(R.string.blacklist_tag_confirm, blacklistTag?.name ?: "")) },
-            confirmButton = {
-                TextButton(onClick = {
-                    blacklistTag?.let { viewModel.blacklistTag(it) }
-                    blacklistTag = null
-                }) {
-                    Text(stringResource(R.string.blacklist))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { blacklistTag = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
-    if (showDownloadDialog) {
-        val state = uiState
-        if (state is DetailUiState.Success) {
-            DownloadDialog(
-                detail = state.detail,
-                onDismiss = { showDownloadDialog = false },
-                onDownload = { filename, path ->
-                    viewModel.startDownload(context, state.detail, filename, path)
-                    showDownloadDialog = false
-                },
-                onCache = {
-                    viewModel.startCache(context, state.detail)
-                    showDownloadDialog = false
-                }
-            )
-        }
-    }
+    val topAppBarScrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberBlurBackdrop()
+    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.detail)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+            BlurredBar(
+                backdrop = backdrop,
+                blurEnabled = true,
+                blurStyle = 1,
+                scrollBehavior = topAppBarScrollBehavior,
+            ) {
+                TopAppBar(
+                    title = stringResource(R.string.detail),
+                    titleColor = MiuixTheme.colorScheme.onBackground,
+                    defaultWindowInsetsPadding = false,
+                    scrollBehavior = topAppBarScrollBehavior,
+                    color = barColor,
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            }
         }
     ) { innerPadding ->
-        when (val state = uiState) {
-            is DetailUiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
+        if (blacklistTag != null) {
+            OverlayDialog(
+                show = true,
+                title = stringResource(R.string.blacklist_tag),
+                summary = stringResource(R.string.blacklist_tag_confirm, blacklistTag?.name ?: ""),
+                onDismissRequest = { blacklistTag = null }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary
+                    TextButton(
+                        text = stringResource(R.string.blacklist),
+                        onClick = {
+                            blacklistTag?.let { viewModel.blacklistTag(it) }
+                            blacklistTag = null
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        text = stringResource(R.string.cancel),
+                        onClick = { blacklistTag = null },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
+        }
 
-            is DetailUiState.Success -> {
-                val detail = state.detail
-                val shape = RoundedCornerShape(12.dp)
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+        if (showDownloadDialog) {
+            val state = uiState
+            if (state is DetailUiState.Success) {
+                DownloadDialog(
+                    detail = state.detail,
+                    onDismiss = { showDownloadDialog = false },
+                    onDownload = { filename, path ->
+                        viewModel.startDownload(context, state.detail, filename, path)
+                        showDownloadDialog = false
+                    },
+                    onCache = {
+                        viewModel.startCache(context, state.detail)
+                        showDownloadDialog = false
+                    }
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
+        ) {
+            when (val state = uiState) {
+                is DetailUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        InfiniteProgressIndicator()
+                    }
+                }
+
+                is DetailUiState.Success -> {
+                    val detail = state.detail
+                    val shape = RoundedCornerShape(12.dp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerPadding.calculateTopPadding())
+                            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                            .scrollEndHaptic(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -184,13 +211,13 @@ fun DetailScreen(
                         ) {
                             Text(
                                 text = detail.title.pretty ?: detail.title.english ?: "Untitled",
-                                style = MaterialTheme.typography.titleMedium
+                                style = MiuixTheme.textStyles.title3
                             )
 
                             Text(
                                 text = stringResource(R.string.pages_favorites_format, detail.numPages, detail.numFavorites),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MiuixTheme.textStyles.body1,
+                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                             )
                         }
                     }
@@ -203,22 +230,20 @@ fun DetailScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(40.dp)
                         ) {
                             Button(
                                 onClick = { },
-                                modifier = Modifier.fillMaxSize(),
-                                shape = shape,
-                                contentPadding = ButtonDefaults.ContentPadding
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColorsPrimary()
                             ) {
-                                Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
+                                Icon(MiuixIcons.Play, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(6.dp))
                                 Text(stringResource(R.string.read))
                             }
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(shape)
+                                    .matchParentSize()
+                                    .clip(RoundedCornerShape(16.dp))
                                     .combinedClickable(
                                         onClick = { onReaderClick(detail.id) },
                                         onLongClick = { showDownloadDialog = true }
@@ -226,35 +251,27 @@ fun DetailScreen(
                             )
                         }
 
-                        FilledTonalButton(
+                        Button(
                             onClick = {
                                 viewModel.toggleFavorite(detail, state.isFavorite)
                             },
-                            shape = shape,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(40.dp),
-                            contentPadding = ButtonDefaults.ContentPadding
+                            modifier = Modifier.weight(1f)
                         ) {
                             Icon(
-                                if (state.isFavorite) Icons.Default.Favorite
-                                else Icons.Default.FavoriteBorder,
+                                if (state.isFavorite) MiuixIcons.FavoritesFill
+                                else MiuixIcons.Favorites,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text(if (state.isFavorite) stringResource(R.string.favorited) else stringResource(R.string.favorite))
                         }
                     }
 
                     Card(
-                        shape = shape,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                        )
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val tagsByType = detail.tags.groupBy { it.type }
@@ -267,14 +284,14 @@ fun DetailScreen(
                                         modifier = Modifier
                                             .height(28.dp)
                                             .clip(RoundedCornerShape(14.dp))
-                                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                                            .background(MiuixTheme.colorScheme.tertiaryContainer)
                                             .padding(horizontal = 10.dp, vertical = 4.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
                                             text = type.replaceFirstChar { it.uppercase() },
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            style = MiuixTheme.textStyles.footnote2,
+                                            color = MiuixTheme.colorScheme.onTertiaryContainer
                                         )
                                     }
                                     tags.forEach { tag ->
@@ -294,19 +311,15 @@ fun DetailScreen(
                     }
 
                     Card(
-                        shape = shape,
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                        )
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
                                 text = stringResource(R.string.pages_preview),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
+                                style = MiuixTheme.textStyles.footnote1,
+                                color = MiuixTheme.colorScheme.primary
                             )
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -340,17 +353,16 @@ fun DetailScreen(
 
             is DetailUiState.Error -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = state.message,
-                        color = MaterialTheme.colorScheme.error
+                        color = MiuixTheme.colorScheme.error
                     )
                 }
             }
         }
+    }
     }
 }

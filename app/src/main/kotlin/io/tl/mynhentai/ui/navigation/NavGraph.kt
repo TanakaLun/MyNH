@@ -1,90 +1,70 @@
 package io.tl.mynhentai.ui.navigation
 
-import android.os.Build
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.PredictiveBackHandler
-import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.SettingsHelper
-import io.tl.mynhentai.ui.components.AnimatedNavbar
+import io.tl.mynhentai.ui.components.BlurredNavbar
 import io.tl.mynhentai.ui.components.NavbarItem
+import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import io.tl.mynhentai.ui.detail.DetailScreen
 import io.tl.mynhentai.ui.history.HistoryScreen
 import io.tl.mynhentai.ui.home.HomeScreen
 import io.tl.mynhentai.ui.library.LibraryScreen
 import io.tl.mynhentai.ui.reader.ReaderScreen
+import io.tl.mynhentai.ui.search.SearchResultsScreen
 import io.tl.mynhentai.ui.search.SearchScreen
 import io.tl.mynhentai.ui.settings.SettingsScreen
-import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
-import java.net.URLDecoder
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Favorites
+import top.yukonga.miuix.kmp.icon.extended.Home
+import top.yukonga.miuix.kmp.icon.extended.Recent
+import top.yukonga.miuix.kmp.icon.extended.Settings
+import top.yukonga.miuix.kmp.nav.core.NavCornerClipMode
+import top.yukonga.miuix.kmp.nav.core.NavDisplay
+import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
+import top.yukonga.miuix.kmp.nav.core.rememberNavBackStack
+import top.yukonga.miuix.kmp.nav.core.rememberNavSystemCornerRadius
+import top.yukonga.miuix.kmp.nav.transition.NavSwipeDirection
+import top.yukonga.miuix.kmp.nav.transition.NavTransitions
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import androidx.compose.ui.unit.dp
 
 private val navbarItems = listOf(
-    NavbarItem(R.string.nav_home, Icons.Default.Home, Routes.HOME),
-    NavbarItem(R.string.nav_history, Icons.Default.History, Routes.HISTORY),
-    NavbarItem(R.string.nav_favorites, Icons.Default.Bookmark, Routes.LIBRARY),
-    NavbarItem(R.string.nav_settings, Icons.Default.Settings, Routes.SETTINGS)
+    NavbarItem(R.string.nav_home, MiuixIcons.Home, Routes.HOME),
+    NavbarItem(R.string.nav_history, MiuixIcons.Recent, Routes.HISTORY),
+    NavbarItem(R.string.nav_favorites, MiuixIcons.Favorites, Routes.LIBRARY),
+    NavbarItem(R.string.nav_settings, MiuixIcons.Settings, Routes.SETTINGS)
 )
 
-private val mainRoutes = setOf(Routes.HOME, Routes.HISTORY, Routes.LIBRARY, Routes.SETTINGS)
-
-enum class SubPage { NONE, SEARCH, SEARCH_QUERY, DETAIL, READER }
+private val swipeDismiss = NavSwipeDirection.LeftToRight
 
 @Composable
 fun MainNavGraph(
     initialDeepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {}
 ) {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-    val currentRoute = currentDestination?.route
-    val isOnMainPage = currentRoute in mainRoutes
-
-    var bottomBarHidden by remember { mutableStateOf(false) }
+    val backStack = rememberNavBackStack<AppRoute>(AppRoute.Main)
+    val navigator = remember { Navigator(backStack) }
 
     val settings: SettingsHelper = koinInject()
     val backAnimStyle by settings.backAnimStyleFlow.collectAsState()
-
-    var subPage by remember { mutableStateOf(SubPage.NONE) }
-    var subPageId by remember { mutableStateOf(0L) }
-    var subPageQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(initialDeepLink) {
         if (initialDeepLink != null) {
@@ -92,167 +72,150 @@ fun MainNavGraph(
             if (parts.size >= 2 && parts[0] == "gallery") {
                 val id = parts[1].toLongOrNull()
                 if (id != null) {
-                    subPage = SubPage.DETAIL
-                    subPageId = id
+                    navigator.push(AppRoute.Detail(id))
                 }
             }
             onDeepLinkConsumed()
         }
     }
 
-    fun openSub(p: SubPage, id: Long = 0L, q: String = "") {
-        subPage = p; subPageId = id; subPageQuery = q
-    }
-    fun closeSub() {
-        subPage = SubPage.NONE; subPageId = 0L; subPageQuery = ""
-    }
-
-    val hasSubPage = subPage != SubPage.NONE
-
-    val bottomPadding by animateDpAsState(
-        targetValue = if (isOnMainPage && !bottomBarHidden && !hasSubPage) 80.dp else 0.dp,
-        animationSpec = tween(300)
-    )
-
-    var currentPredictiveProgress by remember { mutableFloatStateOf(0f) }
-    var isPredictingBack by remember { mutableStateOf(false) }
-    var predictiveTouchYPx by remember { mutableFloatStateOf(-1f) }
-
-    if (hasSubPage && backAnimStyle != "none") {
-        PredictiveBackHandler(enabled = true) { progressFlow ->
-            isPredictingBack = true
-            try {
-                progressFlow.collect { backEvent ->
-                    currentPredictiveProgress = backEvent.progress
-                    if (Build.VERSION.SDK_INT >= 35) predictiveTouchYPx = backEvent.touchY
-                }
-                closeSub()
-            } catch (_: CancellationException) {
-            } finally {
-                isPredictingBack = false
-                currentPredictiveProgress = 0f
-            }
+    val isCrossActivityStyle = backAnimStyle == "scale"
+    val cornerRadius = rememberNavSystemCornerRadius()
+    val isDark = isSystemInDarkTheme()
+    val backdropColor = MiuixTheme.colorScheme.surface
+    val effects = remember(backAnimStyle, cornerRadius, isDark, backdropColor) {
+        when (backAnimStyle) {
+            "none" -> NavDisplayEffects.None
+            else -> NavDisplayEffects(
+                enableCornerClip = true,
+                cornerClipRadius = if (isCrossActivityStyle && cornerRadius == 0.dp) 32.dp else cornerRadius,
+                cornerClipMode = if (isCrossActivityStyle) NavCornerClipMode.All else NavCornerClipMode.Leading,
+                dimAmount = when {
+                    isCrossActivityStyle -> if (isDark) 0.8f else 0.2f
+                    else -> 0.5f
+                },
+                blockInputDuringTransition = true,
+                backdropColor = backdropColor
+            )
         }
     }
+    val navTransition = when (backAnimStyle) {
+        "scale" -> CrossActivityTransition
+        "none" -> NavTransitions.None
+        else -> NavTransitions.MiuixDefault
+    }
 
-    BackHandler(hasSubPage) { closeSub() }
+    NavDisplay(
+        backStack = backStack,
+        onBack = { navigator.pop() },
+        transition = navTransition,
+        effects = effects,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        entry<AppRoute.Main> {
+            MainTabs(navigator = navigator)
+        }
+        entry<AppRoute.Search>(swipeDismiss = swipeDismiss) { route ->
+            SearchScreen(
+                initialQuery = route.query,
+                onBack = { navigator.pop() },
+                onSearch = { q -> navigator.push(AppRoute.SearchResults(q)) }
+            )
+        }
+        entry<AppRoute.SearchResults>(swipeDismiss = swipeDismiss) { route ->
+            SearchResultsScreen(
+                query = route.query,
+                onBack = { navigator.pop() },
+                onItemClick = { navigator.push(AppRoute.Detail(it)) }
+            )
+        }
+        entry<AppRoute.Detail>(swipeDismiss = swipeDismiss) { route ->
+            DetailScreen(
+                galleryId = route.id,
+                onBack = { navigator.pop() },
+                onReaderClick = { navigator.push(AppRoute.Reader(it)) },
+                onTagClick = { q -> navigator.push(AppRoute.Search(q)) }
+            )
+        }
+        entry<AppRoute.Reader>(swipeDismiss = NavSwipeDirection.None) { route ->
+            ReaderScreen(
+                galleryId = route.id,
+                onBack = { navigator.pop() }
+            )
+        }
+    }
+}
 
-    val isAnimating = isPredictingBack && currentPredictiveProgress > 0f
-    val showNavbar = isOnMainPage && !bottomBarHidden && !hasSubPage
+@Composable
+private fun MainTabs(navigator: Navigator) {
+    val settings: SettingsHelper = koinInject()
+    val enableBlur by settings.enableBlurFlow.collectAsState()
+    val useFloatingNavbar by settings.useFloatingNavbarFlow.collectAsState()
+    val floatingNavbarStyle by settings.floatingNavbarStyleFlow.collectAsState()
+    val floatingNavbarPosition by settings.floatingNavbarPositionFlow.collectAsState()
 
-    Scaffold { innerPadding ->
-        Box(Modifier.fillMaxSize()) {
-            NavHost(
-                navController = navController,
-                startDestination = Routes.HOME,
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(bottom = bottomPadding)
-            ) {
-                composable(Routes.HOME) {
-                    HomeScreen(
-                        onSearchClick = { openSub(SubPage.SEARCH) },
-                        onItemClick = { id -> openSub(SubPage.DETAIL, id) },
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-                composable(Routes.HISTORY) {
-                    HistoryScreen(
-                        onItemClick = { id -> openSub(SubPage.DETAIL, id) },
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-                composable(Routes.LIBRARY) {
-                    LibraryScreen(
-                        onItemClick = { id -> openSub(SubPage.DETAIL, id) },
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-                composable(Routes.SETTINGS) {
-                    SettingsScreen(
-                        onScroll = { hidden -> bottomBarHidden = hidden }
-                    )
-                }
-            }
+    val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
-            AnimatedNavbar(
-                visible = showNavbar,
+    val backdrop = rememberBlurBackdrop(enableBlur = enableBlur)
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        bottomBar = {
+            BlurredNavbar(
                 items = navbarItems,
                 currentRoute = currentRoute,
                 onNavigate = { route ->
-                    bottomBarHidden = false
                     navController.navigate(route) {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
                 },
-                modifier = Modifier.align(Alignment.BottomCenter)
+                backdrop = backdrop,
+                useFloating = useFloatingNavbar,
+                floatingStyle = floatingNavbarStyle,
+                floatingPosition = floatingNavbarPosition,
             )
-
-            if (hasSubPage) {
-                val eased = CubicBezierEasing(0.2f, 0f, 0f, 1f).transform(currentPredictiveProgress)
-
-                val overlayModifier = if (isAnimating) {
-                    when (backAnimStyle) {
-                        "scale" -> {
-                            val sc = 1f - 0.25f * eased
-                            val roundShape = RoundedCornerShape(if (sc < 0.98f) 16.dp else 0.dp)
-                            Modifier
-                                .graphicsLayer {
-                                    scaleX = sc
-                                    scaleY = sc
-                                    val ty = if (predictiveTouchYPx >= 0f)
-                                        (predictiveTouchYPx / size.height).coerceIn(0.1f, 0.9f)
-                                    else 0.5f
-                                    transformOrigin = TransformOrigin(0.5f, ty)
-                                }
-                                .clip(roundShape)
-                                .background(MaterialTheme.colorScheme.background)
-                        }
-                        "slide" -> {
-                            val sideClip = RoundedCornerShape(
-                                topStart = if (currentPredictiveProgress > 0f) 16.dp else 0.dp,
-                                bottomStart = if (currentPredictiveProgress > 0f) 16.dp else 0.dp
-                            )
-                            Modifier
-                                .graphicsLayer { translationX = size.width * 0.4f * eased }
-                                .clip(sideClip)
-                                .background(MaterialTheme.colorScheme.background)
-                        }
-                        else -> Modifier.background(MaterialTheme.colorScheme.background)
-                    }
-                } else Modifier.background(MaterialTheme.colorScheme.background)
-
-                Box(
-                    modifier = overlayModifier.fillMaxSize()
-                ) {
-                    when (subPage) {
-                        SubPage.SEARCH -> SearchScreen(
-                            onBack = { closeSub() },
-                            onItemClick = { id -> openSub(SubPage.DETAIL, id) }
-                        )
-                        SubPage.SEARCH_QUERY -> SearchScreen(
-                            initialQuery = subPageQuery,
-                            onBack = { closeSub() },
-                            onItemClick = { id -> openSub(SubPage.DETAIL, id) }
-                        )
-                        SubPage.DETAIL -> DetailScreen(
-                            galleryId = subPageId,
-                            onBack = { closeSub() },
-                            onReaderClick = { id -> openSub(SubPage.READER, id) },
-                            onTagClick = { q -> openSub(SubPage.SEARCH_QUERY, q = q) }
-                        )
-                        SubPage.READER -> ReaderScreen(
-                            galleryId = subPageId,
-                            onBack = { subPage = SubPage.DETAIL }
-                        )
-                        SubPage.NONE -> {}
-                    }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
+        ) {
+            NavHost(
+                navController = navController,
+                startDestination = Routes.HOME,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                composable(Routes.HOME) {
+                    HomeScreen(
+                        bottomNavPadding = innerPadding.calculateBottomPadding(),
+                        onSearchClick = { navigator.push(AppRoute.Search()) },
+                        onItemClick = { navigator.push(AppRoute.Detail(it)) }
+                    )
+                }
+                composable(Routes.HISTORY) {
+                    HistoryScreen(
+                        bottomNavPadding = innerPadding.calculateBottomPadding(),
+                        onItemClick = { navigator.push(AppRoute.Detail(it)) }
+                    )
+                }
+                composable(Routes.LIBRARY) {
+                    LibraryScreen(
+                        bottomNavPadding = innerPadding.calculateBottomPadding(),
+                        onItemClick = { navigator.push(AppRoute.Detail(it)) }
+                    )
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(bottomNavPadding = innerPadding.calculateBottomPadding())
                 }
             }
         }
     }
 }
-
-private fun String.decodeQueryParam(): String = URLDecoder.decode(this, "UTF-8")

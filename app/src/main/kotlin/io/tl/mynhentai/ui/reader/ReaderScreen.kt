@@ -10,27 +10,13 @@ import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -43,26 +29,31 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.SubcomposeAsyncImage
-import io.tl.mynhentai.ui.components.PreloadPages
 import io.tl.mynhentai.R
-import androidx.compose.ui.res.stringResource
+import io.tl.mynhentai.ui.components.PreloadPages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
+import top.yukonga.miuix.kmp.basic.Slider
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreen(
     galleryId: Long,
@@ -130,12 +121,15 @@ fun ReaderScreen(
 
     if (showSaveDialog != null) {
         val pageNum = showSaveDialog!!
-        AlertDialog(
-            onDismissRequest = { showSaveDialog = null },
-            title = { Text(stringResource(R.string.save_page_title, pageNum)) },
-            text = { Text(stringResource(R.string.save_page_confirm)) },
-            confirmButton = {
-                TextButton(onClick = {
+        OverlayDialog(
+            show = true,
+            title = stringResource(R.string.save_page_title, pageNum),
+            summary = stringResource(R.string.save_page_confirm),
+            onDismissRequest = { showSaveDialog = null }
+        ) {
+            TextButton(
+                text = stringResource(R.string.save),
+                onClick = {
                     val state = uiState
                     if (state is ReaderUiState.Success) {
                         val page = state.pages.find { it.number == pageNum }
@@ -144,23 +138,21 @@ fun ReaderScreen(
                         }
                     }
                     showSaveDialog = null
-                }) {
-                    Text(stringResource(R.string.save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSaveDialog = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            TextButton(
+                text = stringResource(R.string.cancel),
+                onClick = { showSaveDialog = null },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .consumeWindowInsets(WindowInsets(0, 0, 0, 0))
     ) {
         when (val state = uiState) {
             is ReaderUiState.Loading -> {
@@ -168,7 +160,7 @@ fun ReaderScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    InfiniteProgressIndicator()
                 }
             }
 
@@ -177,6 +169,7 @@ fun ReaderScreen(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
+                        .scrollEndHaptic()
                         .pointerInput(showControls) {
                             if (!showControls) {
                                 detectTapGestures(
@@ -184,8 +177,7 @@ fun ReaderScreen(
                                     onLongPress = { showSaveDialog = currentPage }
                                 )
                             }
-                        },
-                    contentPadding = PaddingValues(0.dp)
+                        }
                 ) {
                     items(state.pages, key = { it.number }) { page ->
                         SubcomposeAsyncImage(
@@ -202,9 +194,7 @@ fun ReaderScreen(
                                         .size(400.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
+                                    CircularProgressIndicator()
                                 }
                             }
                         )
@@ -243,20 +233,7 @@ fun ReaderScreen(
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 3.dp)
-                            .padding(horizontal = 16.dp),
-                        thumb = {
-                            Box(
-                                modifier = Modifier
-                                    .width(4.dp)
-                                    .height(24.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        colors = SliderDefaults.colors(
-                            thumbColor = MaterialTheme.colorScheme.primary,
-                            activeTrackColor = MaterialTheme.colorScheme.primary
-                        )
+                            .padding(horizontal = 16.dp)
                     )
                 }
             }

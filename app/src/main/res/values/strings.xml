@@ -71,8 +71,28 @@
     <string name="cache_download">Cache</string>
 
     <!-- Search -->
+    <string name="search">Search</string>
+    <string name="search_results">Search results</string>
+    <string name="sort">Sort</string>
     <string name="search_hint">Search…</string>
     <string name="search_empty">Enter a search query</string>
+
+    <!-- Appearance -->
+    <string name="appearance">Appearance</string>
+    <string name="monet">Monet dynamic color</string>
+    <string name="monet_summary">Use system wallpaper colors</string>
+    <string name="enable_blur">Enable Blur Effect</string>
+
+    <!-- Navigation -->
+    <string name="navigation">Navigation</string>
+    <string name="use_floating_navbar">Use FloatingNavigationBar</string>
+    <string name="floating_navbar_style">FloatingNavigationBar Style</string>
+    <string name="floating_navbar_style_default">Default</string>
+    <string name="floating_navbar_style_ios">iOS-like</string>
+    <string name="floating_navbar_position">FloatingNavigationBar Position</string>
+    <string name="floating_navbar_position_center">Center</string>
+    <string name="floating_navbar_position_start">Start</string>
+    <string name="floating_navbar_position_end">End</string>
 
     <!-- Back Animation -->
     <string name="back_animation">Back Animation</string>

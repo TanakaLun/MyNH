@@ -3,94 +3,99 @@ package io.tl.mynhentai.ui.library
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.tl.mynhentai.R
+import io.tl.mynhentai.data.model.MangaSummary
+import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.SelectionToolbar
-import io.tl.mynhentai.data.model.MangaSummary
-import io.tl.mynhentai.R
+import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     onItemClick: (Long) -> Unit,
-    onScroll: (Boolean) -> Unit = {},
+    bottomNavPadding: Dp = 0.dp,
     viewModel: LibraryViewModel = koinViewModel()
 ) {
     val favorites by viewModel.favorites.collectAsState()
     val listState = rememberLazyListState()
-    var previousIndex by remember { mutableIntStateOf(0) }
-    var previousScrollOffset by remember { mutableIntStateOf(0) }
 
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
 
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset
-        }.collect { (index, offset) ->
-            val isAtTop = index == 0 && offset == 0
-            if (isAtTop) {
-                onScroll(false)
-            } else {
-                val scrollingDown = if (index != previousIndex) {
-                    index > previousIndex
-                } else {
-                    offset > previousScrollOffset
-                }
-                onScroll(scrollingDown)
-            }
-            previousIndex = index
-            previousScrollOffset = offset
-        }
-    }
+    val topAppBarScrollBehavior = MiuixScrollBehavior()
+    val backdrop = rememberBlurBackdrop()
+    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (selectionMode) "Selected ${selectedIds.size}"
-                        else stringResource(R.string.favorites)
-                    )
+            BlurredBar(
+                backdrop = backdrop,
+                blurEnabled = true,
+                blurStyle = 1,
+                scrollBehavior = topAppBarScrollBehavior,
+            ) {
+                TopAppBar(
+                    title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.favorites),
+                    defaultWindowInsetsPadding = false,
+                    scrollBehavior = topAppBarScrollBehavior,
+                    color = barColor
+                )
+            }
+        },
+        floatingToolbar = {
+            SelectionToolbar(
+                visible = selectionMode,
+                selectedCount = selectedIds.size,
+                onConfirm = {
+                    viewModel.removeFavoritesByIds(selectedIds.toList())
+                    selectionMode = false
+                    selectedIds = emptySet()
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                windowInsets = WindowInsets(0, 0, 0, 0)
+                onCancel = {
+                    selectionMode = false
+                    selectedIds = emptySet()
+                },
+                bottomPadding = bottomNavPadding
             )
         }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .then(
+                    if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
         ) {
             if (favorites.isEmpty()) {
                 Box(
@@ -99,8 +104,8 @@ fun LibraryScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.no_favorites),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MiuixTheme.textStyles.body1,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
                 }
             } else {
@@ -108,8 +113,15 @@ fun LibraryScreen(
                     state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .overscroll(rememberOverscrollEffect()),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        .overscroll(rememberOverscrollEffect())
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                        .scrollEndHaptic(),
+                    contentPadding = PaddingValues(
+                        top = innerPadding.calculateTopPadding() + 8.dp,
+                        start = 12.dp,
+                        end = 12.dp,
+                        bottom = innerPadding.calculateBottomPadding() + bottomNavPadding + 8.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(favorites, key = { it.id }) { fav ->
@@ -147,21 +159,6 @@ fun LibraryScreen(
                     }
                 }
             }
-
-            SelectionToolbar(
-                visible = selectionMode,
-                selectedCount = selectedIds.size,
-                onConfirm = {
-                    viewModel.removeFavoritesByIds(selectedIds.toList())
-                    selectionMode = false
-                    selectedIds = emptySet()
-                },
-                onCancel = {
-                    selectionMode = false
-                    selectedIds = emptySet()
-                },
-                modifier = Modifier.align(Alignment.BottomEnd)
-            )
         }
     }
 }

@@ -26,11 +26,31 @@ class SettingsViewModel(
     private val _languageFilterEnabled = MutableStateFlow(settings.languageFilterEnabled)
     val languageFilterEnabled: StateFlow<Boolean> = _languageFilterEnabled.asStateFlow()
 
+    private val _monetEnabled = MutableStateFlow(settings.monetEnabled)
+    val monetEnabled: StateFlow<Boolean> = _monetEnabled.asStateFlow()
+
     private val _backAnimStyle = MutableStateFlow(settings.backAnimStyle)
     val backAnimStyle: StateFlow<String> = _backAnimStyle.asStateFlow()
 
+    private val _enableBlur = MutableStateFlow(settings.enableBlur)
+    val enableBlur: StateFlow<Boolean> = _enableBlur.asStateFlow()
+
+    private val _useFloatingNavbar = MutableStateFlow(settings.useFloatingNavbar)
+    val useFloatingNavbar: StateFlow<Boolean> = _useFloatingNavbar.asStateFlow()
+
+    private val _floatingNavbarStyle = MutableStateFlow(settings.floatingNavbarStyle)
+    val floatingNavbarStyle: StateFlow<Int> = _floatingNavbarStyle.asStateFlow()
+
+    private val _floatingNavbarPosition = MutableStateFlow(settings.floatingNavbarPosition)
+    val floatingNavbarPosition: StateFlow<Int> = _floatingNavbarPosition.asStateFlow()
+
     val blacklistedTags: StateFlow<List<BlacklistedTagEntity>> = repository.getAllBlacklistedTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun setMonetEnabled(enabled: Boolean) {
+        settings.monetEnabled = enabled
+        _monetEnabled.value = enabled
+    }
 
     fun setConcurrency(value: Int) {
         settings.maxConcurrency = value
@@ -50,6 +70,26 @@ class SettingsViewModel(
     fun setBackAnimStyle(style: String) {
         settings.backAnimStyle = style
         _backAnimStyle.value = style
+    }
+
+    fun setEnableBlur(enabled: Boolean) {
+        settings.enableBlur = enabled
+        _enableBlur.value = enabled
+    }
+
+    fun setUseFloatingNavbar(enabled: Boolean) {
+        settings.useFloatingNavbar = enabled
+        _useFloatingNavbar.value = enabled
+    }
+
+    fun setFloatingNavbarStyle(style: Int) {
+        settings.floatingNavbarStyle = style
+        _floatingNavbarStyle.value = style
+    }
+
+    fun setFloatingNavbarPosition(position: Int) {
+        settings.floatingNavbarPosition = position
+        _floatingNavbarPosition.value = position
     }
 
     fun removeBlacklistedTag(tagId: Long) {

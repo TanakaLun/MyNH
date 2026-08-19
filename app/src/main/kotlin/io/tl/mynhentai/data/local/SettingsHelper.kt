@@ -30,6 +30,16 @@ class SettingsHelper(private val appContext: Context) {
             prefs.edit().putBoolean(KEY_LANG_FILTER_ENABLED, value).apply()
         }
 
+    private val _monetEnabledFlow = MutableStateFlow(prefs.getBoolean(KEY_MONET_ENABLED, false))
+    val monetEnabledFlow: StateFlow<Boolean> = _monetEnabledFlow.asStateFlow()
+
+    var monetEnabled: Boolean
+        get() = _monetEnabledFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_MONET_ENABLED, value).apply()
+            _monetEnabledFlow.value = value
+        }
+
     private val _backAnimStyleFlow = MutableStateFlow(prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide")
     val backAnimStyleFlow: StateFlow<String> = _backAnimStyleFlow.asStateFlow()
 
@@ -38,6 +48,46 @@ class SettingsHelper(private val appContext: Context) {
         set(value) {
             prefs.edit().putString(KEY_BACK_ANIM_STYLE, value).apply()
             _backAnimStyleFlow.value = value
+        }
+
+    private val _enableBlurFlow = MutableStateFlow(prefs.getBoolean(KEY_BLUR_ENABLED, true))
+    val enableBlurFlow: StateFlow<Boolean> = _enableBlurFlow.asStateFlow()
+
+    var enableBlur: Boolean
+        get() = _enableBlurFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_BLUR_ENABLED, value).apply()
+            _enableBlurFlow.value = value
+        }
+
+    private val _useFloatingNavbarFlow = MutableStateFlow(prefs.getBoolean(KEY_USE_FLOATING_NAVBAR, false))
+    val useFloatingNavbarFlow: StateFlow<Boolean> = _useFloatingNavbarFlow.asStateFlow()
+
+    var useFloatingNavbar: Boolean
+        get() = _useFloatingNavbarFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_USE_FLOATING_NAVBAR, value).apply()
+            _useFloatingNavbarFlow.value = value
+        }
+
+    private val _floatingNavbarStyleFlow = MutableStateFlow(prefs.getInt(KEY_FLOATING_NAVBAR_STYLE, 0))
+    val floatingNavbarStyleFlow: StateFlow<Int> = _floatingNavbarStyleFlow.asStateFlow()
+
+    var floatingNavbarStyle: Int
+        get() = _floatingNavbarStyleFlow.value
+        set(value) {
+            prefs.edit().putInt(KEY_FLOATING_NAVBAR_STYLE, value).apply()
+            _floatingNavbarStyleFlow.value = value
+        }
+
+    private val _floatingNavbarPositionFlow = MutableStateFlow(prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0))
+    val floatingNavbarPositionFlow: StateFlow<Int> = _floatingNavbarPositionFlow.asStateFlow()
+
+    var floatingNavbarPosition: Int
+        get() = _floatingNavbarPositionFlow.value
+        set(value) {
+            prefs.edit().putInt(KEY_FLOATING_NAVBAR_POSITION, value).apply()
+            _floatingNavbarPositionFlow.value = value
         }
 
     val coilCacheDir: java.io.File
@@ -49,23 +99,43 @@ class SettingsHelper(private val appContext: Context) {
     private val searchHistoryFile: java.io.File
         get() = java.io.File(appContext.filesDir, "search_history.json")
 
-    fun getSearchHistory(): List<String> {
+    private fun readSearchHistory(): List<String> {
         return try {
             if (!searchHistoryFile.exists()) return emptyList()
             val text = searchHistoryFile.readText()
-            val data = json.decodeFromString<HistoryData>(text)
-            data.items.take(10)
+            json.decodeFromString<HistoryData>(text).items
         } catch (e: Exception) {
             emptyList()
         }
     }
 
-    fun saveSearchHistory(history: List<String>) {
+    private val _searchHistoryFlow = MutableStateFlow(readSearchHistory())
+    val searchHistoryFlow: StateFlow<List<String>> = _searchHistoryFlow.asStateFlow()
+
+    private fun writeSearchHistory(history: List<String>) {
         try {
-            val text = json.encodeToString(HistoryData.serializer(), HistoryData(history.take(10)))
             searchHistoryFile.parentFile?.mkdirs()
-            searchHistoryFile.writeText(text)
+            searchHistoryFile.writeText(json.encodeToString(HistoryData.serializer(), HistoryData(history)))
         } catch (_: Exception) { }
+    }
+
+    fun addSearchHistoryItem(query: String) {
+        val history = _searchHistoryFlow.value.toMutableList()
+        history.remove(query)
+        history.add(0, query)
+        _searchHistoryFlow.value = history
+        writeSearchHistory(history)
+    }
+
+    fun removeSearchHistoryItem(query: String) {
+        val history = _searchHistoryFlow.value.filter { it != query }
+        _searchHistoryFlow.value = history
+        writeSearchHistory(history)
+    }
+
+    fun clearSearchHistory() {
+        _searchHistoryFlow.value = emptyList()
+        writeSearchHistory(emptyList())
     }
 
     fun coilCacheSize(): Long {
@@ -102,6 +172,11 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_CONCURRENCY = "max_concurrency"
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
+        private const val KEY_MONET_ENABLED = "monet_enabled"
         private const val KEY_BACK_ANIM_STYLE = "back_anim_style"
+        private const val KEY_BLUR_ENABLED = "blur_enabled"
+        private const val KEY_USE_FLOATING_NAVBAR = "use_floating_navbar"
+        private const val KEY_FLOATING_NAVBAR_STYLE = "floating_navbar_style"
+        private const val KEY_FLOATING_NAVBAR_POSITION = "floating_navbar_position"
     }
 }

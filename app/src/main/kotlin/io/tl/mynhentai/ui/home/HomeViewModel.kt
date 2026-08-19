@@ -31,6 +31,9 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
         loadPage(1)
         viewModelScope.launch { repository.refreshCdn() }
@@ -42,9 +45,19 @@ class HomeViewModel(
         loadPage(1)
     }
 
-    fun loadPage(page: Int, sort: String = _currentSort.value) {
+    fun refresh() {
+        val state = _uiState.value
+        val page = if (state is HomeUiState.Success) state.currentPage else 1
+        loadPage(page, withIndicator = true)
+    }
+
+    fun loadPage(page: Int, sort: String = _currentSort.value, withIndicator: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = HomeUiState.Loading
+            if (withIndicator) {
+                _isRefreshing.value = true
+            } else {
+                _uiState.value = HomeUiState.Loading
+            }
             try {
                 _currentSort.value = sort
                 val language = settings.languageFilter
@@ -66,7 +79,9 @@ class HomeViewModel(
                     currentPage = page,
                     numPages = response.numPages
                 )
+                _isRefreshing.value = false
             } catch (e: Exception) {
+                _isRefreshing.value = false
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
             }
         }

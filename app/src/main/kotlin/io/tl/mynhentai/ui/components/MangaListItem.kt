@@ -1,8 +1,6 @@
 package io.tl.mynhentai.ui.components
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,10 +24,15 @@ import coil.compose.AsyncImage
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.model.TagHelper
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 private val cardShape = RoundedCornerShape(8.dp)
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaListItem(
     manga: MangaSummary,
@@ -49,27 +44,14 @@ fun MangaListItem(
 ) {
     val language = TagHelper.getLanguage(manga.tagIds)
 
-    if (onLongClick != null) {
-        ElevatedCard(
-            modifier = modifier
-                .fillMaxWidth()
-                .clip(cardShape)
-                .combinedClickable(
-                    onClick = onItemClick,
-                    onLongClick = onLongClick
-                ),
-            shape = cardShape
-        ) {
-            MangaListItemContent(manga, imageUrl, language, isSelected)
-        }
-    } else {
-        ElevatedCard(
-            onClick = onItemClick,
-            modifier = modifier.fillMaxWidth(),
-            shape = cardShape
-        ) {
-            MangaListItemContent(manga, imageUrl, language, isSelected)
-        }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        cornerRadius = 8.dp,
+        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp),
+        onClick = onItemClick,
+        onLongPress = onLongClick
+    ) {
+        MangaListItemContent(manga, imageUrl, language, isSelected)
     }
 }
 
@@ -111,10 +93,10 @@ private fun MangaListItemContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = MiuixIcons.Ok,
                         contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.padding(8.dp)
+                        modifier = Modifier.padding(8.dp),
+                        tint = Color.White
                     )
                 }
             }
@@ -126,7 +108,7 @@ private fun MangaListItemContent(
         ) {
             Text(
                 text = manga.englishTitle ?: manga.japaneseTitle ?: stringResource(R.string.untitled),
-                style = MaterialTheme.typography.titleMedium,
+                style = MiuixTheme.textStyles.main,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -137,21 +119,23 @@ private fun MangaListItemContent(
             ) {
                 Text(
                     text = stringResource(R.string.pages_format, manga.numPages),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MiuixTheme.textStyles.footnote2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                 )
 
                 if (language != null) {
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text(language, fontSize = 11.sp) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ),
-                        border = null,
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MiuixTheme.colorScheme.secondaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = language,
+                            fontSize = 11.sp,
+                            color = MiuixTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
                 }
             }
         }

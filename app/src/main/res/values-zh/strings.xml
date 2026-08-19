@@ -71,8 +71,26 @@
     <string name="cache_download">缓存</string>
 
     <!-- Search -->
+    <string name="search_results">搜索结果</string>
     <string name="search_hint">搜索…</string>
     <string name="search_empty">输入搜索关键词</string>
+
+    <!-- Appearance -->
+    <string name="appearance">外观</string>
+    <string name="monet">Monet 动态取色</string>
+    <string name="monet_summary">使用系统壁纸颜色</string>
+    <string name="enable_blur">启用模糊效果</string>
+
+    <!-- Navigation -->
+    <string name="navigation">导航</string>
+    <string name="use_floating_navbar">使用悬浮导航栏</string>
+    <string name="floating_navbar_style">悬浮导航栏样式</string>
+    <string name="floating_navbar_style_default">默认</string>
+    <string name="floating_navbar_style_ios">类 iOS</string>
+    <string name="floating_navbar_position">悬浮导航栏位置</string>
+    <string name="floating_navbar_position_center">居中</string>
+    <string name="floating_navbar_position_start">靠左</string>
+    <string name="floating_navbar_position_end">靠右</string>
 
     <!-- Back Animation -->
     <string name="back_animation">返回动画</string>
