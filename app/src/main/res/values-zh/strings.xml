@@ -69,6 +69,33 @@
     <string name="download_bg_hint">下载将在后台进行，可通过通知查看进度</string>
     <string name="download_zip">下载 (Zip)</string>
     <string name="cache_download">缓存</string>
+    <string name="download_failed_title">下载失败</string>
+    <string name="cache_failed_title">缓存失败</string>
+    <string name="download_failed_body">无法获取任何内容：\n%s</string>
+    <string name="error_http_429">请求过于频繁 (HTTP 429)</string>
+    <string name="error_http_status">获取内容失败 (HTTP %1$d)</string>
+    <string name="error_network">网络错误</string>
+    <string name="error_empty_response">服务器返回空响应</string>
+    <string name="error_failed_pages">%1$s（%2$d 页失败）</string>
+    <string name="toast_download_finished">%1$s 已下载</string>
+    <string name="toast_cache_finished">%1$s 已离线缓存</string>
+
+    <!-- Download notifications -->
+    <string name="notification_channel_progress">下载进度</string>
+    <string name="notification_channel_progress_desc">漫画下载和缓存任务的进度</string>
+    <string name="notification_channel_result">下载结果</string>
+    <string name="notification_channel_result_desc">下载或缓存任务完成时通知</string>
+    <string name="notification_foreground_title">正在进行 %1$d 项下载</string>
+    <string name="notification_foreground_text">%1$s</string>
+    <string name="notification_foreground_text_more">%1$s 等 %2$d 项</string>
+    <string name="notification_downloading_title">正在下载</string>
+    <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_download_done_title">下载完成</string>
+    <string name="notification_cache_done_title">缓存完成</string>
+    <string name="notification_download_failed_title">下载失败</string>
+    <string name="notification_cache_failed_title">缓存失败</string>
+    <string name="notification_failed_text">%1$s：%2$s</string>
+    <string name="notification_cache_count">已缓存 %1$d 页</string>
 
     <!-- Search -->
     <string name="search_results">搜索结果</string>

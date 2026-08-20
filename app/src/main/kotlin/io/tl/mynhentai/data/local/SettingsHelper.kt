@@ -9,7 +9,7 @@ import kotlinx.serialization.json.Json
 
 class SettingsHelper(private val appContext: Context) {
 
-    private val prefs = appContext.getSharedPreferences("mynhentai_settings", Context.MODE_PRIVATE)
+    private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
 
     var maxConcurrency: Int
@@ -169,7 +169,8 @@ class SettingsHelper(private val appContext: Context) {
     data class HistoryData(val items: List<String>)
 
     companion object {
-        private const val KEY_CONCURRENCY = "max_concurrency"
+        const val PREFS_NAME = "mynhentai_settings"
+        const val KEY_CONCURRENCY = "max_concurrency"
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
         private const val KEY_MONET_ENABLED = "monet_enabled"

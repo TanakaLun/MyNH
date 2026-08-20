@@ -69,6 +69,33 @@
     <string name="download_bg_hint">Download runs in background, check notification for progress</string>
     <string name="download_zip">Download (Zip)</string>
     <string name="cache_download">Cache</string>
+    <string name="download_failed_title">Download failed</string>
+    <string name="cache_failed_title">Cache failed</string>
+    <string name="download_failed_body">No content could be fetched:\n%s</string>
+    <string name="error_http_429">Too many requests (HTTP 429)</string>
+    <string name="error_http_status">Failed to fetch content (HTTP %1$d)</string>
+    <string name="error_network">Network error</string>
+    <string name="error_empty_response">Empty response from server</string>
+    <string name="error_failed_pages">%1$s (%2$d pages failed)</string>
+    <string name="toast_download_finished">%1$s downloaded</string>
+    <string name="toast_cache_finished">%1$s cached offline</string>
+
+    <!-- Download notifications -->
+    <string name="notification_channel_progress">Download progress</string>
+    <string name="notification_channel_progress_desc">Progress of manga downloads and cache tasks</string>
+    <string name="notification_channel_result">Download results</string>
+    <string name="notification_channel_result_desc">Notifications when a download or cache task finishes</string>
+    <string name="notification_foreground_title">Downloads in progress (%1$d)</string>
+    <string name="notification_foreground_text">%1$s</string>
+    <string name="notification_foreground_text_more">%1$s and %2$d more</string>
+    <string name="notification_downloading_title">Downloading</string>
+    <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_download_done_title">Download completed</string>
+    <string name="notification_cache_done_title">Cache completed</string>
+    <string name="notification_download_failed_title">Download failed</string>
+    <string name="notification_cache_failed_title">Cache failed</string>
+    <string name="notification_failed_text">%1$s: %2$s</string>
+    <string name="notification_cache_count">%1$d pages cached</string>
 
     <!-- Search -->
     <string name="search">Search</string>

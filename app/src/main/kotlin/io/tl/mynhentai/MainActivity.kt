@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import io.tl.mynhentai.ui.components.DownloadOverlayRoot
 import io.tl.mynhentai.ui.navigation.MainNavGraph
 import io.tl.mynhentai.ui.theme.MyNHentaiTheme
 
@@ -28,10 +29,12 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
         setContent {
             MyNHentaiTheme {
-                MainNavGraph(
-                    initialDeepLink = pendingDeepLink,
-                    onDeepLinkConsumed = { pendingDeepLink = null }
-                )
+                DownloadOverlayRoot {
+                    MainNavGraph(
+                        initialDeepLink = pendingDeepLink,
+                        onDeepLinkConsumed = { pendingDeepLink = null }
+                    )
+                }
             }
         }
     }

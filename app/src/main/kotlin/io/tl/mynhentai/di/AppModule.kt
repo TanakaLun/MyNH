@@ -12,8 +12,8 @@ import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.api.MangaService
 import io.tl.mynhentai.data.local.MangaDatabase
 import io.tl.mynhentai.data.local.SettingsHelper
+import io.tl.mynhentai.data.local.DownloadStateHolder
 import io.tl.mynhentai.data.repository.MangaRepository
-import io.tl.mynhentai.ui.components.DownloadManager
 import io.tl.mynhentai.ui.detail.DetailViewModel
 import io.tl.mynhentai.ui.history.HistoryViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
@@ -106,7 +106,7 @@ val databaseModule = module {
 val repositoryModule = module {
     single { MangaRepository(get(), get(), get()) }
     single { SettingsHelper(androidContext()) }
-    single { DownloadManager(get(), androidContext()) }
+    single { DownloadStateHolder() }
 }
 
 val viewModelModule = module {

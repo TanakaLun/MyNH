@@ -1,25 +1,68 @@
 package io.tl.mynhentai.ui.components
 
+import android.app.Notification
+import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
+import io.tl.mynhentai.R
+import io.tl.mynhentai.data.local.DownloadCompleted
+import io.tl.mynhentai.data.local.DownloadError
+import io.tl.mynhentai.data.local.DownloadKind
+import io.tl.mynhentai.data.local.DownloadStateHolder
+import io.tl.mynhentai.data.local.SettingsHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.koin.android.ext.android.get
 
-class DownloadService : android.app.Service() {
+/**
+ * Foreground service that owns all download / offline-cache tasks.
+ *
+ * Every incoming intent creates an independent task (with its own notification and job).
+ * Tasks for the same (kind, galleryId) are deduplicated while one is still active.
+ * The service stays foregrounded (with a partial wake lock) until the last task finishes,
+ * so concurrent tasks never stop the process out from under each other.
+ */
+class DownloadService : Service() {
 
-    private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private val lock = Any()
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     private lateinit var client: OkHttpClient
+    private lateinit var stateHolder: DownloadStateHolder
+    private lateinit var wakeLock: PowerManager.WakeLock
+
+    private val taskCounter = AtomicInteger(0)
+    private val tasks = mutableMapOf<Int, ActiveTask>()
+    private val taskJobs = mutableMapOf<Int, Job>()
+    private val taskKeys = mutableMapOf<Pair<DownloadKind, Long>, Int>()
+
+    private var concurrencySemaphore = Semaphore(10)
+    private var foregroundActive = false
 
     override fun onCreate() {
         super.onCreate()
@@ -36,145 +79,323 @@ class DownloadService : android.app.Service() {
                 )
             }
             .build()
+        stateHolder = get()
+        val prefs = getSharedPreferences(SettingsHelper.PREFS_NAME, Context.MODE_PRIVATE)
+        val maxConcurrency = prefs.getInt(SettingsHelper.KEY_CONCURRENCY, 10).coerceIn(1, 30)
+        concurrencySemaphore = Semaphore(maxConcurrency)
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "$packageName:download").apply {
+            setReferenceCounted(false)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_DOWNLOAD -> {
-                val pageNumbers = intent.getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return START_NOT_STICKY
-                val pageUrls = intent.getStringArrayExtra(EXTRA_PAGE_URLS) ?: return START_NOT_STICKY
+                val pages = intent.extractPages() ?: return START_NOT_STICKY
                 val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0)
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
                 val targetDir = intent.getStringExtra(EXTRA_TARGET_DIR) ?: return START_NOT_STICKY
-                val pages = pageNumbers.zip(pageUrls.toList())
-                scope.launch {
-                    doDownload(pages, galleryId, title, targetDir)
-                    stopSelf()
-                }
+                startTask(DownloadKind.DOWNLOAD, pages, galleryId, title, targetDir)
             }
+
             ACTION_CACHE -> {
-                val pageNumbers = intent.getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return START_NOT_STICKY
-                val pageUrls = intent.getStringArrayExtra(EXTRA_PAGE_URLS) ?: return START_NOT_STICKY
+                val pages = intent.extractPages() ?: return START_NOT_STICKY
                 val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0)
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
-                val pages = pageNumbers.zip(pageUrls.toList())
-                scope.launch {
-                    doCache(pages, galleryId, title)
-                    stopSelf()
-                }
+                startTask(DownloadKind.CACHE, pages, galleryId, title, null)
             }
         }
         return START_NOT_STICKY
     }
 
-    override fun onBind(p0: Intent?) = null
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         scope.cancel()
+        releaseWakeLock()
         super.onDestroy()
     }
 
-    private suspend fun doDownload(
+    // ---------------------------------------------------------------------------------------------
+    // Task orchestration
+    // ---------------------------------------------------------------------------------------------
+
+    private fun startTask(
+        kind: DownloadKind,
         pages: List<Pair<Int, String>>,
         galleryId: Long,
         title: String,
-        targetDir: String
-    ) = withContext(Dispatchers.IO) {
-        val tempDir = File(cacheDir, "download_temp_$galleryId")
+        targetDir: String?,
+    ) {
+        synchronized(lock) {
+            val key = kind to galleryId
+            // Keep only one task per (kind, galleryId): a duplicate request is dropped.
+            if (key in taskKeys) return
+
+            val taskId = taskCounter.incrementAndGet()
+            val task = ActiveTask(taskId, kind, galleryId, title, targetDir, pages)
+
+            taskKeys[key] = taskId
+            tasks[taskId] = task
+
+            if (tasks.size == 1) {
+                // First active task: go foreground + hold a wake lock so the system won't
+                // throttle the process while background work is still in flight.
+                if (!foregroundActive) {
+                    foregroundActive = true
+                    startForeground(
+                        NotificationHelper.FOREGROUND_NOTIFICATION_ID,
+                        NotificationHelper.buildForegroundNotification(
+                            this, tasks.size, tasks.values.map { it.title }
+                        )
+                    )
+                }
+                acquireWakeLock()
+            } else {
+                refreshForegroundNotification()
+            }
+
+            val job = scope.launch {
+                try {
+                    runTask(task)
+                } finally {
+                    finishTask(taskId)
+                }
+            }
+            taskJobs[taskId] = job
+        }
+    }
+
+    private suspend fun runTask(task: ActiveTask) {
+        var extraLine: String? = null
+        val error: DownloadError? = try {
+            when (task.kind) {
+                DownloadKind.DOWNLOAD -> {
+                    doDownload(task)
+                    null
+                }
+
+                DownloadKind.CACHE -> {
+                    val cached = doCache(task)
+                    extraLine = getString(R.string.notification_cache_count, cached)
+                    null
+                }
+            }
+        } catch (e: FetchFailedException) {
+            DownloadError(
+                task.taskId, task.kind, task.galleryId, task.title,
+                task.targetDir, task.pages, buildFailureMessage(e.failures)
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            DownloadError(
+                task.taskId, task.kind, task.galleryId, task.title,
+                task.targetDir, task.pages, e.message?.takeIf { it.isNotBlank() } ?: getString(R.string.error_network)
+            )
+        }
+        handleTaskResult(task, error, extraLine)
+    }
+
+    private fun handleTaskResult(task: ActiveTask, error: DownloadError?, extraLine: String?) {
+        val inForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+        val notificationId = NotificationHelper.taskNotificationId(task.taskId)
+        if (error != null) {
+            stateHolder.reportError(error)
+            if (!inForeground) {
+                notifyTask(notificationId, NotificationHelper.buildFailedNotification(this, task.kind, task.title, error.message))
+            }
+        } else {
+            if (inForeground) {
+                stateHolder.reportCompletion(DownloadCompleted(task.kind, task.title))
+            } else {
+                notifyTask(notificationId, NotificationHelper.buildCompletionNotification(this, task.kind, task.title, extraLine))
+            }
+        }
+    }
+
+    private fun finishTask(taskId: Int) {
+        synchronized(lock) {
+            val task = tasks.remove(taskId)
+            taskJobs.remove(taskId)
+            if (task != null) taskKeys.remove(task.kind to task.galleryId)
+
+            if (tasks.isEmpty()) {
+                releaseWakeLock()
+                if (foregroundActive) {
+                    foregroundActive = false
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                }
+                stopSelf()
+            } else {
+                refreshForegroundNotification()
+            }
+        }
+    }
+
+    private fun refreshForegroundNotification() {
+        val notification = NotificationHelper.buildForegroundNotification(
+            this, tasks.size, tasks.values.map { it.title }
+        )
+        notifyTask(NotificationHelper.FOREGROUND_NOTIFICATION_ID, notification)
+    }
+
+    private fun acquireWakeLock() {
+        if (!wakeLock.isHeld) {
+            // Safety timeout so a stuck task can never hold the lock indefinitely.
+            wakeLock.acquire(6 * 60 * 60 * 1000L)
+        }
+    }
+
+    private fun releaseWakeLock() {
+        if (wakeLock.isHeld) {
+            wakeLock.release()
+        }
+    }
+
+    private fun notifyTask(id: Int, notification: Notification) {
+        NotificationManagerCompat.from(this).notify(id, notification)
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Task workers
+    // ---------------------------------------------------------------------------------------------
+
+    private suspend fun doDownload(task: ActiveTask) {
+        val tempDir = File(cacheDir, "download_temp_${task.galleryId}_${task.taskId}")
         tempDir.mkdirs()
         try {
-            startForeground(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildProgressNotification(this@DownloadService, title, 0, pages.size)
-            )
-            for ((i, pair) in pages.withIndex()) {
-                val (num, url) = pair
-                val ext = if (url.contains("jpg") || url.contains("jpeg")) ".jpg" else ".png"
-                val pageFile = File(tempDir, "$num$ext")
-                if (!pageFile.exists()) {
-                    downloadImage(url, pageFile)
-                }
-                NotificationManagerCompat.from(this@DownloadService).notify(
-                    NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                    NotificationHelper.buildProgressNotification(this@DownloadService, title, i + 1, pages.size)
-                )
-            }
-            val zipFile = File(targetDir, "${title.replace("/", "_")}.zip")
+            notifyProgress(task, 0, task.pages.size)
+            val failures = fetchAllPages(task, tempDir) { it.second }
+            if (failures.isNotEmpty()) throw FetchFailedException(failures)
+
+            val zipFile = uniqueZipFile(task.targetDir!!, task.title)
             zipFile.parentFile?.mkdirs()
             ZipOutputStream(FileOutputStream(zipFile)).use { zos ->
-                tempDir.listFiles()?.sortedBy { it.nameWithoutExtension.toIntOrNull() }?.forEach { file ->
-                    zos.putNextEntry(ZipEntry(file.name))
-                    file.inputStream().use { it.copyTo(zos) }
-                    zos.closeEntry()
-                }
+                tempDir.listFiles()
+                    ?.sortedBy { it.nameWithoutExtension.toIntOrNull() }
+                    ?.forEach { file ->
+                        zos.putNextEntry(ZipEntry(file.name))
+                        file.inputStream().use { it.copyTo(zos) }
+                        zos.closeEntry()
+                    }
             }
             tempDir.deleteRecursively()
-            NotificationManagerCompat.from(this@DownloadService).notify(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildSuccessNotification(this@DownloadService, title)
-            )
-            stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
         } catch (e: Exception) {
             tempDir.deleteRecursively()
-            NotificationManagerCompat.from(this@DownloadService).notify(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildFailedNotification(this@DownloadService, title, e.message ?: "未知错误")
-            )
-            stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
+            throw e
         }
     }
 
-    private suspend fun doCache(
-        pages: List<Pair<Int, String>>,
-        galleryId: Long,
-        title: String
-    ) = withContext(Dispatchers.IO) {
-        val offlineDir = File(this@DownloadService.cacheDir, "offline/$galleryId")
-        offlineDir.mkdirs()
-        try {
-            startForeground(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildProgressNotification(this@DownloadService, title, 0, pages.size)
-            )
-            var count = 0
-            for ((i, pair) in pages.withIndex()) {
-                val (num, url) = pair
-                val ext = if (url.contains("jpg") || url.contains("jpeg")) ".jpg" else ".png"
-                val pageFile = File(offlineDir, "$num$ext")
-                if (!pageFile.exists()) {
+    private suspend fun doCache(task: ActiveTask): Int {
+        val dir = File(cacheDir, "offline/${task.galleryId}")
+        dir.mkdirs()
+        val failures = fetchAllPages(task, dir) { it.second }
+        if (failures.isNotEmpty()) throw FetchFailedException(failures)
+        return dir.listFiles()?.size ?: 0
+    }
+
+    /**
+     * Fetches every page concurrently, bounded by the per-task [concurrencySemaphore].
+     * Already-present files are skipped (a retried task only fills in the gaps).
+     * Returns the list of failed exceptions so callers can decide how to surface them.
+     */
+    private suspend fun fetchAllPages(
+        task: ActiveTask,
+        destDir: File,
+        urlFor: (Pair<Int, String>) -> String,
+    ): List<Throwable> {
+        val completed = AtomicInteger(0)
+        val failures = java.util.Collections.synchronizedList(mutableListOf<Throwable>())
+        coroutineScope {
+            task.pages.map { pair ->
+                async {
+                    val url = urlFor(pair)
+                    val ext = if (url.contains("jpg") || url.contains("jpeg")) ".jpg" else ".png"
+                    val pageFile = File(destDir, "${pair.first}$ext")
                     try {
-                        downloadImage(url, pageFile)
-                        count++
-                    } catch (_: Exception) { }
+                        concurrencySemaphore.withPermit {
+                            if (!pageFile.exists()) downloadRaw(url, pageFile)
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        failures.add(e)
+                    } finally {
+                        notifyProgress(task, completed.incrementAndGet(), task.pages.size)
+                    }
                 }
-                NotificationManagerCompat.from(this@DownloadService).notify(
-                    NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                    NotificationHelper.buildProgressNotification(this@DownloadService, title, i + 1, pages.size)
-                )
+            }.awaitAll()
+        }
+        return failures
+    }
+
+    private fun downloadRaw(url: String, dest: File) {
+        val request = Request.Builder().url(url).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw DownloadHttpException(response.code)
             }
-            NotificationManagerCompat.from(this@DownloadService).notify(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildSuccessNotification(this@DownloadService, "已缓存 $count 页")
-            )
-            stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
-        } catch (e: Exception) {
-            NotificationManagerCompat.from(this@DownloadService).notify(
-                NotificationHelper.PROGRESS_NOTIFICATION_ID,
-                NotificationHelper.buildFailedNotification(this@DownloadService, title, e.message ?: "缓存失败")
-            )
-            stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
+            val body = response.body ?: throw IOException(getString(R.string.error_empty_response))
+            body.byteStream().use { input ->
+                dest.outputStream().use { output -> input.copyTo(output) }
+            }
         }
     }
 
-    private fun downloadImage(url: String, dest: File) {
-        val request = Request.Builder().url(url).build()
-        val response = client.newCall(request).execute()
-        response.body.byteStream().use { input ->
-            dest.outputStream().use { output ->
-                input.copyTo(output)
-            }
+    private fun notifyProgress(task: ActiveTask, progress: Int, total: Int) {
+        notifyTask(
+            NotificationHelper.taskNotificationId(task.taskId),
+            NotificationHelper.buildProgressNotification(this, task.title, progress, total)
+        )
+    }
+
+    private fun uniqueZipFile(targetDir: String, title: String): File {
+        val safeTitle = title.replace("/", "_")
+        var file = File(targetDir, "$safeTitle.zip")
+        var index = 2
+        while (file.exists()) {
+            file = File(targetDir, "$safeTitle ($index).zip")
+            index++
+        }
+        return file
+    }
+
+    private fun buildFailureMessage(failures: List<Throwable>): String {
+        val httpFailure = failures.filterIsInstance<DownloadHttpException>().firstOrNull()
+        val base = when {
+            httpFailure != null -> httpFailure.userMessage(this)
+            else -> failures.firstOrNull()?.message?.takeIf { it.isNotBlank() } ?: getString(R.string.error_network)
+        }
+        return if (failures.size > 1) {
+            getString(R.string.error_failed_pages, base, failures.size)
+        } else {
+            base
         }
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Models
+    // ---------------------------------------------------------------------------------------------
+
+    private class ActiveTask(
+        val taskId: Int,
+        val kind: DownloadKind,
+        val galleryId: Long,
+        val title: String,
+        val targetDir: String?,
+        val pages: List<Pair<Int, String>>,
+    )
+
+    private class DownloadHttpException(val code: Int) : IOException("HTTP $code") {
+        fun userMessage(context: Context): String = when (code) {
+            429 -> context.getString(R.string.error_http_429)
+            else -> context.getString(R.string.error_http_status, code)
+        }
+    }
+
+    private class FetchFailedException(val failures: List<Throwable>) : IOException()
 
     companion object {
         const val ACTION_DOWNLOAD = "io.tl.mynhentai.action.DOWNLOAD"
@@ -185,12 +406,18 @@ class DownloadService : android.app.Service() {
         const val EXTRA_TITLE = "title"
         const val EXTRA_TARGET_DIR = "target_dir"
 
+        private fun Intent.extractPages(): List<Pair<Int, String>>? {
+            val pageNumbers = getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return null
+            val pageUrls = getStringArrayExtra(EXTRA_PAGE_URLS) ?: return null
+            return pageNumbers.zip(pageUrls.toList())
+        }
+
         fun startDownload(
             context: Context,
             pages: List<Pair<Int, String>>,
             galleryId: Long,
             title: String,
-            targetDir: String
+            targetDir: String,
         ) {
             val intent = Intent(context, DownloadService::class.java).apply {
                 action = ACTION_DOWNLOAD
@@ -207,7 +434,7 @@ class DownloadService : android.app.Service() {
             context: Context,
             pages: List<Pair<Int, String>>,
             galleryId: Long,
-            title: String
+            title: String,
         ) {
             val intent = Intent(context, DownloadService::class.java).apply {
                 action = ACTION_CACHE
