@@ -109,6 +109,7 @@
     <string name="monet">Monet dynamic color</string>
     <string name="monet_summary">Use system wallpaper colors</string>
     <string name="enable_blur">Enable Blur Effect</string>
+    <string name="blur_disabled_power_save">Disabled while battery saver is on</string>
 
     <!-- Navigation -->
     <string name="navigation">Navigation</string>

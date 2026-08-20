@@ -36,9 +36,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.pow
 import io.tl.mynhentai.R
+import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
@@ -83,6 +85,8 @@ fun SettingsScreen(
     val backAnimStyle by viewModel.backAnimStyle.collectAsState()
     val monetEnabled by viewModel.monetEnabled.collectAsState()
     val enableBlur by viewModel.enableBlur.collectAsState()
+    val powerSaveModeTracker: PowerSaveModeTracker = koinInject()
+    val isPowerSaveMode by powerSaveModeTracker.isPowerSaveMode.collectAsState()
     val useFloatingNavbar by viewModel.useFloatingNavbar.collectAsState()
     val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
@@ -300,9 +304,15 @@ fun SettingsScreen(
                             summary = stringResource(R.string.monet_summary)
                         )
                         SwitchPreference(
-                            checked = enableBlur,
+                            checked = enableBlur && !isPowerSaveMode,
                             onCheckedChange = { viewModel.setEnableBlur(it) },
-                            title = stringResource(R.string.enable_blur)
+                            title = stringResource(R.string.enable_blur),
+                            summary = if (isPowerSaveMode) {
+                                stringResource(R.string.blur_disabled_power_save)
+                            } else {
+                                null
+                            },
+                            enabled = !isPowerSaveMode
                         )
                     }
                 }

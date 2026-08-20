@@ -107,6 +107,7 @@
     <string name="monet">Monet 动态取色</string>
     <string name="monet_summary">使用系统壁纸颜色</string>
     <string name="enable_blur">启用模糊效果</string>
+    <string name="blur_disabled_power_save">省电模式下已禁用</string>
 
     <!-- Navigation -->
     <string name="navigation">导航</string>

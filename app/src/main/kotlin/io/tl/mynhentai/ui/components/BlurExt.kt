@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.data.local.SettingsHelper
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
@@ -24,6 +25,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun rememberBlurBackdrop(enableBlur: Boolean): LayerBackdrop? {
     if (!enableBlur || !isRuntimeShaderSupported()) return null
+    val powerSaveModeTracker: PowerSaveModeTracker = koinInject()
+    val isPowerSaveMode by powerSaveModeTracker.isPowerSaveMode.collectAsState()
+    if (isPowerSaveMode) return null
     val surfaceColor = MiuixTheme.colorScheme.surface
     return rememberLayerBackdrop {
         drawRect(surfaceColor)
