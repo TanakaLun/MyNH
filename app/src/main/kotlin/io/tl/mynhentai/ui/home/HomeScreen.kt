@@ -2,7 +2,6 @@ package io.tl.mynhentai.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,9 +30,9 @@ import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.MangaListItem
+import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
-import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.FloatingToolbar
@@ -50,7 +49,6 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
-import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
@@ -100,6 +98,16 @@ fun HomeScreen(
                     )
                 }
             )
+        )
+    }
+
+    val errorState = uiState as? HomeUiState.Error
+    var errorDismissed by remember(errorState) { mutableStateOf(false) }
+    if (errorState != null && !errorDismissed) {
+        NetworkErrorDialog(
+            error = errorState.error,
+            onRetry = { viewModel.retry() },
+            onExit = { errorDismissed = true },
         )
     }
 
@@ -219,26 +227,7 @@ fun HomeScreen(
                 }
 
                 is HomeUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = state.message,
-                                color = MiuixTheme.colorScheme.error
-                            )
-                            Button(
-                                onClick = { viewModel.retry() }
-                            ) {
-                                Icon(MiuixIcons.Refresh, contentDescription = null)
-                                Text(stringResource(R.string.retry))
-                            }
-                        }
-                    }
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }

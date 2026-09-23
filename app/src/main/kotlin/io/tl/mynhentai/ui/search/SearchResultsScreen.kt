@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.MangaListItem
+import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownEntry
@@ -31,7 +32,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -70,6 +70,15 @@ fun SearchResultsScreen(
 
     LaunchedEffect(query) {
         viewModel.search(query)
+    }
+
+    val errorState = uiState as? SearchUiState.Error
+    if (errorState != null) {
+        NetworkErrorDialog(
+            error = errorState.error,
+            onRetry = { viewModel.search(query) },
+            onExit = onBack,
+        )
     }
 
     val sortLabels = sortOptions.map { sortOptionLabel(it) }
@@ -161,15 +170,7 @@ fun SearchResultsScreen(
                 }
 
                 is SearchUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MiuixTheme.colorScheme.error
-                        )
-                    }
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }

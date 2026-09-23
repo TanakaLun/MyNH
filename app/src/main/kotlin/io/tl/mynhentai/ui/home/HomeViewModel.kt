@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.repository.MangaRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,7 @@ sealed interface HomeUiState {
         val currentPage: Int = 1,
         val numPages: Int = 1
     ) : HomeUiState
-    data class Error(val message: String) : HomeUiState
+    data class Error(val error: Throwable) : HomeUiState
 }
 
 class HomeViewModel(
@@ -36,7 +37,15 @@ class HomeViewModel(
 
     init {
         loadPage(1)
-        viewModelScope.launch { repository.refreshCdn() }
+        viewModelScope.launch {
+            try {
+                repository.refreshCdn()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // best-effort CDN refresh
+            }
+        }
     }
 
     fun resolveThumbnailUrl(path: String): String = repository.resolveThumbnailUrl(path)
@@ -80,9 +89,11 @@ class HomeViewModel(
                     numPages = response.numPages
                 )
                 _isRefreshing.value = false
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _isRefreshing.value = false
-                _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = HomeUiState.Error(e)
             }
         }
     }

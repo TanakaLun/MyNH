@@ -41,6 +41,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.SubcomposeAsyncImage
 import io.tl.mynhentai.R
+import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.PreloadPages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -49,7 +50,6 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -149,6 +149,15 @@ fun ReaderScreen(
         }
     }
 
+    val errorState = uiState as? ReaderUiState.Error
+    if (errorState != null) {
+        NetworkErrorDialog(
+            error = errorState.error,
+            onRetry = { viewModel.load(galleryId) },
+            onExit = onBack,
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -239,15 +248,7 @@ fun ReaderScreen(
             }
 
             is ReaderUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.message,
-                        color = Color.Red
-                    )
-                }
+                Box(modifier = Modifier.fillMaxSize())
             }
         }
     }

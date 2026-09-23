@@ -10,6 +10,7 @@ import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
 import io.tl.mynhentai.ui.components.DownloadService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,7 @@ sealed interface DetailUiState {
         val detail: MangaDetail,
         val isFavorite: Boolean = false
     ) : DetailUiState
-    data class Error(val message: String) : DetailUiState
+    data class Error(val error: Throwable) : DetailUiState
 }
 
 class DetailViewModel(
@@ -43,8 +44,10 @@ class DetailViewModel(
                     detail = detail,
                     isFavorite = isFav
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.value = DetailUiState.Error(e.message ?: "Failed to load")
+                _uiState.value = DetailUiState.Error(e)
             }
         }
     }

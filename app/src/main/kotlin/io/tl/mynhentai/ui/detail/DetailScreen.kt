@@ -42,6 +42,7 @@ import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.DownloadDialog
+import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.TagChip
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
@@ -53,6 +54,7 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -157,6 +159,15 @@ fun DetailScreen(
             }
         }
 
+        val errorState = uiState as? DetailUiState.Error
+        if (errorState != null) {
+            NetworkErrorDialog(
+                error = errorState.error,
+                onRetry = { viewModel.load(galleryId) },
+                onExit = onBack,
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -164,184 +175,194 @@ fun DetailScreen(
                     if (backdrop != null) Modifier.layerBackdrop(backdrop)
                     else Modifier
                 )
-        ) {
-            when (val state = uiState) {
-                is DetailUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        InfiniteProgressIndicator()
+            ) {
+                when (val state = uiState) {
+                    is DetailUiState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            InfiniteProgressIndicator()
+                        }
                     }
-                }
-
-                is DetailUiState.Success -> {
-                    val detail = state.detail
-                    val shape = RoundedCornerShape(12.dp)
+    
+                    is DetailUiState.Success -> {
+                        val detail = state.detail
+                        val shape = RoundedCornerShape(12.dp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                                .verticalScroll(rememberScrollState())
+                                .scrollEndHaptic(),
+                        ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = innerPadding.calculateTopPadding())
-                            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                            .verticalScroll(rememberScrollState())
-                            .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
-                            .scrollEndHaptic(),
+                        modifier = Modifier.padding(
+                            top = innerPadding.calculateTopPadding(),
+                            bottom = 12.dp
+                        ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         AsyncImage(
-                            model = viewModel.resolveThumbnailUrl(detail.cover.path),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .width(120.dp)
-                                .aspectRatio(
-                                    if (detail.cover.width > 0) detail.cover.width.toFloat() / detail.cover.height
-                                    else 0.7f
+                                    model = viewModel.resolveThumbnailUrl(detail.cover.path),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(120.dp)
+                                        .aspectRatio(
+                                            if (detail.cover.width > 0) detail.cover.width.toFloat() / detail.cover.height
+                                            else 0.7f
+                                        )
+                                        .clip(shape),
+                                    contentScale = ContentScale.Crop
                                 )
-                                .clip(shape),
-                            contentScale = ContentScale.Crop
-                        )
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = detail.title.pretty ?: detail.title.english ?: "Untitled",
-                                style = MiuixTheme.textStyles.title3
-                            )
-
-                            Text(
-                                text = stringResource(R.string.pages_favorites_format, detail.numPages, detail.numFavorites),
-                                style = MiuixTheme.textStyles.body1,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                            )
-                        }
-                    }
-
+        
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = detail.title.pretty ?: detail.title.english ?: "Untitled",
+                                        style = MiuixTheme.textStyles.title3
+                                    )
+        
+                                    Text(
+                                        text = stringResource(R.string.pages_favorites_format, detail.numPages, detail.numFavorites),
+                                        style = MiuixTheme.textStyles.body1,
+                                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                    )
+                                }
+                            }
+        
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
-                            modifier = Modifier
-                                .weight(1f)
-                        ) {
-                            Button(
-                                onClick = { },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColorsPrimary()
-                            ) {
-                                Icon(MiuixIcons.Play, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text(stringResource(R.string.read))
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .combinedClickable(
-                                        onClick = { onReaderClick(detail.id) },
-                                        onLongClick = { showDownloadDialog = true }
+                                    modifier = Modifier
+                                        .weight(1f)
+                                ) {
+                                    Button(
+                                        onClick = { },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColorsPrimary()
+                                    ) {
+                                        Icon(MiuixIcons.Play, null, Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(stringResource(R.string.read))
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .matchParentSize()
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .combinedClickable(
+                                                onClick = { onReaderClick(detail.id) },
+                                                onLongClick = { showDownloadDialog = true }
+                                            )
                                     )
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                viewModel.toggleFavorite(detail, state.isFavorite)
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                if (state.isFavorite) MiuixIcons.FavoritesFill
-                                else MiuixIcons.Favorites,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (state.isFavorite) stringResource(R.string.favorited) else stringResource(R.string.favorite))
-                        }
-                    }
-
+                                }
+        
+                                Button(
+                                    onClick = {
+                                        viewModel.toggleFavorite(detail, state.isFavorite)
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        if (state.isFavorite) MiuixIcons.FavoritesFill
+                                        else MiuixIcons.Favorites,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(if (state.isFavorite) stringResource(R.string.favorited) else stringResource(R.string.favorite))
+                                }
+                            }
+        
                     Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
                         insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp)
                     ) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             val tagsByType = detail.tags.groupBy { it.type }
-                            tagsByType.forEach { (type, tags) ->
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .height(28.dp)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(MiuixTheme.colorScheme.tertiaryContainer)
-                                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                                        contentAlignment = Alignment.Center
+                                tagsByType.forEach { (type, tags) ->
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
-                                        Text(
-                                            text = type.replaceFirstChar { it.uppercase() },
-                                            style = MiuixTheme.textStyles.footnote2,
-                                            color = MiuixTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                    tags.forEach { tag ->
-                                        TagChip(
-                                            tag = tag,
-                                            onClick = {
-                                                onTagClick("${tag.type}:${tag.name}")
-                                            },
-                                            onLongClick = {
-                                                blacklistTag = tag
-                                            }
-                                        )
+                                        Box(
+                                            modifier = Modifier
+                                                .height(28.dp)
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .background(MiuixTheme.colorScheme.tertiaryContainer)
+                                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = type.replaceFirstChar { it.uppercase() },
+                                                style = MiuixTheme.textStyles.footnote2,
+                                                color = MiuixTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        }
+                                        tags.forEach { tag ->
+                                            TagChip(
+                                                tag = tag,
+                                                onClick = {
+                                                    onTagClick("${tag.type}:${tag.name}")
+                                                },
+                                                onLongClick = {
+                                                    blacklistTag = tag
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-
-                    Card(
-                        insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp)
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            
+                        SmallTitle(text = stringResource(R.string.pages_preview))
+                        Card(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            insideMargin = androidx.compose.foundation.layout.PaddingValues(12.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.pages_preview),
-                                style = MiuixTheme.textStyles.footnote1,
-                                color = MiuixTheme.colorScheme.primary
-                            )
                             Column(
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                detail.pages.take(20).chunked(2).forEach { pair ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        pair.forEach { page ->
-                                            AsyncImage(
-                                                model = viewModel.resolveImageUrl(page.path),
-                                                contentDescription = "Page ${page.number}",
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .aspectRatio(
-                                                        if (page.width > 0) page.width.toFloat() / page.height
-                                                        else 0.7f
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    detail.pages.take(20).chunked(2).forEach { pair ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            pair.forEach { page ->
+                                                AsyncImage(
+                                                    model = viewModel.resolveImageUrl(page.path),
+                                                    contentDescription = "Page ${page.number}",
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .aspectRatio(
+                                                            if (page.width > 0) page.width.toFloat() / page.height
+                                                            else 0.7f
+                                                        )
+                                                        .clip(RoundedCornerShape(12.dp)),
+                                                        contentScale = ContentScale.Crop
                                                     )
-                                                    .clip(RoundedCornerShape(12.dp)),
-                                                contentScale = ContentScale.Crop
-                                            )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -349,20 +370,11 @@ fun DetailScreen(
                         }
                     }
                 }
-            }
-
-            is DetailUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.message,
-                        color = MiuixTheme.colorScheme.error
-                    )
+    
+                is DetailUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
-    }
     }
 }

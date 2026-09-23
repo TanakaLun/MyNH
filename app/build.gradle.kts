@@ -13,8 +13,8 @@ android {
         applicationId = "io.tl.mynhentai"
         minSdk = 33
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 45
+        versionName = "Glap-Glap"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,6 +32,13 @@ android {
             excludes += "/META-INF/*.kotlin_module"
             excludes += "/kotlin/**"
             excludes += "DebugProbesKt.bin"
+        }
+        jniLibs {
+            // Module-specific exclusions
+            excludes += setOf(
+                "lib/*/libandroidx.graphics.path.so",
+                "lib/*/libdatastore_shared_counter.so"
+            )
         }
     }
     

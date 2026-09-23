@@ -6,6 +6,7 @@ import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.local.ReadProgressEntity
 import io.tl.mynhentai.data.model.MangaPage
 import io.tl.mynhentai.data.repository.MangaRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,7 @@ sealed interface ReaderUiState {
         val pages: List<MangaPage>,
         val initialPage: Int = 1
     ) : ReaderUiState
-    data class Error(val message: String) : ReaderUiState
+    data class Error(val error: Throwable) : ReaderUiState
 }
 
 class ReaderViewModel(
@@ -57,8 +58,10 @@ class ReaderViewModel(
                         numPages = detail.numPages
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.value = ReaderUiState.Error(e.message ?: "Failed to load")
+                _uiState.value = ReaderUiState.Error(e)
             }
         }
     }

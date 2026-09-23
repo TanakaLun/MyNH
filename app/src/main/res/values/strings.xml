@@ -77,6 +77,10 @@
     <string name="error_network">Network error</string>
     <string name="error_empty_response">Empty response from server</string>
     <string name="error_failed_pages">%1$s (%2$d pages failed)</string>
+    <string name="error_load_failed">Failed to load</string>
+    <string name="error_exit">Exit</string>
+    <string name="error_parse_failed">Failed to parse server response</string>
+    <string name="error_unknown">Unknown error</string>
     <string name="toast_download_finished">%1$s downloaded</string>
     <string name="toast_cache_finished">%1$s cached offline</string>
 

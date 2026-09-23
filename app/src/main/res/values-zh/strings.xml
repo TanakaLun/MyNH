@@ -77,6 +77,10 @@
     <string name="error_network">网络错误</string>
     <string name="error_empty_response">服务器返回空响应</string>
     <string name="error_failed_pages">%1$s（%2$d 页失败）</string>
+    <string name="error_load_failed">加载失败</string>
+    <string name="error_exit">退出</string>
+    <string name="error_parse_failed">解析服务器响应失败</string>
+    <string name="error_unknown">未知错误</string>
     <string name="toast_download_finished">%1$s 已下载</string>
     <string name="toast_cache_finished">%1$s 已离线缓存</string>
 

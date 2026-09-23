@@ -5,8 +5,8 @@ import top.yukonga.miuix.kmp.nav.core.NavKey
 
 /**
  * Typed, serializable navigation keys backed by miuix-nav. The four main tabs share the single
- * [Main] key (tab switching is handled by the AndroidX [androidx.navigation.NavHost] nested inside
- * the root entry); everything pushed on top runs on the miuix-nav back stack with predictive back.
+ * [Main] key (tab switching is handled by a HorizontalPager nested inside the root entry);
+ * everything pushed on top runs on the miuix-nav back stack with predictive back.
  */
 @Serializable
 sealed interface AppRoute : NavKey {

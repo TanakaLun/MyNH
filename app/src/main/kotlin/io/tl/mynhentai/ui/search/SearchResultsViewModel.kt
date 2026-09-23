@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.repository.MangaRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +17,7 @@ sealed interface SearchUiState {
     data class Success(
         val items: List<MangaSummary>
     ) : SearchUiState
-    data class Error(val message: String) : SearchUiState
+    data class Error(val error: Throwable) : SearchUiState
 }
 
 class SearchResultsViewModel(
@@ -56,8 +57,10 @@ class SearchResultsViewModel(
                 val response = repository.search(finalQuery, 1, sort)
                 _uiState.value = SearchUiState.Success(items = response.result)
                 settings.addSearchHistoryItem(query)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.value = SearchUiState.Error(e.message ?: "Search failed")
+                _uiState.value = SearchUiState.Error(e)
             }
         }
     }
