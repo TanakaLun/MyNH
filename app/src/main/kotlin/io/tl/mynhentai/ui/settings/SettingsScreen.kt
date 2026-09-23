@@ -260,7 +260,13 @@ fun SettingsScreen(
                     ) {
                         ArrowPreference(
                             title = stringResource(R.string.clear_image_cache),
-                            summary = coilCacheSize.formatSize(),
+                            endActions = {
+                                Text(
+                                    text = coilCacheSize.formatSize(),
+                                    fontSize = MiuixTheme.textStyles.body2.fontSize,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                )
+                            },
                             onClick = { viewModel.clearCoilCache() }
                         )
                         if (offlineCacheSize > 0L) {
@@ -283,7 +289,13 @@ fun SettingsScreen(
                     ) {
                         ArrowPreference(
                             title = stringResource(R.string.blacklist_management),
-                            summary = "${blacklistedTags.size}",
+                            endActions = {
+                                Text(
+                                    text = "${blacklistedTags.size}",
+                                    fontSize = MiuixTheme.textStyles.body2.fontSize,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                )
+                            },
                             onClick = { showBlacklistDialog = true }
                         )
                     }

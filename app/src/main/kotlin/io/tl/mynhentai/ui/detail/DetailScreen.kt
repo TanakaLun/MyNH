@@ -193,8 +193,8 @@ fun DetailScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                                .verticalScroll(rememberScrollState())
-                                .scrollEndHaptic(),
+                                .scrollEndHaptic()
+                                .verticalScroll(rememberScrollState()),
                         ) {
                     Column(
                         modifier = Modifier.padding(
