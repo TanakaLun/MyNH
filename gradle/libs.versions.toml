@@ -14,7 +14,7 @@ koin = "4.2.2"
 koinCompose = "4.2.2"
 kotlinxSerializationJson = "1.11.0"
 retrofitKotlinxSerialization = "1.0.0"
-miuix = "0.9.4-rc01"
+miuix = "0.9.4"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
