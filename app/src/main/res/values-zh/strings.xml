@@ -22,6 +22,12 @@
     <string name="previous_page">上一页</string>
     <string name="next_page">下一页</string>
 
+    <!-- Pull to refresh -->
+    <string name="pull_down_to_refresh">下拉刷新</string>
+    <string name="release_to_refresh">松开刷新</string>
+    <string name="refreshing">正在刷新…</string>
+    <string name="refresh_successfully">刷新成功</string>
+
     <!-- Favorites -->
     <string name="favorites">收藏</string>
     <string name="no_favorites">暂无收藏</string>

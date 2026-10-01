@@ -81,6 +81,12 @@ fun HomeScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val listState = rememberLazyListState()
     val pullToRefreshState = rememberPullToRefreshState()
+    val refreshTexts = listOf(
+        stringResource(R.string.pull_down_to_refresh),
+        stringResource(R.string.release_to_refresh),
+        stringResource(R.string.refreshing),
+        stringResource(R.string.refresh_successfully)
+    )
     val topAppBarScrollBehavior = MiuixScrollBehavior()
 
     val sortLabels = sortOptions.map { sortOptionLabel(it) }
@@ -167,6 +173,7 @@ fun HomeScreen(
                         onRefresh = { viewModel.refresh() },
                         pullToRefreshState = pullToRefreshState,
                         topAppBarScrollBehavior = topAppBarScrollBehavior,
+                        refreshTexts = refreshTexts,
                         contentPadding = contentPadding
                     ) {
                         LazyColumn(

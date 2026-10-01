@@ -22,6 +22,12 @@
     <string name="previous_page">Previous page</string>
     <string name="next_page">Next page</string>
 
+    <!-- Pull to refresh -->
+    <string name="pull_down_to_refresh">Pull down to refresh</string>
+    <string name="release_to_refresh">Release to refresh</string>
+    <string name="refreshing">Refreshing…</string>
+    <string name="refresh_successfully">Refreshed successfully</string>
+
     <!-- Favorites -->
     <string name="favorites">Favorites</string>
     <string name="no_favorites">No favorites yet</string>
