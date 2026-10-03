@@ -13,6 +13,12 @@ interface MangaDao {
     @Query("SELECT * FROM favorites ORDER BY addedAt DESC")
     fun getAllFavorites(): Flow<List<FavoriteEntity>>
 
+    @Query("SELECT * FROM favorites ORDER BY addedAt DESC")
+    suspend fun getFavoritesOnce(): List<FavoriteEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFavorites(favorites: List<FavoriteEntity>)
+
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE id = :id)")
     fun isFavorite(id: Long): Flow<Boolean>
 
@@ -57,6 +63,12 @@ interface MangaDao {
 
     @Query("SELECT * FROM history ORDER BY viewedAt DESC")
     fun getAllHistory(): Flow<List<HistoryEntity>>
+
+    @Query("SELECT * FROM history ORDER BY viewedAt DESC")
+    suspend fun getHistoryOnce(): List<HistoryEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertHistories(items: List<HistoryEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(history: HistoryEntity)

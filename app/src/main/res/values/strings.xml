@@ -145,4 +145,18 @@
 
     <!-- Selection -->
     <string name="selected_count">%d selected</string>
+
+    <!-- Backup -->
+    <string name="backup">Backup</string>
+    <string name="export_data">Export data</string>
+    <string name="import_data">Import data</string>
+    <string name="export_items">Select items to export</string>
+    <string name="import_items">Select items to import</string>
+    <string name="export_confirm">Export</string>
+    <string name="import_confirm">Import</string>
+    <string name="export_success">Backup exported</string>
+    <string name="export_failed">Export failed</string>
+    <string name="import_success">Backup imported</string>
+    <string name="import_failed">Import failed</string>
+    <string name="backup_invalid">Unable to read backup file</string>
 </resources>

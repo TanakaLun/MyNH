@@ -11,6 +11,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import io.tl.mynhentai.data.api.CdnRepository
 import io.tl.mynhentai.data.api.MangaService
 import io.tl.mynhentai.data.local.MangaDatabase
+import io.tl.mynhentai.data.local.BackupHelper
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.local.DownloadStateHolder
@@ -109,6 +110,7 @@ val repositoryModule = module {
     single { SettingsHelper(androidContext()) }
     single { DownloadStateHolder() }
     single { PowerSaveModeTracker(androidContext()) }
+    single { BackupHelper(androidContext(), get(), get()) }
 }
 
 val viewModelModule = module {
@@ -119,5 +121,5 @@ val viewModelModule = module {
     viewModel { ReaderViewModel(get(), get()) }
     viewModel { LibraryViewModel(get()) }
     viewModel { HistoryViewModel(get()) }
-    viewModel { SettingsViewModel(get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get()) }
 }

@@ -1,7 +1,10 @@
 package io.tl.mynhentai.ui.settings
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.tl.mynhentai.data.local.BackupData
+import io.tl.mynhentai.data.local.BackupHelper
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.repository.MangaRepository
@@ -14,7 +17,8 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val settings: SettingsHelper,
-    private val repository: MangaRepository
+    private val repository: MangaRepository,
+    private val backupHelper: BackupHelper,
 ) : ViewModel() {
 
     private val _concurrency = MutableStateFlow(settings.maxConcurrency)
@@ -90,6 +94,41 @@ class SettingsViewModel(
     fun setFloatingNavbarPosition(position: Int) {
         settings.floatingNavbarPosition = position
         _floatingNavbarPosition.value = position
+    }
+
+    suspend fun exportBackup(
+        uri: Uri,
+        favorites: Boolean,
+        history: Boolean,
+        backupSettings: Boolean,
+    ): Result<Unit> = runCatching {
+        backupHelper.export(uri, favorites, history, backupSettings)
+    }
+
+    suspend fun parseBackup(uri: Uri): Result<BackupData> = runCatching {
+        backupHelper.parse(uri)
+    }
+
+    suspend fun importBackup(
+        data: BackupData,
+        favorites: Boolean,
+        history: Boolean,
+        backupSettings: Boolean,
+    ): Result<Unit> = runCatching {
+        backupHelper.importFrom(data, favorites, history, backupSettings)
+        resyncFromSettings()
+    }
+
+    private fun resyncFromSettings() {
+        _concurrency.value = settings.maxConcurrency
+        _languageFilter.value = settings.languageFilter
+        _languageFilterEnabled.value = settings.languageFilterEnabled
+        _monetEnabled.value = settings.monetEnabled
+        _backAnimStyle.value = settings.backAnimStyle
+        _enableBlur.value = settings.enableBlur
+        _useFloatingNavbar.value = settings.useFloatingNavbar
+        _floatingNavbarStyle.value = settings.floatingNavbarStyle
+        _floatingNavbarPosition.value = settings.floatingNavbarPosition
     }
 
     fun removeBlacklistedTag(tagId: Long) {

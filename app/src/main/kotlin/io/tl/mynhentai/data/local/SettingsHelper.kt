@@ -6,6 +6,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.long
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.put
 
 class SettingsHelper(private val appContext: Context) {
 
@@ -89,6 +102,46 @@ class SettingsHelper(private val appContext: Context) {
             prefs.edit().putInt(KEY_FLOATING_NAVBAR_POSITION, value).apply()
             _floatingNavbarPositionFlow.value = value
         }
+
+    fun exportToJson(): JsonObject = buildJsonObject {
+        prefs.all.forEach { (key, value) ->
+            when (value) {
+                is Boolean -> put(key, value)
+                is Int -> put(key, value)
+                is Long -> put(key, value)
+                is Float -> put(key, value)
+                is String -> put(key, value)
+                is Set<*> -> put(key, JsonArray(value.filterNotNull().map { JsonPrimitive(it.toString()) }))
+                else -> put(key, JsonPrimitive(value.toString()))
+            }
+        }
+    }
+
+    fun importFromJson(obj: JsonObject) {
+        val editor = prefs.edit()
+        obj.forEach { (key, element) ->
+            val prim = element as? JsonPrimitive ?: return@forEach
+            when {
+                prim.isString -> editor.putString(key, prim.content)
+                prim.booleanOrNull != null -> editor.putBoolean(key, prim.boolean)
+                prim.intOrNull != null -> editor.putInt(key, prim.int)
+                prim.longOrNull != null -> editor.putLong(key, prim.long)
+                prim.doubleOrNull != null -> editor.putFloat(key, prim.double.toFloat())
+                else -> editor.putString(key, prim.content)
+            }
+        }
+        editor.apply()
+        reloadFlows()
+    }
+
+    private fun reloadFlows() {
+        _monetEnabledFlow.value = prefs.getBoolean(KEY_MONET_ENABLED, false)
+        _backAnimStyleFlow.value = prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide"
+        _enableBlurFlow.value = prefs.getBoolean(KEY_BLUR_ENABLED, true)
+        _useFloatingNavbarFlow.value = prefs.getBoolean(KEY_USE_FLOATING_NAVBAR, false)
+        _floatingNavbarStyleFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_STYLE, 0)
+        _floatingNavbarPositionFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0)
+    }
 
     val coilCacheDir: java.io.File
         get() = java.io.File(appContext.cacheDir, "coil_cache")
