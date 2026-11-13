@@ -53,6 +53,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
+import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -106,18 +107,25 @@ fun SettingsScreen(
     val useFloatingNavbar by viewModel.useFloatingNavbar.collectAsState()
     val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
+    val statisticsEnabled by viewModel.statisticsEnabled.collectAsState()
+    val statisticsRecordQueries by viewModel.statisticsRecordQueries.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
+    var showClearStatisticsDialog by remember { mutableStateOf(false) }
 
     var showExportSheet by remember { mutableStateOf(false) }
     var showImportSheet by remember { mutableStateOf(false) }
     var pendingImport by remember { mutableStateOf<BackupData?>(null) }
-    var exportSelection by remember { mutableStateOf(Triple(true, true, true)) }
+    var exportSelection by remember { mutableStateOf(ExportSelection()) }
     var exportFavorites by remember { mutableStateOf(true) }
     var exportHistory by remember { mutableStateOf(true) }
     var exportSettings by remember { mutableStateOf(true) }
+    var exportStatistics by remember { mutableStateOf(true) }
     var importFavorites by remember(pendingImport) { mutableStateOf(pendingImport?.favorites != null) }
     var importHistory by remember(pendingImport) { mutableStateOf(pendingImport?.history != null) }
     var importSettings by remember(pendingImport) { mutableStateOf(pendingImport?.settings != null) }
+    var importStatistics by remember(pendingImport) {
+        mutableStateOf(pendingImport?.usageEvents != null || pendingImport?.readingRecords != null)
+    }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -135,9 +143,15 @@ fun SettingsScreen(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
-            val (favorites, history, backupSettings) = exportSelection
+            val selection = exportSelection
             scope.launch {
-                val result = viewModel.exportBackup(uri, favorites, history, backupSettings)
+                val result = viewModel.exportBackup(
+                    uri,
+                    selection.favorites,
+                    selection.history,
+                    selection.backupSettings,
+                    selection.statistics,
+                )
                 if (result.isSuccess) {
                     showBackupResult(R.string.export_success, null)
                 } else {
@@ -154,7 +168,9 @@ fun SettingsScreen(
             scope.launch {
                 viewModel.parseBackup(uri).fold(
                     onSuccess = { data ->
-                        if (data.favorites == null && data.history == null && data.settings == null) {
+                        if (data.favorites == null && data.history == null && data.settings == null &&
+                            data.usageEvents == null && data.readingRecords == null
+                        ) {
                             showBackupResult(R.string.backup_invalid, null)
                         } else {
                             pendingImport = data
@@ -240,6 +256,39 @@ fun SettingsScreen(
         }
     }
 
+    if (showClearStatisticsDialog) {
+        OverlayDialog(
+            show = true,
+            title = stringResource(R.string.statistics_clear),
+            onDismissRequest = { showClearStatisticsDialog = false }
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.statistics_clear_confirm),
+                    style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                )
+                TextButton(
+                    text = stringResource(R.string.cancel),
+                    onClick = { showClearStatisticsDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextButton(
+                    text = stringResource(R.string.confirm),
+                    onClick = {
+                        viewModel.clearStatistics()
+                        showClearStatisticsDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.textButtonColors(
+                        color = MiuixTheme.colorScheme.errorContainer,
+                        textColor = MiuixTheme.colorScheme.onErrorContainer
+                    )
+                )
+            }
+        }
+    }
+
     OverlayBottomSheet(
         show = showExportSheet,
         title = stringResource(R.string.export_items),
@@ -256,11 +305,16 @@ fun SettingsScreen(
         endAction = {
             IconButton(
                 onClick = {
-                    exportSelection = Triple(exportFavorites, exportHistory, exportSettings)
+                    exportSelection = ExportSelection(
+                        favorites = exportFavorites,
+                        history = exportHistory,
+                        backupSettings = exportSettings,
+                        statistics = exportStatistics,
+                    )
                     showExportSheet = false
                     exportLauncher.launch("mynhentai-backup.json")
                 },
-                enabled = exportFavorites || exportHistory || exportSettings
+                enabled = exportFavorites || exportHistory || exportSettings || exportStatistics
             ) {
                 Icon(
                     imageVector = MiuixIcons.Ok,
@@ -300,6 +354,11 @@ fun SettingsScreen(
                         onCheckedChange = { exportSettings = it },
                         title = stringResource(R.string.settings)
                     )
+                    SwitchPreference(
+                        checked = exportStatistics,
+                        onCheckedChange = { exportStatistics = it },
+                        title = stringResource(R.string.statistics_data)
+                    )
                 }
             }
             item {
@@ -333,7 +392,7 @@ fun SettingsScreen(
                     onClick = {
                         scope.launch {
                             val result = viewModel.importBackup(
-                                backup, importFavorites, importHistory, importSettings
+                                backup, importFavorites, importHistory, importSettings, importStatistics
                             )
                             showImportSheet = false
                             if (result.isSuccess) {
@@ -343,7 +402,7 @@ fun SettingsScreen(
                             }
                         }
                     },
-                    enabled = importFavorites || importHistory || importSettings
+                    enabled = importFavorites || importHistory || importSettings || importStatistics
                 ) {
                     Icon(
                         imageVector = MiuixIcons.Ok,
@@ -385,6 +444,12 @@ fun SettingsScreen(
                             onCheckedChange = { importSettings = it },
                             title = stringResource(R.string.settings),
                             enabled = backup.settings != null
+                        )
+                        SwitchPreference(
+                            checked = importStatistics,
+                            onCheckedChange = { importStatistics = it },
+                            title = stringResource(R.string.statistics_data),
+                            enabled = backup.usageEvents != null || backup.readingRecords != null
                         )
                     }
                 }
@@ -470,6 +535,35 @@ fun SettingsScreen(
                             checked = languageFilterEnabled,
                             onCheckedChange = { viewModel.setLanguageFilterEnabled(it) },
                             title = stringResource(R.string.sync_language_to_search)
+                        )
+                    }
+                }
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallTitle(text = stringResource(R.string.statistics))
+                    Card(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                    ) {
+                        SwitchPreference(
+                            checked = statisticsEnabled,
+                            onCheckedChange = { viewModel.setStatisticsEnabled(it) },
+                            title = stringResource(R.string.statistics_enabled),
+                            summary = stringResource(R.string.statistics_enabled_summary)
+                        )
+                        SwitchPreference(
+                            checked = statisticsRecordQueries,
+                            onCheckedChange = { viewModel.setStatisticsRecordQueries(it) },
+                            title = stringResource(R.string.statistics_record_queries),
+                            summary = stringResource(R.string.statistics_record_queries_summary),
+                            enabled = statisticsEnabled
+                        )
+                        ArrowPreference(
+                            title = stringResource(R.string.statistics_clear),
+                            enabled = statisticsEnabled,
+                            onClick = { showClearStatisticsDialog = true }
                         )
                     }
                 }
@@ -664,3 +758,10 @@ fun SettingsScreen(
         }
     }
 }
+
+private data class ExportSelection(
+    val favorites: Boolean = true,
+    val history: Boolean = true,
+    val backupSettings: Boolean = true,
+    val statistics: Boolean = true,
+)

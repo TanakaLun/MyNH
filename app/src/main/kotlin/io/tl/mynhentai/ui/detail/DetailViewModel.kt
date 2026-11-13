@@ -9,6 +9,7 @@ import io.tl.mynhentai.data.local.FavoriteEntity
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.tracker.UsageTracker
 import io.tl.mynhentai.ui.components.DownloadService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +29,8 @@ sealed interface DetailUiState {
 
 class DetailViewModel(
     private val repository: MangaRepository,
-    private val cdnRepository: CdnRepository
+    private val cdnRepository: CdnRepository,
+    private val usageTracker: UsageTracker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -44,6 +46,7 @@ class DetailViewModel(
                     detail = detail,
                     isFavorite = isFav
                 )
+                usageTracker.recordBrowse(detail)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

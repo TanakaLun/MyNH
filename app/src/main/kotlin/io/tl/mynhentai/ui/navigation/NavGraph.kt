@@ -37,6 +37,7 @@ import io.tl.mynhentai.ui.reader.ReaderScreen
 import io.tl.mynhentai.ui.search.SearchResultsScreen
 import io.tl.mynhentai.ui.search.SearchScreen
 import io.tl.mynhentai.ui.settings.SettingsScreen
+import io.tl.mynhentai.ui.statistics.StatisticsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -47,6 +48,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Favorites
 import top.yukonga.miuix.kmp.icon.extended.Home
 import top.yukonga.miuix.kmp.icon.extended.Recent
+import top.yukonga.miuix.kmp.icon.extended.Report
 import top.yukonga.miuix.kmp.icon.extended.Settings
 import top.yukonga.miuix.kmp.nav.core.NavCornerClipMode
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
@@ -60,12 +62,15 @@ import top.yukonga.miuix.kmp.utils.PagerNavigationSpringSpec
 import top.yukonga.miuix.kmp.utils.springAnimateToPage
 import androidx.compose.ui.unit.dp
 
-private val navbarItems = listOf(
-    NavbarItem(R.string.nav_home, MiuixIcons.Home, Routes.HOME),
-    NavbarItem(R.string.nav_history, MiuixIcons.Recent, Routes.HISTORY),
-    NavbarItem(R.string.nav_favorites, MiuixIcons.Favorites, Routes.LIBRARY),
-    NavbarItem(R.string.nav_settings, MiuixIcons.Settings, Routes.SETTINGS)
-)
+private fun navbarItems(statisticsEnabled: Boolean): List<NavbarItem> = buildList {
+    add(NavbarItem(R.string.nav_home, MiuixIcons.Home, Routes.HOME))
+    add(NavbarItem(R.string.nav_history, MiuixIcons.Recent, Routes.HISTORY))
+    add(NavbarItem(R.string.nav_favorites, MiuixIcons.Favorites, Routes.LIBRARY))
+    if (statisticsEnabled) {
+        add(NavbarItem(R.string.nav_statistics, MiuixIcons.Report, Routes.STATISTICS))
+    }
+    add(NavbarItem(R.string.nav_settings, MiuixIcons.Settings, Routes.SETTINGS))
+}
 
 private val swipeDismiss = NavSwipeDirection.LeftToRight
 
@@ -244,11 +249,18 @@ private fun MainTabs(navigator: Navigator) {
     val useFloatingNavbar by settings.useFloatingNavbarFlow.collectAsState()
     val floatingNavbarStyle by settings.floatingNavbarStyleFlow.collectAsState()
     val floatingNavbarPosition by settings.floatingNavbarPositionFlow.collectAsState()
+    val statisticsEnabled by settings.statisticsEnabledFlow.collectAsState()
 
-    val pagerState = rememberPagerState(pageCount = { navbarItems.size })
+    val items = remember(statisticsEnabled) { navbarItems(statisticsEnabled) }
+    val pagerState = rememberPagerState(pageCount = { items.size })
     val mainPagerState = rememberMainPagerState(pagerState)
     LaunchedEffect(pagerState.currentPage) {
         mainPagerState.syncPage()
+    }
+    LaunchedEffect(items.size) {
+        if (mainPagerState.selectedPage > items.lastIndex) {
+            mainPagerState.animateToPage(items.lastIndex)
+        }
     }
     MainScreenBackHandler(mainState = mainPagerState, navigator = navigator)
 
@@ -258,10 +270,10 @@ private fun MainTabs(navigator: Navigator) {
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
             BlurredNavbar(
-                items = navbarItems,
-                currentRoute = navbarItems.getOrNull(mainPagerState.selectedPage)?.route,
+                items = items,
+                currentRoute = items.getOrNull(mainPagerState.selectedPage)?.route,
                 onNavigate = { route ->
-                    val index = navbarItems.indexOfFirst { it.route == route }
+                    val index = items.indexOfFirst { it.route == route }
                     if (index >= 0) mainPagerState.animateToPage(index)
                 },
                 backdrop = backdrop,
@@ -289,7 +301,7 @@ private fun MainTabs(navigator: Navigator) {
                 verticalAlignment = Alignment.Top,
                 flingBehavior = flingBehavior,
             ) { page ->
-                when (navbarItems[page].route) {
+                when (items.getOrNull(page)?.route) {
                     Routes.HOME -> HomeScreen(
                         bottomNavPadding = innerPadding.calculateBottomPadding(),
                         onSearchClick = { navigator.push(AppRoute.Search()) },
@@ -302,6 +314,11 @@ private fun MainTabs(navigator: Navigator) {
                     Routes.LIBRARY -> LibraryScreen(
                         bottomNavPadding = innerPadding.calculateBottomPadding(),
                         onItemClick = { navigator.push(AppRoute.Detail(it)) }
+                    )
+                    Routes.STATISTICS -> StatisticsScreen(
+                        bottomNavPadding = innerPadding.calculateBottomPadding(),
+                        onItemClick = { navigator.push(AppRoute.Detail(it)) },
+                        onSearchClick = { query -> navigator.push(AppRoute.SearchResults(query)) }
                     )
                     Routes.SETTINGS -> SettingsScreen(bottomNavPadding = innerPadding.calculateBottomPadding())
                     else -> {}

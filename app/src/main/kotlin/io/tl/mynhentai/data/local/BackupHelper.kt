@@ -11,15 +11,18 @@ import kotlinx.serialization.json.JsonObject
 
 @Serializable
 data class BackupData(
-    val version: Int = 1,
+    val version: Int = 2,
     val favorites: List<FavoriteEntity>? = null,
     val history: List<HistoryEntity>? = null,
     val settings: JsonObject? = null,
+    val usageEvents: List<UsageEventEntity>? = null,
+    val readingRecords: List<ReadingRecordEntity>? = null,
 )
 
 class BackupHelper(
     private val context: Context,
     private val dao: MangaDao,
+    private val usageDao: UsageDao,
     private val settingsHelper: SettingsHelper,
 ) {
 
@@ -33,11 +36,14 @@ class BackupHelper(
         favorites: Boolean,
         history: Boolean,
         backupSettings: Boolean,
+        statistics: Boolean,
     ): Unit = withContext(Dispatchers.IO) {
         val data = BackupData(
             favorites = if (favorites) dao.getFavoritesOnce() else null,
             history = if (history) dao.getHistoryOnce() else null,
             settings = if (backupSettings) settingsHelper.exportToJson() else null,
+            usageEvents = if (statistics) usageDao.getAllEventsOnce() else null,
+            readingRecords = if (statistics) usageDao.getAllReadingsOnce() else null,
         )
         val output = context.contentResolver.openOutputStream(uri, "wt")
             ?: throw IOException("Cannot open output stream")
@@ -58,9 +64,16 @@ class BackupHelper(
         favorites: Boolean,
         history: Boolean,
         backupSettings: Boolean,
+        statistics: Boolean,
     ): Unit = withContext(Dispatchers.IO) {
         if (favorites) data.favorites?.let { dao.insertFavorites(it) }
         if (history) data.history?.let { dao.insertHistories(it) }
         if (backupSettings) data.settings?.let { settingsHelper.importFromJson(it) }
+        if (statistics) {
+            usageDao.clearEvents()
+            usageDao.clearReadings()
+            data.usageEvents?.takeIf { it.isNotEmpty() }?.let { usageDao.insertEvents(it) }
+            data.readingRecords?.takeIf { it.isNotEmpty() }?.let { usageDao.insertReadings(it) }
+        }
     }
 }

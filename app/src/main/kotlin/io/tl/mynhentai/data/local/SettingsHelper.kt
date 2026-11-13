@@ -103,6 +103,26 @@ class SettingsHelper(private val appContext: Context) {
             _floatingNavbarPositionFlow.value = value
         }
 
+    private val _statisticsEnabledFlow = MutableStateFlow(prefs.getBoolean(KEY_STATISTICS_ENABLED, true))
+    val statisticsEnabledFlow: StateFlow<Boolean> = _statisticsEnabledFlow.asStateFlow()
+
+    var statisticsEnabled: Boolean
+        get() = _statisticsEnabledFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_STATISTICS_ENABLED, value).apply()
+            _statisticsEnabledFlow.value = value
+        }
+
+    private val _statisticsRecordQueriesFlow = MutableStateFlow(prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true))
+    val statisticsRecordQueriesFlow: StateFlow<Boolean> = _statisticsRecordQueriesFlow.asStateFlow()
+
+    var statisticsRecordQueries: Boolean
+        get() = _statisticsRecordQueriesFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_STATISTICS_RECORD_QUERIES, value).apply()
+            _statisticsRecordQueriesFlow.value = value
+        }
+
     fun exportToJson(): JsonObject = buildJsonObject {
         prefs.all.forEach { (key, value) ->
             when (value) {
@@ -141,6 +161,8 @@ class SettingsHelper(private val appContext: Context) {
         _useFloatingNavbarFlow.value = prefs.getBoolean(KEY_USE_FLOATING_NAVBAR, false)
         _floatingNavbarStyleFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_STYLE, 0)
         _floatingNavbarPositionFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0)
+        _statisticsEnabledFlow.value = prefs.getBoolean(KEY_STATISTICS_ENABLED, true)
+        _statisticsRecordQueriesFlow.value = prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true)
     }
 
     val coilCacheDir: java.io.File
@@ -232,5 +254,7 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_USE_FLOATING_NAVBAR = "use_floating_navbar"
         private const val KEY_FLOATING_NAVBAR_STYLE = "floating_navbar_style"
         private const val KEY_FLOATING_NAVBAR_POSITION = "floating_navbar_position"
+        private const val KEY_STATISTICS_ENABLED = "statistics_enabled"
+        private const val KEY_STATISTICS_RECORD_QUERIES = "statistics_record_queries"
     }
 }

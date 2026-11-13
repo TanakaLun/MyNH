@@ -71,6 +71,10 @@ fun ReaderScreen(
         viewModel.load(galleryId)
     }
 
+    DisposableEffect(galleryId) {
+        onDispose { viewModel.stopReadingTracking() }
+    }
+
     val currentPage by remember {
         derivedStateOf {
             val visible = listState.layoutInfo.visibleItemsInfo

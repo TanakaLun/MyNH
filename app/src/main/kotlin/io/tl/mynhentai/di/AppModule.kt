@@ -16,6 +16,8 @@ import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.local.DownloadStateHolder
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.repository.UsageRepository
+import io.tl.mynhentai.data.tracker.UsageTracker
 import io.tl.mynhentai.ui.detail.DetailViewModel
 import io.tl.mynhentai.ui.history.HistoryViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
@@ -24,6 +26,7 @@ import io.tl.mynhentai.ui.reader.ReaderViewModel
 import io.tl.mynhentai.ui.search.SearchResultsViewModel
 import io.tl.mynhentai.ui.search.SearchViewModel
 import io.tl.mynhentai.ui.settings.SettingsViewModel
+import io.tl.mynhentai.ui.statistics.StatisticsViewModel
 import kotlinx.serialization.json.Json
 import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
@@ -94,15 +97,49 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `usage_event` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`kind` TEXT NOT NULL, " +
+                "`startAt` INTEGER NOT NULL, " +
+                "`durationMillis` INTEGER NOT NULL, " +
+                "`galleryId` INTEGER, " +
+                "`galleryTitle` TEXT, " +
+                "`coverPath` TEXT, " +
+                "`query` TEXT)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_usage_event_startAt` ON `usage_event` (`startAt`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_usage_event_kind` ON `usage_event` (`kind`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `reading_record` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`galleryId` INTEGER NOT NULL, " +
+                "`title` TEXT NOT NULL, " +
+                "`coverPath` TEXT, " +
+                "`startedAt` INTEGER NOT NULL, " +
+                "`durationMillis` INTEGER NOT NULL, " +
+                "`pageCount` INTEGER NOT NULL, " +
+                "`lastPage` INTEGER NOT NULL, " +
+                "`tagsJson` TEXT NOT NULL, " +
+                "`language` TEXT)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_record_startedAt` ON `reading_record` (`startedAt`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_record_galleryId` ON `reading_record` (`galleryId`)")
+    }
+}
+
 val databaseModule = module {
     single {
         Room.databaseBuilder(
             androidContext(),
             MangaDatabase::class.java,
             "mynhentai.db"
-        ).addMigrations(MIGRATION_3_4).build()
+        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5).build()
     }
     single { get<MangaDatabase>().mangaDao() }
+    single { get<MangaDatabase>().usageDao() }
 }
 
 val repositoryModule = module {
@@ -110,16 +147,19 @@ val repositoryModule = module {
     single { SettingsHelper(androidContext()) }
     single { DownloadStateHolder() }
     single { PowerSaveModeTracker(androidContext()) }
-    single { BackupHelper(androidContext(), get(), get()) }
+    single { UsageRepository(get()) }
+    single { UsageTracker(get(), get()) }
+    single { BackupHelper(androidContext(), get(), get(), get()) }
 }
 
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
-    viewModel { SearchResultsViewModel(get(), get()) }
-    viewModel { DetailViewModel(get(), get()) }
-    viewModel { ReaderViewModel(get(), get()) }
+    viewModel { SearchResultsViewModel(get(), get(), get()) }
+    viewModel { DetailViewModel(get(), get(), get()) }
+    viewModel { ReaderViewModel(get(), get(), get()) }
     viewModel { LibraryViewModel(get()) }
     viewModel { HistoryViewModel(get()) }
-    viewModel { SettingsViewModel(get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get()) }
+    viewModel { StatisticsViewModel(get(), get(), get()) }
 }

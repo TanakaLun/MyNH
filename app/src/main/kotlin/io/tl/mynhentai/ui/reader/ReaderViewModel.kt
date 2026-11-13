@@ -6,6 +6,7 @@ import io.tl.mynhentai.data.local.HistoryEntity
 import io.tl.mynhentai.data.local.ReadProgressEntity
 import io.tl.mynhentai.data.model.MangaPage
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.tracker.UsageTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,7 +27,8 @@ sealed interface ReaderUiState {
 
 class ReaderViewModel(
     private val repository: MangaRepository,
-    private val cdnRepository: io.tl.mynhentai.data.api.CdnRepository
+    private val cdnRepository: io.tl.mynhentai.data.api.CdnRepository,
+    private val usageTracker: UsageTracker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
@@ -36,8 +38,10 @@ class ReaderViewModel(
     val showControls: StateFlow<Boolean> = _showControls.asStateFlow()
 
     private var saveJob: Job? = null
+    private var currentGalleryId: Long? = null
 
     fun load(id: Long) {
+        currentGalleryId = id
         viewModelScope.launch {
             _uiState.value = ReaderUiState.Loading
             try {
@@ -48,6 +52,7 @@ class ReaderViewModel(
                     pages = detail.pages.sortedBy { it.number },
                     initialPage = savedProgress?.pageNumber?.coerceIn(1, detail.pages.size) ?: 1
                 )
+                usageTracker.startReading(detail)
                 repository.addHistory(
                     HistoryEntity(
                         id = detail.id,
@@ -73,10 +78,15 @@ class ReaderViewModel(
     fun resolveImageUrl(path: String): String = cdnRepository.resolveImageUrl(path)
 
     fun saveProgress(galleryId: Long, pageNumber: Int) {
+        usageTracker.updateReadingPage(pageNumber)
         saveJob?.cancel()
         saveJob = viewModelScope.launch {
             delay(500)
             repository.saveReadProgress(ReadProgressEntity(galleryId = galleryId, pageNumber = pageNumber))
         }
+    }
+
+    fun stopReadingTracking() {
+        usageTracker.stopReading(currentGalleryId)
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.tracker.UsageTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,8 @@ sealed interface SearchUiState {
 
 class SearchResultsViewModel(
     private val repository: MangaRepository,
-    private val settings: SettingsHelper
+    private val settings: SettingsHelper,
+    private val usageTracker: UsageTracker,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
@@ -43,6 +45,7 @@ class SearchResultsViewModel(
     }
 
     private val _currentQuery = MutableStateFlow("")
+    private var lastRecordedQuery: String? = null
 
     fun search(query: String) {
         if (query.isBlank()) return
@@ -57,6 +60,10 @@ class SearchResultsViewModel(
                 val response = repository.search(finalQuery, 1, sort)
                 _uiState.value = SearchUiState.Success(items = response.result)
                 settings.addSearchHistoryItem(query)
+                if (lastRecordedQuery != query) {
+                    lastRecordedQuery = query
+                    usageTracker.recordSearch(query)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

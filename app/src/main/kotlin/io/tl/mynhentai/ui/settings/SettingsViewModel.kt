@@ -8,6 +8,7 @@ import io.tl.mynhentai.data.local.BackupHelper
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.repository.UsageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ class SettingsViewModel(
     private val settings: SettingsHelper,
     private val repository: MangaRepository,
     private val backupHelper: BackupHelper,
+    private val usageRepository: UsageRepository,
 ) : ViewModel() {
 
     private val _concurrency = MutableStateFlow(settings.maxConcurrency)
@@ -47,6 +49,12 @@ class SettingsViewModel(
 
     private val _floatingNavbarPosition = MutableStateFlow(settings.floatingNavbarPosition)
     val floatingNavbarPosition: StateFlow<Int> = _floatingNavbarPosition.asStateFlow()
+
+    private val _statisticsEnabled = MutableStateFlow(settings.statisticsEnabled)
+    val statisticsEnabled: StateFlow<Boolean> = _statisticsEnabled.asStateFlow()
+
+    private val _statisticsRecordQueries = MutableStateFlow(settings.statisticsRecordQueries)
+    val statisticsRecordQueries: StateFlow<Boolean> = _statisticsRecordQueries.asStateFlow()
 
     val blacklistedTags: StateFlow<List<BlacklistedTagEntity>> = repository.getAllBlacklistedTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -96,13 +104,30 @@ class SettingsViewModel(
         _floatingNavbarPosition.value = position
     }
 
+    fun setStatisticsEnabled(enabled: Boolean) {
+        settings.statisticsEnabled = enabled
+        _statisticsEnabled.value = enabled
+    }
+
+    fun setStatisticsRecordQueries(enabled: Boolean) {
+        settings.statisticsRecordQueries = enabled
+        _statisticsRecordQueries.value = enabled
+    }
+
+    fun clearStatistics() {
+        viewModelScope.launch {
+            usageRepository.clearAll()
+        }
+    }
+
     suspend fun exportBackup(
         uri: Uri,
         favorites: Boolean,
         history: Boolean,
         backupSettings: Boolean,
+        statistics: Boolean,
     ): Result<Unit> = runCatching {
-        backupHelper.export(uri, favorites, history, backupSettings)
+        backupHelper.export(uri, favorites, history, backupSettings, statistics)
     }
 
     suspend fun parseBackup(uri: Uri): Result<BackupData> = runCatching {
@@ -114,8 +139,9 @@ class SettingsViewModel(
         favorites: Boolean,
         history: Boolean,
         backupSettings: Boolean,
+        statistics: Boolean,
     ): Result<Unit> = runCatching {
-        backupHelper.importFrom(data, favorites, history, backupSettings)
+        backupHelper.importFrom(data, favorites, history, backupSettings, statistics)
         resyncFromSettings()
     }
 
@@ -129,6 +155,8 @@ class SettingsViewModel(
         _useFloatingNavbar.value = settings.useFloatingNavbar
         _floatingNavbarStyle.value = settings.floatingNavbarStyle
         _floatingNavbarPosition.value = settings.floatingNavbarPosition
+        _statisticsEnabled.value = settings.statisticsEnabled
+        _statisticsRecordQueries.value = settings.statisticsRecordQueries
     }
 
     fun removeBlacklistedTag(tagId: Long) {
