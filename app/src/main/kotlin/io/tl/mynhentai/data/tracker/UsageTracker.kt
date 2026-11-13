@@ -1,6 +1,7 @@
 package io.tl.mynhentai.data.tracker
 
 import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import io.tl.mynhentai.data.local.ReadingRecordEntity
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
@@ -64,6 +66,14 @@ class UsageTracker(
 
             override fun onStop(owner: LifecycleOwner) = onBackground()
         })
+        // React immediately when the switch is toggled while the app stays in the foreground.
+        scope.launch {
+            settings.statisticsEnabledFlow.collect { enabled ->
+                val started = ProcessLifecycleOwner.get().lifecycle.currentState
+                    .isAtLeast(Lifecycle.State.STARTED)
+                if (enabled && started) onForeground() else if (!enabled) onBackground()
+            }
+        }
     }
 
     // region foreground app time
