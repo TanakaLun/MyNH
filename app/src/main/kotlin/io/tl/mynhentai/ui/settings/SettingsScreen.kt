@@ -640,6 +640,22 @@ fun SettingsScreen(
             }
 
             item {
+                val styleOptions = listOf(
+                    stringResource(R.string.floating_navbar_style_default),
+                    stringResource(R.string.floating_navbar_style_ios)
+                )
+                val positionOptions = listOf(
+                    stringResource(R.string.floating_navbar_position_center),
+                    stringResource(R.string.floating_navbar_position_start),
+                    stringResource(R.string.floating_navbar_position_end)
+                )
+                val animNames = listOf(stringResource(R.string.back_anim_slide), stringResource(R.string.back_anim_scale), stringResource(R.string.back_anim_none))
+                val animValues = listOf("slide", "scale", "none")
+                val currentAnimIndex = when (backAnimStyle) {
+                    "scale" -> 1
+                    "none" -> 2
+                    else -> 0
+                }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallTitle(text = stringResource(R.string.appearance))
                     Card(
@@ -663,27 +679,7 @@ fun SettingsScreen(
                             },
                             enabled = !isPowerSaveMode
                         )
-                    }
-                }
-            }
-
-            item {
-                val styleOptions = listOf(
-                    stringResource(R.string.floating_navbar_style_default),
-                    stringResource(R.string.floating_navbar_style_ios)
-                )
-                val positionOptions = listOf(
-                    stringResource(R.string.floating_navbar_position_center),
-                    stringResource(R.string.floating_navbar_position_start),
-                    stringResource(R.string.floating_navbar_position_end)
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SmallTitle(text = stringResource(R.string.navigation))
-                    Card(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
-                    ) {
-                        SwitchPreference(
+                                                SwitchPreference(
                             title = stringResource(R.string.use_floating_navbar),
                             checked = useFloatingNavbar,
                             onCheckedChange = { viewModel.setUseFloatingNavbar(it) }
@@ -706,24 +702,6 @@ fun SettingsScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            item {
-                val animNames = listOf(stringResource(R.string.back_anim_slide), stringResource(R.string.back_anim_scale), stringResource(R.string.back_anim_none))
-                val animValues = listOf("slide", "scale", "none")
-                val currentAnimIndex = when (backAnimStyle) {
-                    "scale" -> 1
-                    "none" -> 2
-                    else -> 0
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SmallTitle(text = stringResource(R.string.back_animation))
-                    Card(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
-                    ) {
                         OverlaySpinnerPreference(
                             title = stringResource(R.string.back_animation),
                             items = animNames.map { name -> DropdownItem(text = name) },
