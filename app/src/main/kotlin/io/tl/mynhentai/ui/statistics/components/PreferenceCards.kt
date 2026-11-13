@@ -41,11 +41,6 @@ fun TopTagsCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.stats_top_tags),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
-            )
             if (topTags.isEmpty()) {
                 EmptyHint()
             } else {
@@ -117,11 +112,6 @@ fun TasteProfileCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.stats_taste_profile),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
-            )
             if (tagGroups.isEmpty()) {
                 EmptyHint()
             } else {
@@ -173,11 +163,6 @@ fun HabitCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = stringResource(R.string.stats_habits),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
-            )
             HabitRow(
                 label = stringResource(R.string.stats_avg_session),
                 value = formatDuration(habits.averageSessionMillis)

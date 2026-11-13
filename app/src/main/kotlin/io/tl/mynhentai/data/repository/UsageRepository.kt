@@ -251,7 +251,7 @@ class UsageRepository(private val dao: UsageDao) {
         const val TOP_TAGS = 12
         const val TOP_SEARCHES = 12
         const val RECENT_SEARCHES = 10
-        const val TRAIL_LIMIT = 60
+        const val TRAIL_LIMIT = 20
 
         val TAG_TYPE_ORDER = listOf(
             "parody",

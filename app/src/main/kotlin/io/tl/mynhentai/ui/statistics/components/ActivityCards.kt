@@ -27,10 +27,17 @@ import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.ActivityItem
 import io.tl.mynhentai.data.model.SearchTerm
 import io.tl.mynhentai.data.model.UsageKind
+import io.tl.mynhentai.ui.statistics.activityKindLabelRes
 import io.tl.mynhentai.ui.statistics.formatClock
 import io.tl.mynhentai.ui.statistics.formatDuration
+import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Album
+import top.yukonga.miuix.kmp.icon.extended.Recent
+import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -46,11 +53,6 @@ fun SearchPreferenceCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.stats_search_preferences),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
-            )
             if (topSearches.isEmpty()) {
                 Text(
                     text = stringResource(R.string.stats_no_searches),
@@ -122,30 +124,25 @@ fun ActivityTrailCard(
     trail: List<ActivityItem>,
     resolveCover: (String) -> String,
     onItemClick: (Long) -> Unit,
+    onSearchClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+        if (trail.isEmpty()) {
             Text(
-                text = stringResource(R.string.stats_activity_trail),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
+                text = stringResource(R.string.stats_no_activity),
+                style = MiuixTheme.textStyles.footnote2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.padding(16.dp)
             )
-            if (trail.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.stats_no_activity),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-            } else {
+        } else {
+            Column {
                 trail.forEach { item ->
-                    ActivityRow(
+                    TrailItem(
                         item = item,
                         resolveCover = resolveCover,
-                        onItemClick = onItemClick
+                        onItemClick = onItemClick,
+                        onSearchClick = onSearchClick
                     )
                 }
             }
@@ -154,94 +151,76 @@ fun ActivityTrailCard(
 }
 
 @Composable
-private fun ActivityRow(
+private fun TrailItem(
     item: ActivityItem,
     resolveCover: (String) -> String,
     onItemClick: (Long) -> Unit,
+    onSearchClick: (String) -> Unit,
 ) {
-    val clickable = item.galleryId != null
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (clickable) {
-                    Modifier.clickable { item.galleryId?.let(onItemClick) }
-                } else {
-                    Modifier
-                }
-            )
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (item.coverPath != null) {
-            AsyncImage(
-                model = resolveCover(item.coverPath),
-                contentDescription = item.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(34.dp)
-                    .aspectRatio(0.72f)
-                    .clip(RoundedCornerShape(6.dp))
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(MiuixTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(
-                        when (item.kind) {
-                            UsageKind.READ -> R.string.stats_activity_read
-                            UsageKind.BROWSE -> R.string.stats_activity_browse
-                            else -> R.string.stats_activity_search
-                        }
-                    ),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-            }
-        }
+    val query = item.query
+    val kindLabel = stringResource(activityKindLabelRes(item.kind))
+    val onClick: (() -> Unit)? = when {
+        item.kind == UsageKind.SEARCH && !query.isNullOrBlank() -> ({ onSearchClick(query) })
+        item.galleryId != null -> ({ onItemClick(item.galleryId) })
+        else -> null
+    }
 
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = when (item.kind) {
-                    UsageKind.SEARCH -> "「${item.query.orEmpty()}」"
-                    else -> item.title.orEmpty()
+    val summary = buildString {
+        append(kindLabel)
+        append(" · ")
+        append(formatClock(item.at))
+        if (item.durationMillis > 0) {
+            append(" · ")
+            append(formatDuration(item.durationMillis))
+        }
+    }
+
+    BasicComponent(
+        title = if (item.kind == UsageKind.SEARCH) {
+            "「${query.orEmpty()}」"
+        } else {
+            item.title.orEmpty()
+        },
+        summary = summary,
+        startAction = { TrailLeading(item = item, resolveCover = resolveCover) },
+        onClick = onClick,
+    )
+}
+
+@Composable
+private fun TrailLeading(
+    item: ActivityItem,
+    resolveCover: (String) -> String,
+) {
+    val coverPath = item.coverPath
+    if (coverPath != null) {
+        AsyncImage(
+            model = resolveCover(coverPath),
+            contentDescription = item.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .width(36.dp)
+                .aspectRatio(0.72f)
+                .clip(RoundedCornerShape(6.dp))
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MiuixTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = when (item.kind) {
+                    UsageKind.READ -> MiuixIcons.Album
+                    UsageKind.BROWSE -> MiuixIcons.Recent
+                    else -> MiuixIcons.Search
                 },
-                style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.size(20.dp)
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(
-                        when (item.kind) {
-                            UsageKind.READ -> R.string.stats_activity_read
-                            UsageKind.BROWSE -> R.string.stats_activity_browse
-                            else -> R.string.stats_activity_search
-                        }
-                    ),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-                Text(
-                    text = formatClock(item.at),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-                if (item.durationMillis > 0) {
-                    Text(
-                        text = formatDuration(item.durationMillis),
-                        style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    )
-                }
-            }
         }
     }
 }

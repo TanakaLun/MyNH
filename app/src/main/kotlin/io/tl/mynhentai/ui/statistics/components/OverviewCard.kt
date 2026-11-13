@@ -34,12 +34,6 @@ fun OverviewCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = stringResource(R.string.stats_overview),
-                style = MiuixTheme.textStyles.subtitle,
-                color = MiuixTheme.colorScheme.onSurface
-            )
-
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Metric(
                     label = stringResource(R.string.stats_today),

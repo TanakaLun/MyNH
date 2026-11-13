@@ -45,6 +45,7 @@ import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -98,82 +99,106 @@ fun StatisticsScreen(
                     .overscroll(rememberOverscrollEffect())
                     .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
                     .scrollEndHaptic(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(
-                    top = innerPadding.calculateTopPadding() + 16.dp,
+                    top = innerPadding.calculateTopPadding() + 8.dp,
                     bottom = innerPadding.calculateBottomPadding() + bottomNavPadding +
                         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 16.dp
                 )
             ) {
                 item {
-                    OverviewCard(
-                        stats = state.stats,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                    )
-                }
-
-                item {
-                    SectionCard(title = stringResource(R.string.stats_heatmap)) {
-                        YearHeatmap(daily = state.stats.daily)
+                    Section(title = stringResource(R.string.stats_overview)) {
+                        OverviewCard(
+                            stats = state.stats,
+                            modifier = Modifier.sectionCardModifier()
+                        )
                     }
                 }
 
                 item {
-                    SectionCard(
-                        title = stringResource(R.string.stats_daily),
-                        titleTrailing = {
+                    Section(title = stringResource(R.string.stats_heatmap)) {
+                        ChartCard {
+                            YearHeatmap(daily = state.stats.daily)
+                        }
+                    }
+                }
+
+                item {
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SmallTitle(
+                                text = stringResource(R.string.stats_daily),
+                                modifier = Modifier.weight(1f)
+                            )
                             RangeSelector(
                                 selected = state.rangeDays,
                                 onSelect = viewModel::setRangeDays
                             )
                         }
-                    ) {
-                        DailyBarChart(
-                            daily = state.stats.daily,
-                            rangeDays = state.rangeDays
+                        ChartCard {
+                            DailyBarChart(
+                                daily = state.stats.daily,
+                                rangeDays = state.rangeDays
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Section(title = stringResource(R.string.stats_top_tags)) {
+                        TopTagsCard(
+                            topTags = state.stats.topTags,
+                            modifier = Modifier.sectionCardModifier()
                         )
                     }
                 }
 
                 item {
-                    TopTagsCard(
-                        topTags = state.stats.topTags,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                    )
+                    Section(title = stringResource(R.string.stats_taste_profile)) {
+                        TasteProfileCard(
+                            tagGroups = state.stats.tagGroups,
+                            modifier = Modifier.sectionCardModifier()
+                        )
+                    }
                 }
 
                 item {
-                    TasteProfileCard(
-                        tagGroups = state.stats.tagGroups,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                    )
-                }
-
-                item {
-                    HabitCard(
-                        habits = state.stats.habits,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                    )
+                    Section(title = stringResource(R.string.stats_habits)) {
+                        HabitCard(
+                            habits = state.stats.habits,
+                            modifier = Modifier.sectionCardModifier()
+                        )
+                    }
                 }
 
                 if (state.recordQueries) {
                     item {
-                        SearchPreferenceCard(
-                            topSearches = state.stats.topSearches,
-                            recentSearches = state.stats.recentSearches,
-                            onSearchClick = onSearchClick,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                        )
+                        Section(title = stringResource(R.string.stats_search_preferences)) {
+                            SearchPreferenceCard(
+                                topSearches = state.stats.topSearches,
+                                recentSearches = state.stats.recentSearches,
+                                onSearchClick = onSearchClick,
+                                modifier = Modifier.sectionCardModifier()
+                            )
+                        }
                     }
                 }
 
                 item {
-                    ActivityTrailCard(
-                        trail = state.stats.trail,
-                        resolveCover = viewModel::resolveCover,
-                        onItemClick = onItemClick,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
-                    )
+                    Section(title = stringResource(R.string.stats_activity_trail)) {
+                        ActivityTrailCard(
+                            trail = state.stats.trail,
+                            resolveCover = viewModel::resolveCover,
+                            onItemClick = onItemClick,
+                            onSearchClick = onSearchClick,
+                            modifier = Modifier.sectionCardModifier()
+                        )
+                    }
                 }
             }
         }
@@ -181,32 +206,34 @@ fun StatisticsScreen(
 }
 
 @Composable
-private fun SectionCard(
+private fun Section(
     title: String,
-    titleTrailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+    Column {
+        SmallTitle(text = title)
+        content()
+    }
+}
+
+@Composable
+private fun ChartCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = title,
-                    style = MiuixTheme.textStyles.subtitle,
-                    color = MiuixTheme.colorScheme.onSurface
-                )
-                titleTrailing?.invoke()
-            }
             content()
         }
     }
 }
+
+private fun Modifier.sectionCardModifier(): Modifier =
+    this.fillMaxWidth().padding(horizontal = 12.dp)
 
 @Composable
 private fun RangeSelector(
