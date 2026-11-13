@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -49,68 +48,67 @@ fun SearchPreferenceCard(
     modifier: Modifier = Modifier,
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (topSearches.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.stats_no_searches),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-            } else {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    topSearches.forEach { term ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(MiuixTheme.colorScheme.secondaryContainer)
-                                .clickable { onSearchClick(term.query) }
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+        if (topSearches.isEmpty() && recentSearches.isEmpty()) {
+            Text(
+                text = stringResource(R.string.stats_no_searches),
+                style = MiuixTheme.textStyles.footnote2,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            Column {
+                if (topSearches.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Text(
-                                text = "${term.query} ×${term.count}",
-                                style = MiuixTheme.textStyles.footnote2,
-                                color = MiuixTheme.colorScheme.onSecondaryContainer,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                            topSearches.forEach { term ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .background(MiuixTheme.colorScheme.secondaryContainer)
+                                        .clickable { onSearchClick(term.query) }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = "${term.query} ×${term.count}",
+                                        style = MiuixTheme.textStyles.footnote2,
+                                        color = MiuixTheme.colorScheme.onSecondaryContainer,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            if (recentSearches.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.stats_recent_searches),
-                    style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                )
-                recentSearches.forEach { item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { item.query?.let(onSearchClick) }
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = formatClock(item.at),
-                            style = MiuixTheme.textStyles.footnote2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        )
-                        Text(
-                            text = item.query.orEmpty(),
-                            style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
+                if (recentSearches.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.stats_recent_searches),
+                        style = MiuixTheme.textStyles.footnote2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
+                    )
+                    recentSearches.forEach { item ->
+                        val query = item.query
+                        val clickAction: (() -> Unit)? = query
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { term -> { onSearchClick(term) } }
+                        BasicComponent(
+                            title = query.orEmpty(),
+                            endActions = {
+                                Text(
+                                    text = formatClock(item.at),
+                                    style = MiuixTheme.textStyles.footnote2,
+                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                )
+                            },
+                            onClick = clickAction,
                         )
                     }
                 }
@@ -159,11 +157,6 @@ private fun TrailItem(
 ) {
     val query = item.query
     val kindLabel = stringResource(activityKindLabelRes(item.kind))
-    val onClick: (() -> Unit)? = when {
-        item.kind == UsageKind.SEARCH && !query.isNullOrBlank() -> ({ onSearchClick(query) })
-        item.galleryId != null -> ({ onItemClick(item.galleryId) })
-        else -> null
-    }
 
     val summary = buildString {
         append(kindLabel)
@@ -183,8 +176,22 @@ private fun TrailItem(
         },
         summary = summary,
         startAction = { TrailLeading(item = item, resolveCover = resolveCover) },
-        onClick = onClick,
+        onClick = trailAction(item, onItemClick, onSearchClick),
     )
+}
+
+private fun trailAction(
+    item: ActivityItem,
+    onItemClick: (Long) -> Unit,
+    onSearchClick: (String) -> Unit,
+): (() -> Unit)? {
+    if (item.kind == UsageKind.SEARCH) {
+        val query = item.query ?: return null
+        if (query.isBlank()) return null
+        return { onSearchClick(query) }
+    }
+    val galleryId = item.galleryId ?: return null
+    return { onItemClick(galleryId) }
 }
 
 @Composable
