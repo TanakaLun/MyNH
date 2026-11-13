@@ -19,7 +19,6 @@ import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.UsageStats
 import io.tl.mynhentai.ui.statistics.formatDuration
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
@@ -28,14 +27,19 @@ fun OverviewCard(
     stats: UsageStats,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.defaultColors(color = MiuixTheme.colorScheme.secondaryContainer)
-    ) {
+    Card(modifier = modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text(
+                text = stringResource(R.string.stats_overview),
+                style = MiuixTheme.textStyles.subtitle,
+                color = MiuixTheme.colorScheme.onSurface
+            )
+
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Metric(
                     label = stringResource(R.string.stats_today),
@@ -66,16 +70,16 @@ fun OverviewCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MiuixTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.15f))
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(MiuixTheme.colorScheme.surfaceVariant)
                 ) {
                     if (ratio > 0f) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(ratio)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(3.dp))
                                 .background(MiuixTheme.colorScheme.primary)
                         )
                     }
@@ -90,12 +94,12 @@ fun OverviewCard(
                             (ratio * 100).toInt()
                         ),
                         style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSecondaryContainer
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
                     Text(
                         text = formatDuration(stats.readingMillis),
                         style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
                 }
             }
@@ -107,7 +111,7 @@ fun OverviewCard(
                     stats.habits.distinctGalleries
                 ),
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSecondaryContainer
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
         }
     }
@@ -123,12 +127,12 @@ private fun Metric(
         Text(
             text = label,
             style = MiuixTheme.textStyles.footnote2,
-            color = MiuixTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
         )
         Text(
             text = value,
             style = MiuixTheme.textStyles.title3,
-            color = MiuixTheme.colorScheme.onSecondaryContainer
+            color = MiuixTheme.colorScheme.onSurface
         )
     }
 }

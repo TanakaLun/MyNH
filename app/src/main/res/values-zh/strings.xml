@@ -169,6 +169,7 @@
     <string name="statistics_clear_confirm">将永久删除全部使用记录与阅读记录，确定继续吗？</string>
     <string name="statistics_data">统计数据</string>
     <string name="confirm">确定</string>
+    <string name="stats_overview">概览</string>
     <string name="stats_today">今日</string>
     <string name="stats_week">本周</string>
     <string name="stats_month">本月</string>

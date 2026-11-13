@@ -171,6 +171,7 @@
     <string name="statistics_clear_confirm">This permanently deletes all recorded usage and reading data. Continue?</string>
     <string name="statistics_data">Statistics</string>
     <string name="confirm">Confirm</string>
+    <string name="stats_overview">Overview</string>
     <string name="stats_today">Today</string>
     <string name="stats_week">This week</string>
     <string name="stats_month">This month</string>

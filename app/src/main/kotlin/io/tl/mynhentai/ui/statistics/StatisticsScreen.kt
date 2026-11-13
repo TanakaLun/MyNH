@@ -108,7 +108,7 @@ fun StatisticsScreen(
                 item {
                     OverviewCard(
                         stats = state.stats,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                     )
                 }
 
@@ -138,21 +138,21 @@ fun StatisticsScreen(
                 item {
                     TopTagsCard(
                         topTags = state.stats.topTags,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                     )
                 }
 
                 item {
                     TasteProfileCard(
                         tagGroups = state.stats.tagGroups,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                     )
                 }
 
                 item {
                     HabitCard(
                         habits = state.stats.habits,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                     )
                 }
 
@@ -162,7 +162,7 @@ fun StatisticsScreen(
                             topSearches = state.stats.topSearches,
                             recentSearches = state.stats.recentSearches,
                             onSearchClick = onSearchClick,
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                         )
                     }
                 }
@@ -172,7 +172,7 @@ fun StatisticsScreen(
                         trail = state.stats.trail,
                         resolveCover = viewModel::resolveCover,
                         onItemClick = onItemClick,
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)
                     )
                 }
             }
@@ -186,7 +186,7 @@ private fun SectionCard(
     titleTrailing: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(modifier = Modifier.padding(horizontal = 12.dp)) {
+    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
