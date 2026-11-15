@@ -107,6 +107,7 @@ class AccountViewModel(
     )
 
     init {
+        _mergePrompt.value = accountStore.isBound() && settings.accountMergePending
         if (accountStore.isBound()) {
             viewModelScope.launch { accountRepository.refreshProfile() }
         }
@@ -121,9 +122,8 @@ class AccountViewModel(
             result.fold(
                 onSuccess = {
                     _events.value = AccountEvent(R.string.account_bound_success)
-                    if (uiState.value.localFavorites > 0) {
-                        _mergePrompt.value = true
-                    } else {
+                    _mergePrompt.value = settings.accountMergePending
+                    if (!settings.accountMergePending) {
                         syncNow(linkLocal = false)
                     }
                 },
@@ -136,6 +136,7 @@ class AccountViewModel(
 
     fun confirmMerge(mergeLocal: Boolean) {
         _mergePrompt.value = false
+        settings.accountMergePending = false
         syncNow(linkLocal = mergeLocal)
     }
 
@@ -148,7 +149,13 @@ class AccountViewModel(
             val result = accountRepository.syncAll(linkLocal)
             result.fold(
                 onSuccess = { _events.value = AccountEvent(R.string.account_sync_success) },
-                onFailure = { _events.value = AccountEvent(syncErrorRes(it), it.message) }
+                onFailure = { error ->
+                    if (settings.accountMergePending && !linkLocal) {
+                        _mergePrompt.value = true
+                    } else {
+                        _events.value = AccountEvent(syncErrorRes(error), error.message)
+                    }
+                }
             )
         }
     }

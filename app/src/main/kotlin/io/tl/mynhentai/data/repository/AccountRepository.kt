@@ -66,6 +66,9 @@ class AccountRepository(
     private val _progress = MutableStateFlow<SyncProgress?>(null)
     val progress: StateFlow<SyncProgress?> = _progress.asStateFlow()
 
+    val mergePending: Boolean
+        get() = settings.accountMergePending
+
     // region binding
 
     suspend fun bind(rawKey: String): Result<ApiUser> {
@@ -78,6 +81,7 @@ class AccountRepository(
         return try {
             val user = service.getMe()
             accountStore.completeBind(key, user)
+            settings.accountMergePending = mangaDao.getFavoritesOnce().isNotEmpty()
             Result.success(user)
         } catch (e: kotlinx.coroutines.CancellationException) {
             accountStore.restoreApiKey(previous)
@@ -96,6 +100,7 @@ class AccountRepository(
 
     fun unbind() {
         accountStore.unbind()
+        settings.accountMergePending = false
         scope.launch { syncDao.clear() }
         _progress.value = null
     }
@@ -108,6 +113,7 @@ class AccountRepository(
     /** Syncs only when the last successful sync is old enough, used when opening a screen. */
     suspend fun syncIfStale(): Result<Unit>? {
         if (!accountStore.isBound()) return null
+        if (settings.accountMergePending) return null
         if (!settings.favoritesSyncEnabled && !settings.blacklistSyncEnabled) return null
         val state = accountStore.state.value ?: return null
         if (state.authInvalid) return null
@@ -121,12 +127,14 @@ class AccountRepository(
 
     suspend fun syncAll(linkLocal: Boolean = false): Result<Unit> = runCatching {
         if (!accountStore.isBound()) error("account not bound")
+        if (!linkLocal && settings.accountMergePending) error("local favorites are not merged yet")
         syncMutex.withLock {
             _syncing.value = true
             try {
                 accountStore.clearAuthInvalid()
                 if (settings.favoritesSyncEnabled) syncFavorites(linkLocal)
                 if (settings.blacklistSyncEnabled) syncBlacklist()
+                settings.accountMergePending = false
                 accountStore.setLastSyncAt(System.currentTimeMillis())
                 _progress.value = SyncProgress(SyncPhase.DONE)
             } finally {

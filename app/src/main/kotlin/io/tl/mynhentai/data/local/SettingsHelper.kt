@@ -161,6 +161,16 @@ class SettingsHelper(private val appContext: Context) {
             prefs.edit().putBoolean(KEY_ACCOUNT_AUTH_INVALID, value).apply()
         }
 
+    /**
+     * True when the account was just bound while local favorites exist and the user has not
+     * decided yet whether to upload them. Auto sync stays paused until it is resolved.
+     */
+    var accountMergePending: Boolean
+        get() = prefs.getBoolean(KEY_ACCOUNT_MERGE_PENDING, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_ACCOUNT_MERGE_PENDING, value).apply()
+        }
+
     fun exportToJson(): JsonObject = buildJsonObject {
         prefs.all.forEach { (key, value) ->
             if (key.startsWith(ACCOUNT_KEY_PREFIX)) return@forEach
@@ -303,6 +313,7 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_ACCOUNT_PROFILE = "account_profile"
         private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_at"
         private const val KEY_ACCOUNT_AUTH_INVALID = "account_auth_invalid"
+        private const val KEY_ACCOUNT_MERGE_PENDING = "account_merge_pending"
 
         /** Account keys are private to this device and are never exported to a backup. */
         private const val ACCOUNT_KEY_PREFIX = "account_"
