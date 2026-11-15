@@ -100,6 +100,8 @@
     <string name="notification_foreground_text_more">%1$s 等 %2$d 项</string>
     <string name="notification_downloading_title">正在下载</string>
     <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_archive_progress">%1$s / %2$s</string>
+    <string name="notification_archive_downloaded">已下载 %1$s</string>
     <string name="notification_download_done_title">下载完成</string>
     <string name="notification_cache_done_title">缓存完成</string>
     <string name="notification_download_failed_title">下载失败</string>

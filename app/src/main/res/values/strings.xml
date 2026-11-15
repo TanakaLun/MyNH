@@ -100,6 +100,8 @@
     <string name="notification_foreground_text_more">%1$s and %2$d more</string>
     <string name="notification_downloading_title">Downloading</string>
     <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_archive_progress">%1$s / %2$s</string>
+    <string name="notification_archive_downloaded">Downloaded %1$s</string>
     <string name="notification_download_done_title">Download completed</string>
     <string name="notification_cache_done_title">Cache completed</string>
     <string name="notification_download_failed_title">Download failed</string>

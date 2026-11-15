@@ -239,6 +239,8 @@ class DownloadService : Service() {
     private fun handleTaskResult(task: ActiveTask, error: DownloadError?, extraLine: String?) {
         val inForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
         val notificationId = NotificationHelper.taskNotificationId(task.taskId)
+        // The task progress notification is ongoing: remove it before showing the result.
+        NotificationManagerCompat.from(this).cancel(notificationId)
         if (error != null) {
             stateHolder.reportError(error)
             if (!inForeground) {
@@ -350,36 +352,34 @@ class DownloadService : Service() {
         val displayName = "${safeFileName(task.title)}.$format"
         val uri = createDownloadUri(displayName, "application/zip")
 
-        notifyProgress(task, 0, 0)
+        notifyArchiveProgress(task, 0L, 0L)
         val request = Request.Builder().url(url).build()
         try {
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) throw DownloadHttpException(response.code)
                 val body = response.body ?: throw IOException(getString(R.string.error_empty_response))
-                val totalKb = body.contentLength().let { length ->
-                    if (length > 0) (length / 1024L).toInt().coerceAtLeast(1) else 0
-                }
+                val totalBytes = body.contentLength().coerceAtLeast(0L)
                 val output = contentResolver.openOutputStream(uri)
                     ?: throw IOException(getString(R.string.error_empty_response))
                 output.use { stream ->
                     body.byteStream().use { input ->
                         val buffer = ByteArray(64 * 1024)
                         var done = 0L
-                        var notifiedMb = -1L
+                        var lastNotifiedAt = 0L
                         var read = input.read(buffer)
                         while (read != -1) {
                             stream.write(buffer, 0, read)
                             done += read
-                            val doneMb = done / (1024L * 1024L)
-                            if (totalKb > 0 && doneMb > notifiedMb) {
-                                notifiedMb = doneMb
-                                notifyProgress(task, (done / 1024L).toInt(), totalKb)
+                            val now = System.currentTimeMillis()
+                            if (now - lastNotifiedAt >= NOTIFICATION_INTERVAL_MS) {
+                                lastNotifiedAt = now
+                                notifyArchiveProgress(task, done, totalBytes)
                             }
                             read = input.read(buffer)
                         }
+                        notifyArchiveProgress(task, done, if (totalBytes > 0) totalBytes else done)
                     }
                 }
-                notifyProgress(task, totalKb, totalKb)
             }
             publishDownload(uri)
         } catch (e: Exception) {
@@ -471,6 +471,15 @@ class DownloadService : Service() {
         )
     }
 
+    private fun notifyArchiveProgress(task: ActiveTask, doneBytes: Long, totalBytes: Long) {
+        notifyTask(
+            NotificationHelper.taskNotificationId(task.taskId),
+            NotificationHelper.buildArchiveProgressNotification(
+                this, task.title, doneBytes, totalBytes
+            )
+        )
+    }
+
 
 
     private fun buildFailureMessage(failures: List<Throwable>): String {
@@ -511,6 +520,7 @@ class DownloadService : Service() {
     private class FetchFailedException(val failures: List<Throwable>) : IOException()
 
     companion object {
+        const val NOTIFICATION_INTERVAL_MS = 500L
         const val ACTION_DOWNLOAD = "io.tl.mynhentai.action.DOWNLOAD"
         const val ACTION_CACHE = "io.tl.mynhentai.action.CACHE"
         const val ACTION_ARCHIVE = "io.tl.mynhentai.action.ARCHIVE"
