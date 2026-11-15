@@ -74,16 +74,18 @@ class DetailViewModel(
                 val serverFav = detail.isFavorited
                 if (serverFav != null &&
                     serverFav != isFav &&
-                    accountRepository.shouldCalibrateFavorites() &&
-                    !accountRepository.hasPendingFavorite(id)
+                    accountRepository.shouldCalibrateFavorites()
                 ) {
                     // Server state wins unless the user has an unsent change for this gallery.
-                    if (serverFav) {
-                        repository.addFavorite(detail.toFavoriteEntity())
-                    } else {
-                        repository.removeFavorite(id)
+                    runCatching {
+                        if (accountRepository.hasPendingFavorite(id)) return@runCatching
+                        if (serverFav) {
+                            repository.addFavorite(detail.toFavoriteEntity())
+                        } else {
+                            repository.removeFavorite(id)
+                        }
+                        isFav = serverFav
                     }
-                    isFav = serverFav
                 }
                 _uiState.value = DetailUiState.Success(
                     detail = detail,

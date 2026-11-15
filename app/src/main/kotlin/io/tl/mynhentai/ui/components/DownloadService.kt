@@ -74,7 +74,7 @@ class DownloadService : Service() {
             .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
-                        .header("User-Agent", "MyNHentai/1.0")
+                        .header("User-Agent", "MyNHentai (+https://github.com/TanakaLun/MyNH)")
                         .build()
                 )
             }
