@@ -6,6 +6,7 @@ import io.tl.mynhentai.data.model.ApiUser
 import io.tl.mynhentai.data.model.BlacklistApiResponse
 import io.tl.mynhentai.data.model.BlacklistListResponse
 import io.tl.mynhentai.data.model.BlacklistUpdateRequest
+import io.tl.mynhentai.data.model.DownloadResponse
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.model.RandomFavoriteResponse
 import retrofit2.http.Body
@@ -47,4 +48,10 @@ interface AccountService {
 
     @POST("api/v2/blacklist")
     suspend fun updateBlacklist(@Body body: BlacklistUpdateRequest): BlacklistApiResponse
+
+    @POST("api/v2/galleries/{id}/download")
+    suspend fun getDownloadUrl(
+        @Path("id") id: Long,
+        @Query("format") format: String,
+    ): DownloadResponse
 }

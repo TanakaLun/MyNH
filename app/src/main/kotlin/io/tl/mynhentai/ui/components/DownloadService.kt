@@ -105,6 +105,23 @@ class DownloadService : Service() {
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
                 startTask(DownloadKind.CACHE, pages, galleryId, title, null)
             }
+
+            ACTION_ARCHIVE -> {
+                val url = intent.getStringExtra(EXTRA_ARCHIVE_URL) ?: return START_NOT_STICKY
+                val format = intent.getStringExtra(EXTRA_ARCHIVE_FORMAT) ?: "cbz"
+                val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0)
+                val title = intent.getStringExtra(EXTRA_TITLE) ?: "gallery_$galleryId"
+                val targetDir = intent.getStringExtra(EXTRA_TARGET_DIR) ?: return START_NOT_STICKY
+                startTask(
+                    kind = DownloadKind.ARCHIVE,
+                    pages = emptyList(),
+                    galleryId = galleryId,
+                    title = title,
+                    targetDir = targetDir,
+                    archiveUrl = url,
+                    archiveFormat = format,
+                )
+            }
         }
         return START_NOT_STICKY
     }
@@ -127,6 +144,8 @@ class DownloadService : Service() {
         galleryId: Long,
         title: String,
         targetDir: String?,
+        archiveUrl: String? = null,
+        archiveFormat: String? = null,
     ) {
         synchronized(lock) {
             val key = kind to galleryId
@@ -134,7 +153,16 @@ class DownloadService : Service() {
             if (key in taskKeys) return
 
             val taskId = taskCounter.incrementAndGet()
-            val task = ActiveTask(taskId, kind, galleryId, title, targetDir, pages)
+            val task = ActiveTask(
+                taskId = taskId,
+                kind = kind,
+                galleryId = galleryId,
+                title = title,
+                targetDir = targetDir,
+                pages = pages,
+                archiveUrl = archiveUrl,
+                archiveFormat = archiveFormat,
+            )
 
             taskKeys[key] = taskId
             tasks[taskId] = task
@@ -181,18 +209,25 @@ class DownloadService : Service() {
                     extraLine = getString(R.string.notification_cache_count, cached)
                     null
                 }
+
+                DownloadKind.ARCHIVE -> {
+                    doArchive(task)
+                    null
+                }
             }
         } catch (e: FetchFailedException) {
             DownloadError(
                 task.taskId, task.kind, task.galleryId, task.title,
-                task.targetDir, task.pages, buildFailureMessage(e.failures)
+                task.targetDir, task.pages, buildFailureMessage(e.failures),
+                retryable = task.kind != DownloadKind.ARCHIVE,
             )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             DownloadError(
                 task.taskId, task.kind, task.galleryId, task.title,
-                task.targetDir, task.pages, e.message?.takeIf { it.isNotBlank() } ?: getString(R.string.error_network)
+                task.targetDir, task.pages, e.message?.takeIf { it.isNotBlank() } ?: getString(R.string.error_network),
+                retryable = task.kind != DownloadKind.ARCHIVE,
             )
         }
         handleTaskResult(task, error, extraLine)
@@ -296,6 +331,49 @@ class DownloadService : Service() {
         return dir.listFiles()?.size ?: 0
     }
 
+    /** Streams a server packaged archive (cbz/zip) from its signed URL. */
+    private suspend fun doArchive(task: ActiveTask) {
+        val url = task.archiveUrl ?: throw IOException(getString(R.string.error_empty_response))
+        val format = task.archiveFormat?.takeIf { it.isNotBlank() } ?: "cbz"
+        val targetDir = task.targetDir ?: throw IOException(getString(R.string.error_empty_response))
+        val target = uniqueArchiveFile(targetDir, task.title, format)
+        target.parentFile?.mkdirs()
+
+        notifyProgress(task, 0, 0)
+        val request = Request.Builder().url(url).build()
+        try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) throw DownloadHttpException(response.code)
+                val body = response.body ?: throw IOException(getString(R.string.error_empty_response))
+                val totalKb = body.contentLength().let { length ->
+                    if (length > 0) (length / 1024L).toInt().coerceAtLeast(1) else 0
+                }
+                body.byteStream().use { input ->
+                    target.outputStream().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        var done = 0L
+                        var notifiedMb = -1L
+                        var read = input.read(buffer)
+                        while (read != -1) {
+                            output.write(buffer, 0, read)
+                            done += read
+                            val doneMb = done / (1024L * 1024L)
+                            if (totalKb > 0 && doneMb > notifiedMb) {
+                                notifiedMb = doneMb
+                                notifyProgress(task, (done / 1024L).toInt(), totalKb)
+                            }
+                            read = input.read(buffer)
+                        }
+                    }
+                }
+                notifyProgress(task, totalKb, totalKb)
+            }
+        } catch (e: Exception) {
+            target.delete()
+            throw e
+        }
+    }
+
     /**
      * Fetches every page concurrently, bounded by the per-task [concurrencySemaphore].
      * Already-present files are skipped (a retried task only fills in the gaps).
@@ -362,6 +440,18 @@ class DownloadService : Service() {
         return file
     }
 
+    private fun uniqueArchiveFile(targetDir: String, title: String, extension: String): File {
+        val safeTitle = title.replace("/", "_")
+        val safeExtension = extension.lowercase().let { if (it == "zip" || it == "cbz") it else "cbz" }
+        var file = File(targetDir, "$safeTitle.$safeExtension")
+        var index = 2
+        while (file.exists()) {
+            file = File(targetDir, "$safeTitle ($index).$safeExtension")
+            index++
+        }
+        return file
+    }
+
     private fun buildFailureMessage(failures: List<Throwable>): String {
         val httpFailure = failures.filterIsInstance<DownloadHttpException>().firstOrNull()
         val base = when {
@@ -386,6 +476,8 @@ class DownloadService : Service() {
         val title: String,
         val targetDir: String?,
         val pages: List<Pair<Int, String>>,
+        val archiveUrl: String? = null,
+        val archiveFormat: String? = null,
     )
 
     private class DownloadHttpException(val code: Int) : IOException("HTTP $code") {
@@ -400,11 +492,14 @@ class DownloadService : Service() {
     companion object {
         const val ACTION_DOWNLOAD = "io.tl.mynhentai.action.DOWNLOAD"
         const val ACTION_CACHE = "io.tl.mynhentai.action.CACHE"
+        const val ACTION_ARCHIVE = "io.tl.mynhentai.action.ARCHIVE"
         const val EXTRA_PAGE_NUMBERS = "page_numbers"
         const val EXTRA_PAGE_URLS = "page_urls"
         const val EXTRA_GALLERY_ID = "gallery_id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_TARGET_DIR = "target_dir"
+        const val EXTRA_ARCHIVE_URL = "archive_url"
+        const val EXTRA_ARCHIVE_FORMAT = "archive_format"
 
         private fun Intent.extractPages(): List<Pair<Int, String>>? {
             val pageNumbers = getIntArrayExtra(EXTRA_PAGE_NUMBERS) ?: return null
@@ -442,6 +537,25 @@ class DownloadService : Service() {
                 putExtra(EXTRA_PAGE_URLS, pages.map { it.second }.toTypedArray())
                 putExtra(EXTRA_GALLERY_ID, galleryId)
                 putExtra(EXTRA_TITLE, title)
+            }
+            context.startForegroundService(intent)
+        }
+
+        fun startArchive(
+            context: Context,
+            url: String,
+            galleryId: Long,
+            title: String,
+            targetDir: String,
+            format: String,
+        ) {
+            val intent = Intent(context, DownloadService::class.java).apply {
+                action = ACTION_ARCHIVE
+                putExtra(EXTRA_ARCHIVE_URL, url)
+                putExtra(EXTRA_ARCHIVE_FORMAT, format)
+                putExtra(EXTRA_GALLERY_ID, galleryId)
+                putExtra(EXTRA_TITLE, title)
+                putExtra(EXTRA_TARGET_DIR, targetDir)
             }
             context.startForegroundService(intent)
         }

@@ -308,6 +308,20 @@ class AccountRepository(
         response.id?.takeIf { it > 0 } ?: error("empty favorites")
     }.onFailure { handleAuthFailure(it) }
 
+    /** Asks the server for a short lived archive URL (cbz / zip). */
+    suspend fun downloadUrl(galleryId: Long, format: String): Result<String> = runCatching {
+        if (!accountStore.isBound()) error("account not bound")
+        val response = service.getDownloadUrl(galleryId, format)
+        response.url.takeIf { it.isNotBlank() } ?: error("empty download url")
+    }.onFailure { handleAuthFailure(it) }
+
+    /** True when server reported favorite state can safely be applied to the local mirror. */
+    fun shouldCalibrateFavorites(): Boolean =
+        accountStore.isBound() && settings.favoritesSyncEnabled && !settings.accountAuthInvalid
+
+    suspend fun hasPendingFavorite(galleryId: Long): Boolean =
+        syncDao.hasPendingFavorite(galleryId)
+
     private fun canSyncFavorites(): Boolean =
         accountStore.isBound() && settings.favoritesSyncEnabled && !settings.accountAuthInvalid
 

@@ -26,4 +26,10 @@ interface SyncDao {
 
     @Query("SELECT COUNT(*) FROM pending_sync")
     fun observeCount(): Flow<Int>
+
+    @Query(
+        "SELECT EXISTS(SELECT 1 FROM pending_sync " +
+            "WHERE targetId = :targetId AND kind IN ('favorite_add', 'favorite_remove'))"
+    )
+    suspend fun hasPendingFavorite(targetId: Long): Boolean
 }

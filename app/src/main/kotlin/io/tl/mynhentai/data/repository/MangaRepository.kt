@@ -27,6 +27,8 @@ class MangaRepository(
 
     suspend fun getRandom(): MangaSummary = api.getRandom()
 
+    suspend fun getRelated(id: Long): List<MangaSummary> = api.getRelated(id).result
+
     suspend fun refreshCdn() = cdnRepository.refresh()
 
     fun resolveThumbnailUrl(path: String): String = cdnRepository.resolveThumbnailUrl(path)

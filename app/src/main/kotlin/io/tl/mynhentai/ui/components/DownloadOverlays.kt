@@ -44,10 +44,10 @@ fun DownloadOverlayRoot(content: @Composable () -> Unit) {
     LaunchedEffect(holder) {
         holder.completions.collect { event ->
             val message = context.getString(
-                if (event.kind == DownloadKind.DOWNLOAD) {
-                    R.string.toast_download_finished
-                } else {
+                if (event.kind == DownloadKind.CACHE) {
                     R.string.toast_cache_finished
+                } else {
+                    R.string.toast_download_finished
                 },
                 event.title,
             )
@@ -76,10 +76,10 @@ private fun DownloadRetryDialog(holder: DownloadStateHolder, onRetry: (DownloadE
     OverlayDialog(
         show = true,
         title = stringResource(
-            if (error.kind == DownloadKind.DOWNLOAD) {
-                R.string.download_failed_title
-            } else {
+            if (error.kind == DownloadKind.CACHE) {
                 R.string.cache_failed_title
+            } else {
+                R.string.download_failed_title
             }
         ),
         summary = stringResource(R.string.download_failed_body, error.message),
@@ -95,14 +95,16 @@ private fun DownloadRetryDialog(holder: DownloadStateHolder, onRetry: (DownloadE
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        onRetry(error)
-                        holder.dismissError(error.taskId)
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(stringResource(R.string.retry))
+                if (error.retryable) {
+                    Button(
+                        onClick = {
+                            onRetry(error)
+                            holder.dismissError(error.taskId)
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.retry))
+                    }
                 }
                 TextButton(
                     text = stringResource(R.string.cancel),
@@ -124,5 +126,7 @@ private fun retryTask(context: Context, error: DownloadError) {
         DownloadKind.CACHE -> {
             DownloadService.startCache(context, error.pages, error.galleryId, error.title)
         }
+
+        DownloadKind.ARCHIVE -> Unit
     }
 }

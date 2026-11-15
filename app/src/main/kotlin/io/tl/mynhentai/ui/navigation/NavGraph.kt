@@ -209,7 +209,8 @@ fun MainNavGraph(
                 galleryId = route.id,
                 onBack = { navigator.pop() },
                 onReaderClick = { navigator.push(AppRoute.Reader(it)) },
-                onTagClick = { q -> navigator.push(AppRoute.Search(q)) }
+                onTagClick = { q -> navigator.push(AppRoute.Search(q)) },
+                onItemClick = { id -> navigator.push(AppRoute.Detail(id)) }
             )
         }
         entry<AppRoute.Reader>(swipeDismiss = NavSwipeDirection.None) { route ->

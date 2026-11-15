@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.update
 enum class DownloadKind {
     DOWNLOAD,
     CACHE,
+    ARCHIVE,
 }
 
 data class DownloadError(
@@ -21,6 +22,7 @@ data class DownloadError(
     val targetDir: String?,
     val pages: List<Pair<Int, String>>,
     val message: String,
+    val retryable: Boolean = true,
 )
 
 data class DownloadCompleted(

@@ -276,4 +276,12 @@
     <string name="account_progress_blacklist_pull">正在拉取黑名单…</string>
     <string name="account_about_title">说明</string>
     <string name="account_about_body">账号功能使用 nhentai API Key。密码登录需要 Cloudflare 验证码，第三方 App 无法使用。同步只涉及收藏和标签黑名单，阅读历史仍保存在本地。</string>
+
+    <!-- Detail / archive download -->
+    <string name="related_galleries">相关作品</string>
+    <string name="download_as_cbz">整本 CBZ</string>
+    <string name="download_as_zip">整本 ZIP</string>
+    <string name="download_pages_zip">逐页 ZIP</string>
+    <string name="download_feature_disabled">服务端暂时未开放整本下载</string>
+    <string name="download_archive_failed">获取下载地址失败</string>
 </resources>

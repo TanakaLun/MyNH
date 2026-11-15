@@ -2,6 +2,7 @@ package io.tl.mynhentai.ui.detail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.tl.mynhentai.R
+import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.DownloadDialog
@@ -75,9 +79,13 @@ fun DetailScreen(
     onBack: () -> Unit,
     onReaderClick: (Long) -> Unit,
     onTagClick: (String) -> Unit,
+    onItemClick: (Long) -> Unit,
     viewModel: DetailViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val related by viewModel.related.collectAsState()
+    val archiveAvailable by viewModel.archiveAvailable.collectAsState()
+    val archiveError by viewModel.archiveError.collectAsState()
     val context = LocalContext.current
     var blacklistTag by remember { mutableStateOf<Tag?>(null) }
     var showDownloadDialog by remember { mutableStateOf(false) }
@@ -146,9 +154,14 @@ fun DetailScreen(
             if (state is DetailUiState.Success) {
                 DownloadDialog(
                     detail = state.detail,
+                    archiveAvailable = archiveAvailable,
                     onDismiss = { showDownloadDialog = false },
                     onDownload = { filename, path ->
                         viewModel.startDownload(context, state.detail, filename, path)
+                        showDownloadDialog = false
+                    },
+                    onArchive = { filename, format ->
+                        viewModel.startArchiveDownload(context, state.detail, filename, format)
                         showDownloadDialog = false
                     },
                     onCache = {
@@ -156,6 +169,31 @@ fun DetailScreen(
                         showDownloadDialog = false
                     }
                 )
+            }
+        }
+
+        val archiveFailure = archiveError
+        if (archiveFailure != null) {
+            OverlayDialog(
+                show = true,
+                title = stringResource(R.string.download_failed_title),
+                onDismissRequest = { viewModel.consumeArchiveError() }
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = buildString {
+                            append(stringResource(archiveFailure.messageRes))
+                            archiveFailure.detail?.takeIf { it.isNotBlank() }?.let { append(": $it") }
+                        },
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                    TextButton(
+                        text = stringResource(R.string.close),
+                        onClick = { viewModel.consumeArchiveError() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 
@@ -369,12 +407,66 @@ fun DetailScreen(
                             }
                         }
                     }
+
+                    if (related.isNotEmpty()) {
+                        SmallTitle(text = stringResource(R.string.related_galleries))
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(related, key = { it.id }) { item ->
+                                RelatedMangaItem(
+                                    manga = item,
+                                    imageUrl = viewModel.resolveThumbnailUrl(item.thumbnail),
+                                    onClick = { onItemClick(item.id) }
+                                )
+                            }
+                        }
+                    }
                 }
-    
+
                 is DetailUiState.Error -> {
                     Box(modifier = Modifier.fillMaxSize())
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RelatedMangaItem(
+    manga: MangaSummary,
+    imageUrl: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(104.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+    ) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = manga.englishTitle ?: manga.japaneseTitle,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(
+                    if (manga.thumbnailWidth > 0) {
+                        manga.thumbnailWidth.toFloat() / manga.thumbnailHeight
+                    } else {
+                        0.7f
+                    }
+                )
+                .clip(RoundedCornerShape(12.dp))
+        )
+        Text(
+            text = manga.englishTitle ?: manga.japaneseTitle ?: "",
+            style = MiuixTheme.textStyles.footnote2,
+            color = MiuixTheme.colorScheme.onSurface,
+            maxLines = 2,
+            modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp)
+        )
     }
 }

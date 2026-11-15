@@ -33,7 +33,14 @@ data class MangaDetail(
     val pages: List<MangaPage>,
     val tags: List<Tag> = emptyList(),
     @SerialName("num_pages") val numPages: Int,
-    @SerialName("num_favorites") val numFavorites: Int = 0
+    @SerialName("num_favorites") val numFavorites: Int = 0,
+    @SerialName("is_favorited") val isFavorited: Boolean? = null,
+    @SerialName("comment_count") val commentCount: Int = 0
+)
+
+@Serializable
+data class RelatedGalleriesResponse(
+    val result: List<MangaSummary> = emptyList()
 )
 
 @Serializable

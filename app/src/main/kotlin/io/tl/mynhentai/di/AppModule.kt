@@ -189,7 +189,7 @@ val viewModelModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
     viewModel { SearchResultsViewModel(get(), get(), get()) }
-    viewModel { DetailViewModel(get(), get(), get(), get()) }
+    viewModel { DetailViewModel(get(), get(), get(), get(), get()) }
     viewModel { ReaderViewModel(get(), get(), get()) }
     viewModel { LibraryViewModel(get(), get(), get()) }
     viewModel { HistoryViewModel(get()) }

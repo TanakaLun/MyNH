@@ -278,4 +278,12 @@
     <string name="account_progress_blacklist_pull">Pulling blacklist…</string>
     <string name="account_about_title">How it works</string>
     <string name="account_about_body">Account features use the nhentai API key. Password sign-in needs a Cloudflare captcha and is not available to third-party apps. Sync only covers favorites and the tag blacklist; reading history stays local.</string>
+
+    <!-- Detail / archive download -->
+    <string name="related_galleries">Related</string>
+    <string name="download_as_cbz">Full CBZ</string>
+    <string name="download_as_zip">Full ZIP</string>
+    <string name="download_pages_zip">Page ZIP</string>
+    <string name="download_feature_disabled">Archive downloads are temporarily unavailable</string>
+    <string name="download_archive_failed">Could not get the download URL</string>
 </resources>

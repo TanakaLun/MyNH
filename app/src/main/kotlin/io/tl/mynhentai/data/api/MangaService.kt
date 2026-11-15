@@ -4,6 +4,7 @@ import io.tl.mynhentai.data.model.ApiResponse
 import io.tl.mynhentai.data.model.CdnResponse
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.MangaSummary
+import io.tl.mynhentai.data.model.RelatedGalleriesResponse
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -24,6 +25,9 @@ interface MangaService {
 
     @GET("api/v2/galleries/random")
     suspend fun getRandom(): MangaSummary
+
+    @GET("api/v2/galleries/{id}/related")
+    suspend fun getRelated(@Path("id") id: Long): RelatedGalleriesResponse
 
     @GET("api/v2/search")
     suspend fun search(

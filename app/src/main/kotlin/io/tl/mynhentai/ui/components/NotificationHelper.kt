@@ -78,10 +78,10 @@ object NotificationHelper {
     ): Notification {
         val builder = NotificationCompat.Builder(context, CHANNEL_RESULT_ID)
             .setContentTitle(context.getString(
-                if (kind == DownloadKind.DOWNLOAD) {
-                    R.string.notification_download_done_title
-                } else {
+                if (kind == DownloadKind.CACHE) {
                     R.string.notification_cache_done_title
+                } else {
+                    R.string.notification_download_done_title
                 }
             ))
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
@@ -104,10 +104,10 @@ object NotificationHelper {
     ): Notification {
         return NotificationCompat.Builder(context, CHANNEL_RESULT_ID)
             .setContentTitle(context.getString(
-                if (kind == DownloadKind.DOWNLOAD) {
-                    R.string.notification_download_failed_title
-                } else {
+                if (kind == DownloadKind.CACHE) {
                     R.string.notification_cache_failed_title
+                } else {
+                    R.string.notification_download_failed_title
                 }
             ))
             .setContentText(context.getString(R.string.notification_failed_text, title, error))

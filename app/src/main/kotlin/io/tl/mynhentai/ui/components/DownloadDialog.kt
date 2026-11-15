@@ -24,8 +24,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun DownloadDialog(
     detail: MangaDetail,
+    archiveAvailable: Boolean,
     onDismiss: () -> Unit,
     onDownload: (filename: String, path: String) -> Unit,
+    onArchive: (filename: String, format: String) -> Unit,
     onCache: () -> Unit
 ) {
     var filename by remember { mutableStateOf(detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}") }
@@ -55,6 +57,26 @@ fun DownloadDialog(
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary
             )
 
+            if (archiveAvailable) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { onArchive(filename, "cbz") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.download_as_cbz))
+                    }
+                    Button(
+                        onClick = { onArchive(filename, "zip") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(stringResource(R.string.download_as_zip))
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -63,7 +85,7 @@ fun DownloadDialog(
                     onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(stringResource(R.string.download_zip))
+                    Text(stringResource(R.string.download_pages_zip))
                 }
                 Button(
                     onClick = { onCache() },

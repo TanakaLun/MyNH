@@ -75,3 +75,9 @@ data class BlacklistApiResponse(
     val success: Boolean = false,
     val count: Int = 0,
 )
+
+@Serializable
+data class DownloadResponse(
+    val url: String,
+    @SerialName("expires_at") val expiresAt: Long = 0L,
+)
