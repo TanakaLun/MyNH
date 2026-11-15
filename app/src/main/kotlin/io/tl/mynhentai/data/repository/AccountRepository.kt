@@ -77,11 +77,12 @@ class AccountRepository(
             return Result.failure(IllegalArgumentException("invalid api key"))
         }
         val previous = accountStore.apiKey()
+        val wasBound = accountStore.isBound()
         accountStore.stageApiKey(key)
         return try {
             val user = service.getMe()
             accountStore.completeBind(key, user)
-            settings.accountMergePending = mangaDao.getFavoritesOnce().isNotEmpty()
+            settings.accountMergePending = !wasBound && mangaDao.getFavoritesOnce().isNotEmpty()
             Result.success(user)
         } catch (e: kotlinx.coroutines.CancellationException) {
             accountStore.restoreApiKey(previous)
