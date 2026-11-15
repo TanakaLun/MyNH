@@ -51,6 +51,10 @@ class LibraryViewModel(
     }
 
     fun syncNow() {
+        if (accountRepository.mergePending) {
+            _syncMessage.value = R.string.account_merge_required
+            return
+        }
         viewModelScope.launch {
             accountRepository.syncAll().fold(
                 onSuccess = { _syncMessage.value = R.string.account_sync_success },

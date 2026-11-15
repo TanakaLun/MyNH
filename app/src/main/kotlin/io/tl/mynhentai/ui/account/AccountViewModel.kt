@@ -145,6 +145,10 @@ class AccountViewModel(
     }
 
     fun syncNow(linkLocal: Boolean = false) {
+        if (!linkLocal && accountRepository.mergePending) {
+            _mergePrompt.value = true
+            return
+        }
         viewModelScope.launch {
             val result = accountRepository.syncAll(linkLocal)
             result.fold(
