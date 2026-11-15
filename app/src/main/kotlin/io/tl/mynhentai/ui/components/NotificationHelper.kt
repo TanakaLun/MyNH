@@ -119,7 +119,6 @@ object NotificationHelper {
                 .setSmallIcon(android.R.drawable.stat_sys_download)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setSilent(true)
                 .setRequestPromotedOngoing(true)
                 .setStyle(
                     Notification.ProgressStyle().apply {
