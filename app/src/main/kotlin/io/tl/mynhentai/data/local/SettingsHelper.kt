@@ -123,8 +123,47 @@ class SettingsHelper(private val appContext: Context) {
             _statisticsRecordQueriesFlow.value = value
         }
 
+    private val _favoritesSyncEnabledFlow = MutableStateFlow(prefs.getBoolean(KEY_FAVORITES_SYNC, true))
+    val favoritesSyncEnabledFlow: StateFlow<Boolean> = _favoritesSyncEnabledFlow.asStateFlow()
+
+    var favoritesSyncEnabled: Boolean
+        get() = _favoritesSyncEnabledFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_FAVORITES_SYNC, value).apply()
+            _favoritesSyncEnabledFlow.value = value
+        }
+
+    private val _blacklistSyncEnabledFlow = MutableStateFlow(prefs.getBoolean(KEY_BLACKLIST_SYNC, true))
+    val blacklistSyncEnabledFlow: StateFlow<Boolean> = _blacklistSyncEnabledFlow.asStateFlow()
+
+    var blacklistSyncEnabled: Boolean
+        get() = _blacklistSyncEnabledFlow.value
+        set(value) {
+            prefs.edit().putBoolean(KEY_BLACKLIST_SYNC, value).apply()
+            _blacklistSyncEnabledFlow.value = value
+        }
+
+    var accountProfileJson: String
+        get() = prefs.getString(KEY_ACCOUNT_PROFILE, "") ?: ""
+        set(value) {
+            prefs.edit().putString(KEY_ACCOUNT_PROFILE, value).apply()
+        }
+
+    var accountLastSyncAt: Long
+        get() = prefs.getLong(KEY_ACCOUNT_LAST_SYNC, 0L)
+        set(value) {
+            prefs.edit().putLong(KEY_ACCOUNT_LAST_SYNC, value).apply()
+        }
+
+    var accountAuthInvalid: Boolean
+        get() = prefs.getBoolean(KEY_ACCOUNT_AUTH_INVALID, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_ACCOUNT_AUTH_INVALID, value).apply()
+        }
+
     fun exportToJson(): JsonObject = buildJsonObject {
         prefs.all.forEach { (key, value) ->
+            if (key.startsWith(ACCOUNT_KEY_PREFIX)) return@forEach
             when (value) {
                 is Boolean -> put(key, value)
                 is Int -> put(key, value)
@@ -140,6 +179,7 @@ class SettingsHelper(private val appContext: Context) {
     fun importFromJson(obj: JsonObject) {
         val editor = prefs.edit()
         obj.forEach { (key, element) ->
+            if (key.startsWith(ACCOUNT_KEY_PREFIX)) return@forEach
             val prim = element as? JsonPrimitive ?: return@forEach
             when {
                 prim.isString -> editor.putString(key, prim.content)
@@ -163,6 +203,8 @@ class SettingsHelper(private val appContext: Context) {
         _floatingNavbarPositionFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0)
         _statisticsEnabledFlow.value = prefs.getBoolean(KEY_STATISTICS_ENABLED, true)
         _statisticsRecordQueriesFlow.value = prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true)
+        _favoritesSyncEnabledFlow.value = prefs.getBoolean(KEY_FAVORITES_SYNC, true)
+        _blacklistSyncEnabledFlow.value = prefs.getBoolean(KEY_BLACKLIST_SYNC, true)
     }
 
     val coilCacheDir: java.io.File
@@ -256,5 +298,13 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_FLOATING_NAVBAR_POSITION = "floating_navbar_position"
         private const val KEY_STATISTICS_ENABLED = "statistics_enabled"
         private const val KEY_STATISTICS_RECORD_QUERIES = "statistics_record_queries"
+        private const val KEY_FAVORITES_SYNC = "favorites_sync_enabled"
+        private const val KEY_BLACKLIST_SYNC = "blacklist_sync_enabled"
+        private const val KEY_ACCOUNT_PROFILE = "account_profile"
+        private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_at"
+        private const val KEY_ACCOUNT_AUTH_INVALID = "account_auth_invalid"
+
+        /** Account keys are private to this device and are never exported to a backup. */
+        private const val ACCOUNT_KEY_PREFIX = "account_"
     }
 }

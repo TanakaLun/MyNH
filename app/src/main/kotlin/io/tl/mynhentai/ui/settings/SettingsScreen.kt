@@ -46,7 +46,9 @@ import kotlin.math.pow
 import kotlinx.coroutines.launch
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.BackupData
+import io.tl.mynhentai.data.local.AccountStore
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
+import io.tl.mynhentai.ui.account.AccountAvatar
 import io.tl.mynhentai.ui.components.BlurredBar
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
@@ -91,6 +93,7 @@ private val languageLabels = mapOf(
 @Composable
 fun SettingsScreen(
     bottomNavPadding: Dp = 0.dp,
+    onAccountClick: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val concurrency by viewModel.concurrency.collectAsState()
@@ -104,6 +107,8 @@ fun SettingsScreen(
     val enableBlur by viewModel.enableBlur.collectAsState()
     val powerSaveModeTracker: PowerSaveModeTracker = koinInject()
     val isPowerSaveMode by powerSaveModeTracker.isPowerSaveMode.collectAsState()
+    val accountStore: AccountStore = koinInject()
+    val accountState by accountStore.state.collectAsState()
     val useFloatingNavbar by viewModel.useFloatingNavbar.collectAsState()
     val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
@@ -535,6 +540,40 @@ fun SettingsScreen(
                             checked = languageFilterEnabled,
                             onCheckedChange = { viewModel.setLanguageFilterEnabled(it) },
                             title = stringResource(R.string.sync_language_to_search)
+                        )
+                    }
+                }
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallTitle(text = stringResource(R.string.account))
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                    ) {
+                        val avatarAction: (@Composable () -> Unit)? = if (accountState != null) {
+                            {
+                                AccountAvatar(
+                                    avatarUrl = accountState?.profile?.avatarUrl.orEmpty(),
+                                    size = 32.dp
+                                )
+                            }
+                        } else {
+                            null
+                        }
+                        ArrowPreference(
+                            title = accountState?.profile?.username
+                                ?: stringResource(R.string.account_bind),
+                            summary = if (accountState != null) {
+                                stringResource(R.string.account_bound_summary)
+                            } else {
+                                stringResource(R.string.account_bind_summary)
+                            },
+                            startAction = avatarAction,
+                            onClick = onAccountClick
                         )
                     }
                 }

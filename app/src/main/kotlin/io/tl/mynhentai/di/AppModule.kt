@@ -9,15 +9,21 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.tl.mynhentai.data.api.CdnRepository
+import io.tl.mynhentai.data.api.AccountService
+import io.tl.mynhentai.data.api.AuthInterceptor
 import io.tl.mynhentai.data.api.MangaService
+import io.tl.mynhentai.data.local.AccountStore
 import io.tl.mynhentai.data.local.MangaDatabase
 import io.tl.mynhentai.data.local.BackupHelper
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
+import io.tl.mynhentai.data.local.SecretStore
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.local.DownloadStateHolder
+import io.tl.mynhentai.data.repository.AccountRepository
 import io.tl.mynhentai.data.repository.MangaRepository
 import io.tl.mynhentai.data.repository.UsageRepository
 import io.tl.mynhentai.data.tracker.UsageTracker
+import io.tl.mynhentai.ui.account.AccountViewModel
 import io.tl.mynhentai.ui.detail.DetailViewModel
 import io.tl.mynhentai.ui.history.HistoryViewModel
 import io.tl.mynhentai.ui.home.HomeViewModel
@@ -27,6 +33,7 @@ import io.tl.mynhentai.ui.search.SearchResultsViewModel
 import io.tl.mynhentai.ui.search.SearchViewModel
 import io.tl.mynhentai.ui.settings.SettingsViewModel
 import io.tl.mynhentai.ui.statistics.StatisticsViewModel
+import io.tl.mynhentai.BuildConfig
 import kotlinx.serialization.json.Json
 import okhttp3.Dispatcher
 import okhttp3.MediaType.Companion.toMediaType
@@ -43,15 +50,20 @@ val networkModule = module {
                 maxRequestsPerHost = 20
                 maxRequests = 100
             })
+            .addInterceptor(AuthInterceptor(get()))
             .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
-                        .header("User-Agent", "MyNHentai/1.0 (https://github.com/your-repo)")
+                        .header(
+                            "User-Agent",
+                            "MyNHentai/${BuildConfig.VERSION_NAME} (+https://github.com/TanakaLun/MyNH)"
+                        )
                         .build()
                 )
             }
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
+                redactHeader("Authorization")
             })
             .build()
     }
@@ -69,6 +81,7 @@ val networkModule = module {
     }
 
     single { get<retrofit2.Retrofit>().create(MangaService::class.java) }
+    single { get<retrofit2.Retrofit>().create(AccountService::class.java) }
     single { CdnRepository(get()) }
 }
 
@@ -130,16 +143,33 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `pending_sync` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`kind` TEXT NOT NULL, " +
+                "`targetId` INTEGER NOT NULL, " +
+                "`createdAt` INTEGER NOT NULL)"
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_pending_sync_kind_targetId` " +
+                "ON `pending_sync` (`kind`, `targetId`)"
+        )
+    }
+}
+
 val databaseModule = module {
     single {
         Room.databaseBuilder(
             androidContext(),
             MangaDatabase::class.java,
             "mynhentai.db"
-        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5).build()
+        ).addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
     }
     single { get<MangaDatabase>().mangaDao() }
     single { get<MangaDatabase>().usageDao() }
+    single { get<MangaDatabase>().syncDao() }
 }
 
 val repositoryModule = module {
@@ -150,16 +180,20 @@ val repositoryModule = module {
     single { UsageRepository(get()) }
     single { UsageTracker(get(), get()) }
     single { BackupHelper(androidContext(), get(), get(), get()) }
+    single { SecretStore(androidContext()) }
+    single { AccountStore(get(), get()) }
+    single { AccountRepository(get(), get(), get(), get(), get()) }
 }
 
 val viewModelModule = module {
     viewModel { HomeViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
     viewModel { SearchResultsViewModel(get(), get(), get()) }
-    viewModel { DetailViewModel(get(), get(), get()) }
+    viewModel { DetailViewModel(get(), get(), get(), get()) }
     viewModel { ReaderViewModel(get(), get(), get()) }
-    viewModel { LibraryViewModel(get()) }
+    viewModel { LibraryViewModel(get(), get(), get()) }
     viewModel { HistoryViewModel(get()) }
-    viewModel { SettingsViewModel(get(), get(), get(), get()) }
+    viewModel { SettingsViewModel(get(), get(), get(), get(), get()) }
     viewModel { StatisticsViewModel(get(), get(), get()) }
+    viewModel { AccountViewModel(get(), get(), get(), get(), get()) }
 }

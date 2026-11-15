@@ -24,4 +24,7 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data class Reader(val id: Long) : AppRoute
+
+    @Serializable
+    data object Account : AppRoute
 }

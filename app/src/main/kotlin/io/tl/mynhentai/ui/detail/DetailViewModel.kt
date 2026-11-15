@@ -9,6 +9,7 @@ import io.tl.mynhentai.data.local.FavoriteEntity
 import io.tl.mynhentai.data.model.MangaDetail
 import io.tl.mynhentai.data.model.Tag
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.repository.AccountRepository
 import io.tl.mynhentai.data.tracker.UsageTracker
 import io.tl.mynhentai.ui.components.DownloadService
 import kotlinx.coroutines.CancellationException
@@ -31,6 +32,7 @@ class DetailViewModel(
     private val repository: MangaRepository,
     private val cdnRepository: CdnRepository,
     private val usageTracker: UsageTracker,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -64,6 +66,7 @@ class DetailViewModel(
         viewModelScope.launch {
             if (currentState) {
                 repository.removeFavorite(detail.id)
+                accountRepository.onFavoriteRemoved(detail.id)
             } else {
                 repository.addFavorite(
                     FavoriteEntity(
@@ -75,6 +78,7 @@ class DetailViewModel(
                         numPages = detail.numPages
                     )
                 )
+                accountRepository.onFavoriteAdded(detail.id)
             }
         }
     }
@@ -87,12 +91,14 @@ class DetailViewModel(
                     tagName = tag.name
                 )
             )
+            accountRepository.onBlacklistAdded(tag.id)
         }
     }
 
     fun unblacklistTag(tagId: Long) {
         viewModelScope.launch {
             repository.removeBlacklistedTag(tagId)
+            accountRepository.onBlacklistRemoved(tagId)
         }
     }
 

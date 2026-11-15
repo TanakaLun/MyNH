@@ -30,6 +30,7 @@ import io.tl.mynhentai.ui.components.BlurredNavbar
 import io.tl.mynhentai.ui.components.NavbarItem
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import io.tl.mynhentai.ui.detail.DetailScreen
+import io.tl.mynhentai.ui.account.AccountScreen
 import io.tl.mynhentai.ui.history.HistoryScreen
 import io.tl.mynhentai.ui.home.HomeScreen
 import io.tl.mynhentai.ui.library.LibraryScreen
@@ -217,6 +218,12 @@ fun MainNavGraph(
                 onBack = { navigator.pop() }
             )
         }
+        entry<AppRoute.Account>(swipeDismiss = swipeDismiss) {
+            AccountScreen(
+                onBack = { navigator.pop() },
+                onOpenGallery = { navigator.push(AppRoute.Detail(it)) }
+            )
+        }
     }
 }
 
@@ -320,7 +327,10 @@ private fun MainTabs(navigator: Navigator) {
                         onItemClick = { navigator.push(AppRoute.Detail(it)) },
                         onSearchClick = { query -> navigator.push(AppRoute.SearchResults(query)) }
                     )
-                    Routes.SETTINGS -> SettingsScreen(bottomNavPadding = innerPadding.calculateBottomPadding())
+                    Routes.SETTINGS -> SettingsScreen(
+                        bottomNavPadding = innerPadding.calculateBottomPadding(),
+                        onAccountClick = { navigator.push(AppRoute.Account) }
+                    )
                     else -> {}
                 }
             }

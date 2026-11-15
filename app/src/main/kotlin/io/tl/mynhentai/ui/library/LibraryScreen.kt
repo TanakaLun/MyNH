@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,11 +33,18 @@ import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.SelectionToolbar
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
 import org.koin.androidx.compose.koinViewModel
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.SnackbarHost
+import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Favorites
+import top.yukonga.miuix.kmp.icon.extended.Refresh
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -46,10 +55,32 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = koinViewModel()
 ) {
     val favorites by viewModel.favorites.collectAsState()
+    val bound by viewModel.bound.collectAsState()
+    val syncing by viewModel.syncing.collectAsState()
+    val syncMessage by viewModel.syncMessage.collectAsState()
+    val randomGallery by viewModel.randomGallery.collectAsState()
     val listState = rememberLazyListState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.syncIfStale()
+    }
+    LaunchedEffect(randomGallery) {
+        randomGallery?.let {
+            viewModel.consumeRandomGallery()
+            onItemClick(it)
+        }
+    }
+    LaunchedEffect(syncMessage) {
+        syncMessage?.let {
+            snackbarHostState.showSnackbar(context.getString(it))
+            viewModel.consumeSyncMessage()
+        }
+    }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
     val backdrop = rememberBlurBackdrop()
@@ -57,6 +88,7 @@ fun LibraryScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
+        snackbarHost = { SnackbarHost(state = snackbarHostState) },
         topBar = {
             BlurredBar(
                 backdrop = backdrop,
@@ -68,7 +100,26 @@ fun LibraryScreen(
                     title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.favorites),
                     defaultWindowInsetsPadding = false,
                     scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor
+                    color = barColor,
+                    actions = {
+                        if (bound) {
+                            IconButton(
+                                onClick = { viewModel.syncNow() },
+                                enabled = !syncing
+                            ) {
+                                Icon(
+                                    imageVector = MiuixIcons.Refresh,
+                                    contentDescription = stringResource(R.string.account_sync_now)
+                                )
+                            }
+                            IconButton(onClick = { viewModel.randomFavorite() }) {
+                                Icon(
+                                    imageVector = MiuixIcons.Favorites,
+                                    contentDescription = stringResource(R.string.account_random_favorite)
+                                )
+                            }
+                        }
+                    }
                 )
             }
         },

@@ -8,6 +8,7 @@ import io.tl.mynhentai.data.local.BackupHelper
 import io.tl.mynhentai.data.local.BlacklistedTagEntity
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.repository.MangaRepository
+import io.tl.mynhentai.data.repository.AccountRepository
 import io.tl.mynhentai.data.repository.UsageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +22,7 @@ class SettingsViewModel(
     private val repository: MangaRepository,
     private val backupHelper: BackupHelper,
     private val usageRepository: UsageRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _concurrency = MutableStateFlow(settings.maxConcurrency)
@@ -162,6 +164,7 @@ class SettingsViewModel(
     fun removeBlacklistedTag(tagId: Long) {
         viewModelScope.launch {
             repository.removeBlacklistedTag(tagId)
+            accountRepository.onBlacklistRemoved(tagId)
         }
     }
 

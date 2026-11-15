@@ -6,6 +6,7 @@ import io.tl.mynhentai.di.imageModule
 import io.tl.mynhentai.di.networkModule
 import io.tl.mynhentai.di.repositoryModule
 import io.tl.mynhentai.di.viewModelModule
+import io.tl.mynhentai.data.repository.AccountRepository
 import io.tl.mynhentai.data.tracker.UsageTracker
 import io.tl.mynhentai.ui.components.NotificationHelper
 import org.koin.android.ext.koin.androidContext
@@ -26,5 +27,6 @@ class MyNHentaiApp : Application() {
             )
         }
         koinApplication.koin.get<UsageTracker>().install()
+        koinApplication.koin.get<AccountRepository>().scheduleStartupSync()
     }
 }

@@ -11,11 +11,13 @@ import androidx.room.RoomDatabase
         HistoryEntity::class,
         UsageEventEntity::class,
         ReadingRecordEntity::class,
+        PendingSyncEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class MangaDatabase : RoomDatabase() {
     abstract fun mangaDao(): MangaDao
     abstract fun usageDao(): UsageDao
+    abstract fun syncDao(): SyncDao
 }

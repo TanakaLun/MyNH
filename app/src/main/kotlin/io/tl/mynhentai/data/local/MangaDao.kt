@@ -37,6 +37,12 @@ interface MangaDao {
     @Query("DELETE FROM favorites WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
 
+    @Query("DELETE FROM favorites WHERE id NOT IN (:ids)")
+    suspend fun deleteFavoritesNotIn(ids: List<Long>)
+
+    @Query("DELETE FROM favorites")
+    suspend fun deleteAllFavorites()
+
     @Query("SELECT * FROM blacklisted_tags ORDER BY addedAt DESC")
     fun getAllBlacklistedTags(): Flow<List<BlacklistedTagEntity>>
 
@@ -51,6 +57,18 @@ interface MangaDao {
 
     @Query("SELECT tagId FROM blacklisted_tags")
     suspend fun getAllBlacklistedTagIds(): List<Long>
+
+    @Query("SELECT * FROM blacklisted_tags ORDER BY addedAt DESC")
+    suspend fun getBlacklistedTagsOnce(): List<BlacklistedTagEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertBlacklistedTags(tags: List<BlacklistedTagEntity>)
+
+    @Query("DELETE FROM blacklisted_tags WHERE tagId NOT IN (:ids)")
+    suspend fun deleteBlacklistedTagsNotIn(ids: List<Long>)
+
+    @Query("DELETE FROM blacklisted_tags")
+    suspend fun deleteAllBlacklistedTags()
 
     @Query("SELECT * FROM read_progress WHERE galleryId = :galleryId")
     suspend fun getReadProgress(galleryId: Long): ReadProgressEntity?
