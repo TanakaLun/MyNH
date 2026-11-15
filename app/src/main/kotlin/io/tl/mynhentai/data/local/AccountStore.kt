@@ -112,6 +112,8 @@ class AccountStore(
     private fun readState(): AccountState? {
         val raw = settings.accountProfileJson
         if (raw.isBlank()) return null
+        // A restored backup may contain the profile without the encrypted key: treat it as unbound.
+        if (secretStore.readApiKey().isNullOrBlank()) return null
         val profile = runCatching {
             json.decodeFromString(AccountProfile.serializer(), raw)
         }.getOrNull() ?: return null
