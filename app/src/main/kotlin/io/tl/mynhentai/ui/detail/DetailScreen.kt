@@ -406,21 +406,27 @@ fun DetailScreen(
                                 }
                             }
                         }
-                    }
 
-                    if (related.isNotEmpty()) {
-                        SmallTitle(text = stringResource(R.string.related_galleries))
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(related, key = { it.id }) { item ->
-                                RelatedMangaItem(
-                                    manga = item,
-                                    imageUrl = viewModel.resolveThumbnailUrl(item.thumbnail),
-                                    onClick = { onItemClick(item.id) }
-                                )
+                        if (related.isNotEmpty()) {
+                            SmallTitle(text = stringResource(R.string.related_galleries))
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp),
+                                insideMargin = PaddingValues(12.dp)
+                            ) {
+                                LazyRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    items(related, key = { it.id }) { item ->
+                                        RelatedMangaItem(
+                                            manga = item,
+                                            imageUrl = viewModel.resolveThumbnailUrl(item.thumbnail),
+                                            onClick = { onItemClick(item.id) }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

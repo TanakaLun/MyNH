@@ -1,12 +1,9 @@
 package io.tl.mynhentai.ui.components
 
-import android.os.Environment
-import java.io.File
-
+/**
+ * Downloads are written through MediaStore into the public Download collection, so there is no
+ * file-system path to hand out anymore. This is the human readable location shown in the UI.
+ */
 object DownloadManager {
-    val defaultDownloadPath: String
-        get() {
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            return File(dir, "MyNHentai").absolutePath
-        }
+    const val defaultDownloadPath: String = "Download/MyNHentai"
 }

@@ -2,10 +2,14 @@ package io.tl.mynhentai.ui.components
 
 import android.app.Notification
 import android.app.Service
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Environment
 import android.os.IBinder
 import android.os.PowerManager
+import android.provider.MediaStore
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -31,7 +35,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.zip.ZipEntry
@@ -305,16 +308,25 @@ class DownloadService : Service() {
             val failures = fetchAllPages(task, tempDir) { it.second }
             if (failures.isNotEmpty()) throw FetchFailedException(failures)
 
-            val zipFile = uniqueZipFile(task.targetDir!!, task.title)
-            zipFile.parentFile?.mkdirs()
-            ZipOutputStream(FileOutputStream(zipFile)).use { zos ->
-                tempDir.listFiles()
-                    ?.sortedBy { it.nameWithoutExtension.toIntOrNull() }
-                    ?.forEach { file ->
-                        zos.putNextEntry(ZipEntry(file.name))
-                        file.inputStream().use { it.copyTo(zos) }
-                        zos.closeEntry()
+            val uri = createDownloadUri("${safeFileName(task.title)}.zip", "application/zip")
+            try {
+                val output = contentResolver.openOutputStream(uri)
+                    ?: throw IOException(getString(R.string.error_empty_response))
+                output.use { stream ->
+                    ZipOutputStream(stream).use { zos ->
+                        tempDir.listFiles()
+                            ?.sortedBy { it.nameWithoutExtension.toIntOrNull() }
+                            ?.forEach { file ->
+                                zos.putNextEntry(ZipEntry(file.name))
+                                file.inputStream().use { it.copyTo(zos) }
+                                zos.closeEntry()
+                            }
                     }
+                }
+                publishDownload(uri)
+            } catch (e: Exception) {
+                discardDownload(uri)
+                throw e
             }
             tempDir.deleteRecursively()
         } catch (e: Exception) {
@@ -334,10 +346,9 @@ class DownloadService : Service() {
     /** Streams a server packaged archive (cbz/zip) from its signed URL. */
     private suspend fun doArchive(task: ActiveTask) {
         val url = task.archiveUrl ?: throw IOException(getString(R.string.error_empty_response))
-        val format = task.archiveFormat?.takeIf { it.isNotBlank() } ?: "cbz"
-        val targetDir = task.targetDir ?: throw IOException(getString(R.string.error_empty_response))
-        val target = uniqueArchiveFile(targetDir, task.title, format)
-        target.parentFile?.mkdirs()
+        val format = task.archiveFormat?.takeIf { it in setOf("cbz", "zip") } ?: "cbz"
+        val displayName = "${safeFileName(task.title)}.$format"
+        val uri = createDownloadUri(displayName, "application/zip")
 
         notifyProgress(task, 0, 0)
         val request = Request.Builder().url(url).build()
@@ -348,14 +359,16 @@ class DownloadService : Service() {
                 val totalKb = body.contentLength().let { length ->
                     if (length > 0) (length / 1024L).toInt().coerceAtLeast(1) else 0
                 }
-                body.byteStream().use { input ->
-                    target.outputStream().use { output ->
+                val output = contentResolver.openOutputStream(uri)
+                    ?: throw IOException(getString(R.string.error_empty_response))
+                output.use { stream ->
+                    body.byteStream().use { input ->
                         val buffer = ByteArray(64 * 1024)
                         var done = 0L
                         var notifiedMb = -1L
                         var read = input.read(buffer)
                         while (read != -1) {
-                            output.write(buffer, 0, read)
+                            stream.write(buffer, 0, read)
                             done += read
                             val doneMb = done / (1024L * 1024L)
                             if (totalKb > 0 && doneMb > notifiedMb) {
@@ -368,10 +381,39 @@ class DownloadService : Service() {
                 }
                 notifyProgress(task, totalKb, totalKb)
             }
+            publishDownload(uri)
         } catch (e: Exception) {
-            target.delete()
+            discardDownload(uri)
             throw e
         }
+    }
+
+    private fun safeFileName(title: String): String =
+        title.replace(Regex("[\\\\/:*?\"<>|]"), "_").ifBlank { "gallery" }
+
+    private fun createDownloadUri(displayName: String, mimeType: String): Uri {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, displayName)
+            put(MediaStore.Downloads.MIME_TYPE, mimeType)
+            put(
+                MediaStore.Downloads.RELATIVE_PATH,
+                "${Environment.DIRECTORY_DOWNLOADS}/MyNHentai"
+            )
+            put(MediaStore.Downloads.IS_PENDING, 1)
+        }
+        return contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: throw IOException(getString(R.string.error_empty_response))
+    }
+
+    private fun publishDownload(uri: Uri) {
+        val values = ContentValues().apply {
+            put(MediaStore.Downloads.IS_PENDING, 0)
+        }
+        contentResolver.update(uri, values, null, null)
+    }
+
+    private fun discardDownload(uri: Uri) {
+        runCatching { contentResolver.delete(uri, null, null) }
     }
 
     /**
@@ -429,28 +471,7 @@ class DownloadService : Service() {
         )
     }
 
-    private fun uniqueZipFile(targetDir: String, title: String): File {
-        val safeTitle = title.replace("/", "_")
-        var file = File(targetDir, "$safeTitle.zip")
-        var index = 2
-        while (file.exists()) {
-            file = File(targetDir, "$safeTitle ($index).zip")
-            index++
-        }
-        return file
-    }
 
-    private fun uniqueArchiveFile(targetDir: String, title: String, extension: String): File {
-        val safeTitle = title.replace("/", "_")
-        val safeExtension = extension.lowercase().let { if (it == "zip" || it == "cbz") it else "cbz" }
-        var file = File(targetDir, "$safeTitle.$safeExtension")
-        var index = 2
-        while (file.exists()) {
-            file = File(targetDir, "$safeTitle ($index).$safeExtension")
-            index++
-        }
-        return file
-    }
 
     private fun buildFailureMessage(failures: List<Throwable>): String {
         val httpFailure = failures.filterIsInstance<DownloadHttpException>().firstOrNull()
