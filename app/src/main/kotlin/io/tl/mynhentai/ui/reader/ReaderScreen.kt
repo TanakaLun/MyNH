@@ -10,6 +10,7 @@ import android.view.WindowManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -41,12 +44,19 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import coil.compose.SubcomposeAsyncImage
 import io.tl.mynhentai.R
+import io.tl.mynhentai.data.local.SettingsHelper
+import io.tl.mynhentai.data.model.MangaPage
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.PreloadPages
+import io.tl.mynhentai.ui.reader.turn.PageAnimation
+import io.tl.mynhentai.ui.reader.turn.PageTurnSurface
+import io.tl.mynhentai.ui.reader.turn.legado.core.transition.ReaderPageTurnSpeed
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Slider
@@ -62,7 +72,13 @@ fun ReaderScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showControls by viewModel.showControls.collectAsState()
+    val settings: SettingsHelper = koinInject()
+    val readerAnimationName by settings.readerPageAnimationFlow.collectAsState()
+    val readerAnimation = remember(readerAnimationName) {
+        PageAnimation.fromName(readerAnimationName)
+    }
     val listState = rememberLazyListState()
+    val pagedPage = remember { mutableIntStateOf(1) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     var showSaveDialog by remember { mutableStateOf<Int?>(null) }
@@ -75,12 +91,13 @@ fun ReaderScreen(
         onDispose { viewModel.stopReadingTracking() }
     }
 
-    val currentPage by remember {
+    val scrollPage by remember {
         derivedStateOf {
             val visible = listState.layoutInfo.visibleItemsInfo
             if (visible.isNotEmpty()) visible.first().index + 1 else 1
         }
     }
+    val currentPage = if (readerAnimation.isPaged) pagedPage.intValue else scrollPage
 
     val totalPages = (uiState as? ReaderUiState.Success)?.pages?.size ?: 0
 
@@ -90,10 +107,14 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(uiState) {
+    LaunchedEffect(uiState, readerAnimation.isPaged) {
         val state = uiState
-        if (state is ReaderUiState.Success && state.initialPage > 1) {
-            listState.scrollToItem(state.initialPage - 1)
+        if (state is ReaderUiState.Success && state.pages.isNotEmpty()) {
+            val initial = state.initialPage.coerceIn(1, state.pages.size)
+            pagedPage.intValue = initial
+            if (!readerAnimation.isPaged && initial > 1) {
+                listState.scrollToItem(initial - 1)
+            }
         }
     }
 
@@ -178,39 +199,50 @@ fun ReaderScreen(
             }
 
             is ReaderUiState.Success -> {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .scrollEndHaptic()
-                        .pointerInput(showControls) {
-                            if (!showControls) {
-                                detectTapGestures(
-                                    onTap = { viewModel.toggleControls() },
-                                    onLongPress = { showSaveDialog = currentPage }
-                                )
-                            }
-                        }
-                ) {
-                    items(state.pages, key = { it.number }) { page ->
-                        SubcomposeAsyncImage(
-                            model = viewModel.resolveImageUrl(page.path),
-                            contentDescription = "Page ${page.number}",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color.Black),
-                            contentScale = ContentScale.FillWidth,
-                            loading = {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .size(400.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator()
+                if (readerAnimation.isPaged) {
+                    PagedReaderContent(
+                        pages = state.pages,
+                        page = pagedPage.intValue,
+                        animation = readerAnimation,
+                        resolveImageUrl = viewModel::resolveImageUrl,
+                        onPageCommit = { index -> pagedPage.intValue = index + 1 },
+                        onToggleControls = { viewModel.toggleControls() }
+                    )
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .scrollEndHaptic()
+                            .pointerInput(showControls) {
+                                if (!showControls) {
+                                    detectTapGestures(
+                                        onTap = { viewModel.toggleControls() },
+                                        onLongPress = { showSaveDialog = currentPage }
+                                    )
                                 }
                             }
-                        )
+                    ) {
+                        items(state.pages, key = { it.number }) { page ->
+                            SubcomposeAsyncImage(
+                                model = viewModel.resolveImageUrl(page.path),
+                                contentDescription = "Page ${page.number}",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.Black),
+                                contentScale = ContentScale.FillWidth,
+                                loading = {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .size(400.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -237,8 +269,12 @@ fun ReaderScreen(
                         value = currentPage.toFloat(),
                         onValueChange = { value ->
                             val target = value.toInt().coerceIn(1, state.pages.size)
-                            scope.launch {
-                                listState.scrollToItem(target - 1)
+                            if (readerAnimation.isPaged) {
+                                pagedPage.intValue = target
+                            } else {
+                                scope.launch {
+                                    listState.scrollToItem(target - 1)
+                                }
                             }
                         },
                         valueRange = 1f..state.pages.size.toFloat(),
@@ -304,5 +340,60 @@ private fun saveImageToGallery(context: Context, imageUrl: String, galleryId: Lo
                 )
             }
         } catch (_: Exception) { }
+    }
+}
+
+@Composable
+private fun PagedReaderContent(
+    pages: List<MangaPage>,
+    page: Int,
+    animation: PageAnimation,
+    resolveImageUrl: (String) -> String,
+    onPageCommit: (Int) -> Unit,
+    onToggleControls: () -> Unit,
+) {
+    val density = LocalDensity.current
+    val index = (page - 1).coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        val widthPx = with(density) { maxWidth.roundToPx() }
+        val heightPx = with(density) { maxHeight.roundToPx() }
+        PageTurnSurface(
+            index = index,
+            count = pages.size,
+            mode = animation,
+            durationMillis = ReaderPageTurnSpeed.Default.baseDurationMillis,
+            background = Color.Black,
+            width = widthPx,
+            height = heightPx,
+            onCommit = onPageCommit,
+            onBoundary = {},
+            onToggle = onToggleControls,
+            onActive = {},
+            content = { pageIndex ->
+                val item = pages.getOrNull(pageIndex)
+                if (item != null) {
+                    SubcomposeAsyncImage(
+                        model = resolveImageUrl(item.path),
+                        contentDescription = "Page ${item.number}",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black),
+                        contentScale = ContentScale.Fit,
+                        loading = {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    )
+                }
+            }
+        )
     }
 }

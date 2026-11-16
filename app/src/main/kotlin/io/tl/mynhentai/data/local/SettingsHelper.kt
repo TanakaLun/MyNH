@@ -154,6 +154,19 @@ class SettingsHelper(private val appContext: Context) {
             _downloadNotificationModeFlow.value = value
         }
 
+    private val _readerPageAnimationFlow = MutableStateFlow(
+        prefs.getString(KEY_READER_PAGE_ANIMATION, DEFAULT_READER_PAGE_ANIMATION)
+            ?: DEFAULT_READER_PAGE_ANIMATION
+    )
+    val readerPageAnimationFlow: StateFlow<String> = _readerPageAnimationFlow.asStateFlow()
+
+    var readerPageAnimation: String
+        get() = _readerPageAnimationFlow.value
+        set(value) {
+            prefs.edit().putString(KEY_READER_PAGE_ANIMATION, value).apply()
+            _readerPageAnimationFlow.value = value
+        }
+
     var accountProfileJson: String
         get() = prefs.getString(KEY_ACCOUNT_PROFILE, "") ?: ""
         set(value) {
@@ -228,6 +241,9 @@ class SettingsHelper(private val appContext: Context) {
         _blacklistSyncEnabledFlow.value = prefs.getBoolean(KEY_BLACKLIST_SYNC, true)
         _downloadNotificationModeFlow.value =
             prefs.getInt(KEY_DOWNLOAD_NOTIFICATION_MODE, DOWNLOAD_NOTIFY_LIVE)
+        _readerPageAnimationFlow.value =
+            prefs.getString(KEY_READER_PAGE_ANIMATION, DEFAULT_READER_PAGE_ANIMATION)
+                ?: DEFAULT_READER_PAGE_ANIMATION
     }
 
     val coilCacheDir: java.io.File
@@ -328,6 +344,8 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_FAVORITES_SYNC = "favorites_sync_enabled"
         private const val KEY_BLACKLIST_SYNC = "blacklist_sync_enabled"
         private const val KEY_DOWNLOAD_NOTIFICATION_MODE = "download_notification_mode"
+        private const val KEY_READER_PAGE_ANIMATION = "reader_page_animation"
+        private const val DEFAULT_READER_PAGE_ANIMATION = "Scroll"
         private const val KEY_ACCOUNT_PROFILE = "account_profile"
         private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_at"
         private const val KEY_ACCOUNT_AUTH_INVALID = "account_auth_invalid"

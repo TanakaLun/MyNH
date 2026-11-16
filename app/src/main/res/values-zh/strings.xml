@@ -57,6 +57,17 @@
     <string name="language_filter">语言</string>
     <string name="sync_language_to_search">同步语言偏好至搜索</string>
     <string name="downloads">下载</string>
+    <string name="reading">阅读</string>
+    <string name="reader_page_animation">翻页动画</string>
+    <string name="reader_animation_scroll">竖向滚动</string>
+    <string name="reader_animation_slide">左右滑动</string>
+    <string name="reader_animation_cover">覆盖</string>
+    <string name="reader_animation_parallax">视差</string>
+    <string name="reader_animation_fade">淡入淡出</string>
+    <string name="reader_animation_none">无动画</string>
+    <string name="reader_animation_simulation">仿真翻页</string>
+    <string name="reader_animation_google_curl">Google 翻页</string>
+    <string name="reader_animation_ios_curl">iOS 卷曲</string>
     <string name="max_concurrent_downloads">最大并发下载数</string>
     <string name="download_notification">下载进度通知</string>
     <string name="download_notification_disabled">禁用</string>

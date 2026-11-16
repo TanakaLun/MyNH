@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.BackupData
 import io.tl.mynhentai.data.local.AccountStore
+import io.tl.mynhentai.ui.reader.turn.PageAnimation
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.ui.account.AccountAvatar
 import io.tl.mynhentai.ui.components.BlurredBar
@@ -113,6 +114,7 @@ fun SettingsScreen(
     val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
     val downloadNotificationMode by viewModel.downloadNotificationMode.collectAsState()
+    val readerPageAnimation by viewModel.readerPageAnimation.collectAsState()
     val statisticsEnabled by viewModel.statisticsEnabled.collectAsState()
     val statisticsRecordQueries by viewModel.statisticsRecordQueries.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
@@ -611,6 +613,30 @@ fun SettingsScreen(
 
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallTitle(text = stringResource(R.string.reading))
+                    Card(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                    ) {
+                        val animations = PageAnimation.entries
+                        OverlaySpinnerPreference(
+                            title = stringResource(R.string.reader_page_animation),
+                            items = animations.map { animation ->
+                                DropdownItem(text = stringResource(readerAnimationLabelRes(animation)))
+                            },
+                            selectedIndex = animations
+                                .indexOf(PageAnimation.fromName(readerPageAnimation))
+                                .coerceAtLeast(0),
+                            onSelectedIndexChange = { index ->
+                                viewModel.setReaderPageAnimation(animations[index].name)
+                            }
+                        )
+                    }
+                }
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     SmallTitle(text = stringResource(R.string.downloads))
                     Card(
                         modifier = Modifier.padding(horizontal = 12.dp),
@@ -793,3 +819,15 @@ private data class ExportSelection(
     val backupSettings: Boolean = true,
     val statistics: Boolean = true,
 )
+
+private fun readerAnimationLabelRes(animation: PageAnimation): Int = when (animation) {
+    PageAnimation.Scroll -> R.string.reader_animation_scroll
+    PageAnimation.Slide -> R.string.reader_animation_slide
+    PageAnimation.Cover -> R.string.reader_animation_cover
+    PageAnimation.Parallax -> R.string.reader_animation_parallax
+    PageAnimation.Fade -> R.string.reader_animation_fade
+    PageAnimation.None -> R.string.reader_animation_none
+    PageAnimation.Simulation -> R.string.reader_animation_simulation
+    PageAnimation.GoogleCurl -> R.string.reader_animation_google_curl
+    PageAnimation.IosCurl -> R.string.reader_animation_ios_curl
+}

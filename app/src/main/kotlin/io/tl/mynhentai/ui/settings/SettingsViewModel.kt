@@ -55,6 +55,9 @@ class SettingsViewModel(
     private val _downloadNotificationMode = MutableStateFlow(settings.downloadNotificationMode)
     val downloadNotificationMode: StateFlow<Int> = _downloadNotificationMode.asStateFlow()
 
+    private val _readerPageAnimation = MutableStateFlow(settings.readerPageAnimation)
+    val readerPageAnimation: StateFlow<String> = _readerPageAnimation.asStateFlow()
+
     private val _statisticsEnabled = MutableStateFlow(settings.statisticsEnabled)
     val statisticsEnabled: StateFlow<Boolean> = _statisticsEnabled.asStateFlow()
 
@@ -114,6 +117,11 @@ class SettingsViewModel(
         _downloadNotificationMode.value = mode
     }
 
+    fun setReaderPageAnimation(name: String) {
+        settings.readerPageAnimation = name
+        _readerPageAnimation.value = name
+    }
+
     fun setStatisticsEnabled(enabled: Boolean) {
         settings.statisticsEnabled = enabled
         _statisticsEnabled.value = enabled
@@ -166,6 +174,7 @@ class SettingsViewModel(
         _floatingNavbarStyle.value = settings.floatingNavbarStyle
         _floatingNavbarPosition.value = settings.floatingNavbarPosition
         _downloadNotificationMode.value = settings.downloadNotificationMode
+        _readerPageAnimation.value = settings.readerPageAnimation
         _statisticsEnabled.value = settings.statisticsEnabled
         _statisticsRecordQueries.value = settings.statisticsRecordQueries
     }

@@ -57,6 +57,17 @@
     <string name="language_filter">Language</string>
     <string name="sync_language_to_search">Sync language preference to search</string>
     <string name="downloads">Downloads</string>
+    <string name="reading">Reading</string>
+    <string name="reader_page_animation">Page turn animation</string>
+    <string name="reader_animation_scroll">Vertical scroll</string>
+    <string name="reader_animation_slide">Slide</string>
+    <string name="reader_animation_cover">Cover</string>
+    <string name="reader_animation_parallax">Parallax</string>
+    <string name="reader_animation_fade">Fade</string>
+    <string name="reader_animation_none">None</string>
+    <string name="reader_animation_simulation">Simulation</string>
+    <string name="reader_animation_google_curl">Google curl</string>
+    <string name="reader_animation_ios_curl">iOS curl</string>
     <string name="max_concurrent_downloads">Max Concurrent Downloads</string>
     <string name="download_notification">Download progress notification</string>
     <string name="download_notification_disabled">Disabled</string>
