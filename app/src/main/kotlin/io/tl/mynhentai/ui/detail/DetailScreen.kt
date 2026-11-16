@@ -1,5 +1,9 @@
 package io.tl.mynhentai.ui.detail
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +72,7 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Favorites
 import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
 import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Share
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -115,6 +120,14 @@ fun DetailScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { copyMangaLink(context, galleryId) }) {
+                            Icon(
+                                imageVector = MiuixIcons.Share,
+                                contentDescription = stringResource(R.string.share)
+                            )
                         }
                     }
                 )
@@ -475,4 +488,11 @@ private fun RelatedMangaItem(
             modifier = Modifier.padding(top = 4.dp, start = 2.dp, end = 2.dp)
         )
     }
+}
+
+private fun copyMangaLink(context: Context, galleryId: Long) {
+    val url = "https://nhentai.net/g/$galleryId/"
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+    clipboard?.setPrimaryClip(ClipData.newPlainText("nhentai", url))
+    Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
 }

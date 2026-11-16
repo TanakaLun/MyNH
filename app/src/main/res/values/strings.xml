@@ -57,6 +57,8 @@
     <string name="language_filter">Language</string>
     <string name="sync_language_to_search">Sync language preference to search</string>
     <string name="downloads">Downloads</string>
+    <string name="share">Share</string>
+    <string name="link_copied">Link copied</string>
     <string name="reading">Reading</string>
     <string name="reader_page_animation">Page turn animation</string>
     <string name="reader_animation_scroll">Vertical scroll</string>
