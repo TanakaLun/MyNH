@@ -3,7 +3,6 @@ package io.tl.mynhentai.ui.detail
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +53,7 @@ import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.TagChip
 import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -63,6 +64,8 @@ import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.SnackbarHost
+import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TopAppBar
@@ -92,6 +95,8 @@ fun DetailScreen(
     val archiveAvailable by viewModel.archiveAvailable.collectAsState()
     val archiveError by viewModel.archiveError.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var blacklistTag by remember { mutableStateOf<Tag?>(null) }
     var showDownloadDialog by remember { mutableStateOf(false) }
 
@@ -104,6 +109,7 @@ fun DetailScreen(
     val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
 
     Scaffold(
+        snackbarHost = { SnackbarHost(state = snackbarHostState) },
         topBar = {
             BlurredBar(
                 backdrop = backdrop,
@@ -123,7 +129,16 @@ fun DetailScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { copyMangaLink(context, galleryId) }) {
+                        IconButton(
+                            onClick = {
+                                copyMangaLink(context, galleryId)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.link_copied)
+                                    )
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = MiuixIcons.Share,
                                 contentDescription = stringResource(R.string.share)
@@ -494,5 +509,4 @@ private fun copyMangaLink(context: Context, galleryId: Long) {
     val url = "https://nhentai.net/g/$galleryId/"
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
     clipboard?.setPrimaryClip(ClipData.newPlainText("nhentai", url))
-    Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
 }
