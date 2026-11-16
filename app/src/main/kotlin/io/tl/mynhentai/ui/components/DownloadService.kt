@@ -57,7 +57,11 @@ class DownloadService : Service() {
 
     private lateinit var client: OkHttpClient
     private lateinit var stateHolder: DownloadStateHolder
+    private lateinit var settings: SettingsHelper
     private lateinit var wakeLock: PowerManager.WakeLock
+
+    @Volatile
+    private var lastStatusNotificationAt = 0L
 
     private val taskCounter = AtomicInteger(0)
     private val tasks = mutableMapOf<Int, ActiveTask>()
@@ -83,6 +87,7 @@ class DownloadService : Service() {
             }
             .build()
         stateHolder = get()
+        settings = get()
         val prefs = getSharedPreferences(SettingsHelper.PREFS_NAME, Context.MODE_PRIVATE)
         val maxConcurrency = prefs.getInt(SettingsHelper.KEY_CONCURRENCY, 10).coerceIn(1, 30)
         concurrencySemaphore = Semaphore(maxConcurrency)
@@ -169,6 +174,7 @@ class DownloadService : Service() {
 
             taskKeys[key] = taskId
             tasks[taskId] = task
+            initializeTaskProgress(task)
 
             if (tasks.size == 1) {
                 // First active task: go foreground + hold a wake lock so the system won't
@@ -176,15 +182,13 @@ class DownloadService : Service() {
                 if (!foregroundActive) {
                     foregroundActive = true
                     startForeground(
-                        NotificationHelper.FOREGROUND_NOTIFICATION_ID,
-                        NotificationHelper.buildForegroundNotification(
-                            this, tasks.size, tasks.values.map { it.title }
-                        )
+                        NotificationHelper.DOWNLOAD_NOTIFICATION_ID,
+                        buildStatusNotification(tasks.values.toList())
                     )
                 }
                 acquireWakeLock()
             } else {
-                refreshForegroundNotification()
+                refreshStatusNotification(force = true)
             }
 
             val job = scope.launch {
@@ -239,8 +243,6 @@ class DownloadService : Service() {
     private fun handleTaskResult(task: ActiveTask, error: DownloadError?, extraLine: String?) {
         val inForeground = ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
         val notificationId = NotificationHelper.taskNotificationId(task.taskId)
-        // The task progress notification is ongoing: remove it before showing the result.
-        NotificationManagerCompat.from(this).cancel(notificationId)
         if (error != null) {
             stateHolder.reportError(error)
             if (!inForeground) {
@@ -269,17 +271,98 @@ class DownloadService : Service() {
                 }
                 stopSelf()
             } else {
-                refreshForegroundNotification()
+                refreshStatusNotification(force = true)
             }
         }
     }
 
-    private fun refreshForegroundNotification() {
-        val notification = NotificationHelper.buildForegroundNotification(
-            this, tasks.size, tasks.values.map { it.title }
-        )
-        notifyTask(NotificationHelper.FOREGROUND_NOTIFICATION_ID, notification)
+    private fun initializeTaskProgress(task: ActiveTask) {
+        when (task.kind) {
+            DownloadKind.DOWNLOAD, DownloadKind.CACHE -> {
+                task.fraction = if (task.pages.isNotEmpty()) 0f else null
+                task.progressText = getString(
+                    R.string.notification_pages_progress, 0, task.pages.size
+                )
+            }
+            DownloadKind.ARCHIVE -> {
+                task.fraction = null
+                task.progressText = getString(
+                    R.string.notification_archive_downloaded,
+                    NotificationHelper.formatBytes(0L)
+                )
+            }
+        }
     }
+
+    private fun refreshStatusNotification(force: Boolean) {
+        val snapshot = synchronized(lock) { tasks.values.toList() }
+        if (snapshot.isEmpty()) return
+        val now = System.currentTimeMillis()
+        if (!force && now - lastStatusNotificationAt < NOTIFICATION_INTERVAL_MS) return
+        lastStatusNotificationAt = now
+        notifyTask(
+            NotificationHelper.DOWNLOAD_NOTIFICATION_ID,
+            buildStatusNotification(snapshot)
+        )
+    }
+
+    private fun buildStatusNotification(active: List<ActiveTask>): Notification {
+        val mode = settings.downloadNotificationMode
+        if (mode == SettingsHelper.DOWNLOAD_NOTIFY_DISABLED) {
+            return NotificationHelper.buildDownloadNotification(
+                context = this,
+                title = getString(R.string.notification_downloading_title),
+                text = getString(R.string.notification_downloads_active, active.size),
+                percent = null,
+                showProgress = false,
+                promoted = false,
+                shortText = null
+            )
+        }
+
+        val promoted = mode == SettingsHelper.DOWNLOAD_NOTIFY_LIVE
+        if (active.size == 1) {
+            val task = active.first()
+            val percent = percentOf(task.fraction)
+            return NotificationHelper.buildDownloadNotification(
+                context = this,
+                title = task.title,
+                text = task.progressText,
+                percent = percent,
+                showProgress = true,
+                promoted = promoted,
+                shortText = percent?.let { "$it%" }
+            )
+        }
+
+        val knownFractions = active.mapNotNull { it.fraction }
+        val percent = if (knownFractions.isEmpty()) {
+            null
+        } else {
+            (knownFractions.average() * 100).toInt().coerceIn(0, 100)
+        }
+        val preview = active.take(2).joinToString(" · ") { task ->
+            val value = percentOf(task.fraction)
+            if (value == null) task.title.take(16) else "${task.title.take(16)} $value%"
+        }
+        val text = if (active.size > 2) {
+            getString(R.string.notification_multi_more, preview, active.size)
+        } else {
+            preview
+        }
+        return NotificationHelper.buildDownloadNotification(
+            context = this,
+            title = getString(R.string.notification_download_count, active.size),
+            text = text,
+            percent = percent,
+            showProgress = true,
+            promoted = promoted,
+            shortText = percent?.let { "$it%" }
+        )
+    }
+
+    private fun percentOf(fraction: Float?): Int? =
+        fraction?.let { (it * 100).toInt().coerceIn(0, 100) }
 
     private fun acquireWakeLock() {
         if (!wakeLock.isHeld) {
@@ -306,7 +389,6 @@ class DownloadService : Service() {
         val tempDir = File(cacheDir, "download_temp_${task.galleryId}_${task.taskId}")
         tempDir.mkdirs()
         try {
-            notifyProgress(task, 0, task.pages.size)
             val failures = fetchAllPages(task, tempDir) { it.second }
             if (failures.isNotEmpty()) throw FetchFailedException(failures)
 
@@ -352,7 +434,6 @@ class DownloadService : Service() {
         val displayName = "${safeFileName(task.title)}.$format"
         val uri = createDownloadUri(displayName, "application/zip")
 
-        notifyArchiveProgress(task, 0L, 0L)
         val request = Request.Builder().url(url).build()
         try {
             client.newCall(request).execute().use { response ->
@@ -373,11 +454,11 @@ class DownloadService : Service() {
                             val now = System.currentTimeMillis()
                             if (now - lastNotifiedAt >= NOTIFICATION_INTERVAL_MS) {
                                 lastNotifiedAt = now
-                                notifyArchiveProgress(task, done, totalBytes)
+                                updateArchiveProgress(task, done, totalBytes)
                             }
                             read = input.read(buffer)
                         }
-                        notifyArchiveProgress(task, done, if (totalBytes > 0) totalBytes else done)
+                        updateArchiveProgress(task, done, if (totalBytes > 0) totalBytes else done)
                     }
                 }
             }
@@ -443,7 +524,7 @@ class DownloadService : Service() {
                     } catch (e: Throwable) {
                         failures.add(e)
                     } finally {
-                        notifyProgress(task, completed.incrementAndGet(), task.pages.size)
+                        updatePageProgress(task, completed.incrementAndGet(), task.pages.size)
                     }
                 }
             }.awaitAll()
@@ -464,20 +545,31 @@ class DownloadService : Service() {
         }
     }
 
-    private fun notifyProgress(task: ActiveTask, progress: Int, total: Int) {
-        notifyTask(
-            NotificationHelper.taskNotificationId(task.taskId),
-            NotificationHelper.buildProgressNotification(this, task.title, progress, total)
-        )
+    private fun updatePageProgress(task: ActiveTask, progress: Int, total: Int) {
+        task.fraction = if (total > 0) progress.toFloat() / total else null
+        task.progressText = getString(R.string.notification_pages_progress, progress, total)
+        refreshStatusNotification(force = false)
     }
 
-    private fun notifyArchiveProgress(task: ActiveTask, doneBytes: Long, totalBytes: Long) {
-        notifyTask(
-            NotificationHelper.taskNotificationId(task.taskId),
-            NotificationHelper.buildArchiveProgressNotification(
-                this, task.title, doneBytes, totalBytes
+    private fun updateArchiveProgress(task: ActiveTask, doneBytes: Long, totalBytes: Long) {
+        task.fraction = if (totalBytes > 0L) {
+            (doneBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
+        } else {
+            null
+        }
+        task.progressText = if (totalBytes > 0L) {
+            getString(
+                R.string.notification_archive_progress,
+                NotificationHelper.formatBytes(doneBytes),
+                NotificationHelper.formatBytes(totalBytes)
             )
-        )
+        } else {
+            getString(
+                R.string.notification_archive_downloaded,
+                NotificationHelper.formatBytes(doneBytes)
+            )
+        }
+        refreshStatusNotification(force = false)
     }
 
 
@@ -508,6 +600,8 @@ class DownloadService : Service() {
         val pages: List<Pair<Int, String>>,
         val archiveUrl: String? = null,
         val archiveFormat: String? = null,
+        @Volatile var fraction: Float? = null,
+        @Volatile var progressText: String = "",
     )
 
     private class DownloadHttpException(val code: Int) : IOException("HTTP $code") {

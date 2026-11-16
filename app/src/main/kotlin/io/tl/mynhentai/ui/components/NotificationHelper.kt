@@ -9,11 +9,12 @@ import android.text.TextUtils
 import androidx.core.app.NotificationCompat
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.DownloadKind
+import java.util.Locale
 
 object NotificationHelper {
     const val CHANNEL_ID = "mynhentai_download"
     const val CHANNEL_RESULT_ID = "mynhentai_download_results"
-    const val FOREGROUND_NOTIFICATION_ID = 2001
+    const val DOWNLOAD_NOTIFICATION_ID = 2001
     const val TASK_NOTIFICATION_BASE = 3000
 
     fun taskNotificationId(taskId: Int): Int = TASK_NOTIFICATION_BASE + taskId
@@ -34,85 +35,24 @@ object NotificationHelper {
         manager.createNotificationChannel(resultChannel)
     }
 
-    fun buildForegroundNotification(
-        context: Context,
-        activeCount: Int,
-        titles: List<String>,
-    ): Notification {
-        val preview = titles.take(2).joinToString("、")
-        val text = if (titles.size > 2) {
-            context.getString(R.string.notification_foreground_text_more, preview, titles.size - 2)
-        } else {
-            context.getString(R.string.notification_foreground_text, preview)
-        }
-        return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.notification_foreground_title, activeCount))
-            .setContentText(text)
-            .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .build()
-    }
-
-    fun buildProgressNotification(
-        context: Context,
-        title: String,
-        progress: Int,
-        total: Int,
-    ): Notification {
-        val percent = if (total > 0) (progress * 100 / total).coerceIn(0, 100) else null
-        return buildProgressNotificationInternal(
-            context = context,
-            title = context.getString(R.string.notification_downloading_title),
-            text = context.getString(R.string.notification_progress_text, title, progress, total),
-            percent = percent,
-            shortText = percent?.let { "$it%" },
-        )
-    }
-
-    /** Progress notification for a server archive whose size may be unknown. */
-    fun buildArchiveProgressNotification(
-        context: Context,
-        title: String,
-        downloadedBytes: Long,
-        totalBytes: Long,
-    ): Notification {
-        val downloaded = formatBytes(downloadedBytes)
-        val percent = if (totalBytes > 0L) {
-            (downloadedBytes * 100 / totalBytes).toInt().coerceIn(0, 100)
-        } else {
-            null
-        }
-        val text = if (totalBytes > 0L) {
-            context.getString(
-                R.string.notification_archive_progress,
-                downloaded,
-                formatBytes(totalBytes)
-            )
-        } else {
-            context.getString(R.string.notification_archive_downloaded, downloaded)
-        }
-        return buildProgressNotificationInternal(
-            context = context,
-            title = context.getString(R.string.notification_downloading_title),
-            text = text,
-            percent = percent,
-            shortText = percent?.let { "$it%" } ?: downloaded,
-        )
-    }
-
     /**
-     * Builds an ongoing progress notification. On Android 16+ it requests promotion so the
-     * download shows up as a Live Update (status chip, lock screen, promoted card).
+     * One ongoing notification for the whole download queue.
+     *
+     * @param percent 0..100, or null when the size is unknown.
+     * @param showProgress false for the "disabled" mode: the notification still exists because
+     *   Android requires one for a foreground service, but carries no progress information.
+     * @param promoted request a Live Update on Android 16+; ignored on older versions.
      */
-    private fun buildProgressNotificationInternal(
+    fun buildDownloadNotification(
         context: Context,
         title: String,
         text: String,
         percent: Int?,
+        showProgress: Boolean,
+        promoted: Boolean,
         shortText: String?,
     ): Notification {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+        if (promoted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             val builder = Notification.Builder(context, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(text)
@@ -134,7 +74,7 @@ object NotificationHelper {
             return builder.build()
         }
 
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_sys_download)
@@ -142,25 +82,10 @@ object NotificationHelper {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
-            .setProgress(100, percent ?: 0, percent == null)
-            .build()
-    }
-
-    private fun formatBytes(bytes: Long): String {
-        if (bytes <= 0L) return "0 B"
-        val units = arrayOf("B", "KB", "MB", "GB")
-        var value = bytes.toDouble()
-        var index = 0
-        while (value >= 1024 && index < units.lastIndex) {
-            value /= 1024
-            index++
+        if (showProgress) {
+            builder.setProgress(100, percent ?: 0, percent == null)
         }
-        return String.format(
-            java.util.Locale.getDefault(),
-            if (index == 0) "%.0f %s" else "%.1f %s",
-            value,
-            units[index]
-        )
+        return builder.build()
     }
 
     fun buildCompletionNotification(
@@ -208,5 +133,22 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .build()
+    }
+
+    fun formatBytes(bytes: Long): String {
+        if (bytes <= 0L) return "0 B"
+        val units = arrayOf("B", "KB", "MB", "GB")
+        var value = bytes.toDouble()
+        var index = 0
+        while (value >= 1024 && index < units.lastIndex) {
+            value /= 1024
+            index++
+        }
+        return String.format(
+            Locale.getDefault(),
+            if (index == 0) "%.0f %s" else "%.1f %s",
+            value,
+            units[index]
+        )
     }
 }

@@ -58,6 +58,10 @@
     <string name="sync_language_to_search">同步语言偏好至搜索</string>
     <string name="downloads">下载</string>
     <string name="max_concurrent_downloads">最大并发下载数</string>
+    <string name="download_notification">下载进度通知</string>
+    <string name="download_notification_disabled">禁用</string>
+    <string name="download_notification_normal">普通通知</string>
+    <string name="download_notification_live">实时通知</string>
     <string name="cache">缓存</string>
     <string name="clear_image_cache">清除图片缓存</string>
     <string name="clear_offline_cache">清除离线缓存</string>
@@ -100,6 +104,10 @@
     <string name="notification_foreground_text_more">%1$s 等 %2$d 项</string>
     <string name="notification_downloading_title">正在下载</string>
     <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_pages_progress">%1$d/%2$d 页</string>
+    <string name="notification_download_count">%1$d 项下载中</string>
+    <string name="notification_downloads_active">%1$d 项任务进行中</string>
+    <string name="notification_multi_more">%1$s（共 %2$d 项）</string>
     <string name="notification_archive_progress">%1$s / %2$s</string>
     <string name="notification_archive_downloaded">已下载 %1$s</string>
     <string name="notification_download_done_title">下载完成</string>

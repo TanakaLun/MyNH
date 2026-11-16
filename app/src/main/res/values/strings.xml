@@ -58,6 +58,10 @@
     <string name="sync_language_to_search">Sync language preference to search</string>
     <string name="downloads">Downloads</string>
     <string name="max_concurrent_downloads">Max Concurrent Downloads</string>
+    <string name="download_notification">Download progress notification</string>
+    <string name="download_notification_disabled">Disabled</string>
+    <string name="download_notification_normal">Standard notification</string>
+    <string name="download_notification_live">Live Update</string>
     <string name="cache">Cache</string>
     <string name="clear_image_cache">Clear Image Cache</string>
     <string name="clear_offline_cache">Clear Offline Cache</string>
@@ -100,6 +104,10 @@
     <string name="notification_foreground_text_more">%1$s and %2$d more</string>
     <string name="notification_downloading_title">Downloading</string>
     <string name="notification_progress_text">%1$s · %2$d/%3$d</string>
+    <string name="notification_pages_progress">%1$d/%2$d pages</string>
+    <string name="notification_download_count">Downloading %1$d items</string>
+    <string name="notification_downloads_active">%1$d active downloads</string>
+    <string name="notification_multi_more">%1$s (%2$d total)</string>
     <string name="notification_archive_progress">%1$s / %2$s</string>
     <string name="notification_archive_downloaded">Downloaded %1$s</string>
     <string name="notification_download_done_title">Download completed</string>

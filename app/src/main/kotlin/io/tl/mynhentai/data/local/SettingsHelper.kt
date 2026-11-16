@@ -143,6 +143,17 @@ class SettingsHelper(private val appContext: Context) {
             _blacklistSyncEnabledFlow.value = value
         }
 
+    private val _downloadNotificationModeFlow =
+        MutableStateFlow(prefs.getInt(KEY_DOWNLOAD_NOTIFICATION_MODE, DOWNLOAD_NOTIFY_LIVE))
+    val downloadNotificationModeFlow: StateFlow<Int> = _downloadNotificationModeFlow.asStateFlow()
+
+    var downloadNotificationMode: Int
+        get() = _downloadNotificationModeFlow.value
+        set(value) {
+            prefs.edit().putInt(KEY_DOWNLOAD_NOTIFICATION_MODE, value).apply()
+            _downloadNotificationModeFlow.value = value
+        }
+
     var accountProfileJson: String
         get() = prefs.getString(KEY_ACCOUNT_PROFILE, "") ?: ""
         set(value) {
@@ -215,6 +226,8 @@ class SettingsHelper(private val appContext: Context) {
         _statisticsRecordQueriesFlow.value = prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true)
         _favoritesSyncEnabledFlow.value = prefs.getBoolean(KEY_FAVORITES_SYNC, true)
         _blacklistSyncEnabledFlow.value = prefs.getBoolean(KEY_BLACKLIST_SYNC, true)
+        _downloadNotificationModeFlow.value =
+            prefs.getInt(KEY_DOWNLOAD_NOTIFICATION_MODE, DOWNLOAD_NOTIFY_LIVE)
     }
 
     val coilCacheDir: java.io.File
@@ -298,6 +311,10 @@ class SettingsHelper(private val appContext: Context) {
     companion object {
         const val PREFS_NAME = "mynhentai_settings"
         const val KEY_CONCURRENCY = "max_concurrency"
+
+        const val DOWNLOAD_NOTIFY_DISABLED = 0
+        const val DOWNLOAD_NOTIFY_NORMAL = 1
+        const val DOWNLOAD_NOTIFY_LIVE = 2
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
         private const val KEY_MONET_ENABLED = "monet_enabled"
@@ -310,6 +327,7 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_STATISTICS_RECORD_QUERIES = "statistics_record_queries"
         private const val KEY_FAVORITES_SYNC = "favorites_sync_enabled"
         private const val KEY_BLACKLIST_SYNC = "blacklist_sync_enabled"
+        private const val KEY_DOWNLOAD_NOTIFICATION_MODE = "download_notification_mode"
         private const val KEY_ACCOUNT_PROFILE = "account_profile"
         private const val KEY_ACCOUNT_LAST_SYNC = "account_last_sync_at"
         private const val KEY_ACCOUNT_AUTH_INVALID = "account_auth_invalid"

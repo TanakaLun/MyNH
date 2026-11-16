@@ -112,6 +112,7 @@ fun SettingsScreen(
     val useFloatingNavbar by viewModel.useFloatingNavbar.collectAsState()
     val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
+    val downloadNotificationMode by viewModel.downloadNotificationMode.collectAsState()
     val statisticsEnabled by viewModel.statisticsEnabled.collectAsState()
     val statisticsRecordQueries by viewModel.statisticsRecordQueries.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
@@ -615,6 +616,16 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 12.dp),
                         insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
                     ) {
+                        OverlaySpinnerPreference(
+                            title = stringResource(R.string.download_notification),
+                            items = listOf(
+                                DropdownItem(text = stringResource(R.string.download_notification_disabled)),
+                                DropdownItem(text = stringResource(R.string.download_notification_normal)),
+                                DropdownItem(text = stringResource(R.string.download_notification_live))
+                            ),
+                            selectedIndex = downloadNotificationMode.coerceIn(0, 2),
+                            onSelectedIndexChange = { viewModel.setDownloadNotificationMode(it) }
+                        )
                         SliderPreference(
                             value = concurrency.toFloat(),
                             onValueChange = { viewModel.setConcurrency(it.toInt()) },

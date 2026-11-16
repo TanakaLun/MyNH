@@ -52,6 +52,9 @@ class SettingsViewModel(
     private val _floatingNavbarPosition = MutableStateFlow(settings.floatingNavbarPosition)
     val floatingNavbarPosition: StateFlow<Int> = _floatingNavbarPosition.asStateFlow()
 
+    private val _downloadNotificationMode = MutableStateFlow(settings.downloadNotificationMode)
+    val downloadNotificationMode: StateFlow<Int> = _downloadNotificationMode.asStateFlow()
+
     private val _statisticsEnabled = MutableStateFlow(settings.statisticsEnabled)
     val statisticsEnabled: StateFlow<Boolean> = _statisticsEnabled.asStateFlow()
 
@@ -106,6 +109,11 @@ class SettingsViewModel(
         _floatingNavbarPosition.value = position
     }
 
+    fun setDownloadNotificationMode(mode: Int) {
+        settings.downloadNotificationMode = mode
+        _downloadNotificationMode.value = mode
+    }
+
     fun setStatisticsEnabled(enabled: Boolean) {
         settings.statisticsEnabled = enabled
         _statisticsEnabled.value = enabled
@@ -157,6 +165,7 @@ class SettingsViewModel(
         _useFloatingNavbar.value = settings.useFloatingNavbar
         _floatingNavbarStyle.value = settings.floatingNavbarStyle
         _floatingNavbarPosition.value = settings.floatingNavbarPosition
+        _downloadNotificationMode.value = settings.downloadNotificationMode
         _statisticsEnabled.value = settings.statisticsEnabled
         _statisticsRecordQueries.value = settings.statisticsRecordQueries
     }

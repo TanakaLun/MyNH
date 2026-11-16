@@ -13,8 +13,8 @@ android {
         applicationId = "io.tl.mynhentai"
         minSdk = 33
         targetSdk = 37
-        versionCode = 45
-        versionName = "Glap-Glap"
+        versionCode = 51
+        versionName = "turimun"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
