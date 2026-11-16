@@ -38,6 +38,8 @@ import io.tl.mynhentai.ui.reader.turn.legado.components.ioscurl.IosCurlTurn
 import io.tl.mynhentai.ui.reader.turn.legado.core.transition.ReaderTurnDirection
 import io.tl.mynhentai.ui.reader.turn.legado.core.transition.ioscurl.gesture.CurlTouchKind
 import io.tl.mynhentai.ui.reader.turn.PageTurnPolicy
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -56,6 +58,7 @@ internal fun PageTurnSurface(
     onCommit: (Int) -> Unit,
     onBoundary: (Boolean) -> Unit,
     onToggle: () -> Unit,
+    onLongPress: (() -> Unit)? = null,
     onActive: () -> Unit,
     content: @Composable (Int) -> Unit,
 ) {
@@ -77,6 +80,7 @@ internal fun PageTurnSurface(
     val direction = if (next) ReaderTurnDirection.NEXT else ReaderTurnDirection.PREVIOUS
     val currentCommit by rememberUpdatedState(onCommit)
     val currentBoundary by rememberUpdatedState(onBoundary)
+    val currentOnLongPress by rememberUpdatedState(onLongPress)
     DisposableEffect(Unit) {
         onDispose {
             renderer?.close()
@@ -246,6 +250,16 @@ internal fun PageTurnSurface(
                         var captured = false
                         var forward = true
                         var up = false
+                        var longPressed = false
+                        var gestureActive = true
+                        var longPressJob: Job? = null
+                        longPressJob = scope.launch {
+                            delay(viewConfiguration.longPressTimeoutMillis)
+                            if (gestureActive && !captured && !up && !settling) {
+                                longPressed = true
+                                currentOnLongPress?.invoke()
+                            }
+                        }
                         while (true) {
                             val event = awaitPointerEvent()
                             val change = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -260,7 +274,10 @@ internal fun PageTurnSurface(
                             if (!captured && abs(dx) > viewConfiguration.touchSlop && abs(dx) > abs(dy)) {
                                 forward = dx < 0
                                 captured = true
+                                longPressJob?.cancel()
                                 begin(forward, false)
+                            } else if (!captured && (abs(dx) > viewConfiguration.touchSlop || abs(dy) > viewConfiguration.touchSlop)) {
+                                longPressJob?.cancel()
                             }
                             if (captured) {
                                 change.consume()
@@ -268,6 +285,8 @@ internal fun PageTurnSurface(
                                 ios.drag()
                             }
                         }
+                        gestureActive = false
+                        longPressJob?.cancel()
                         onActive()
                         if (captured) {
                             val v = velocity.calculateVelocity().x * if (forward) -1f else 1f
@@ -290,7 +309,7 @@ internal fun PageTurnSurface(
                             } else if (up && abs(dx) > 48 * density) {
                                 currentBoundary(forward)
                             }
-                        } else if (up && abs(dx) < viewConfiguration.touchSlop && abs(dy) < viewConfiguration.touchSlop) {
+                        } else if (up && !longPressed && abs(dx) < viewConfiguration.touchSlop && abs(dy) < viewConfiguration.touchSlop) {
                             if (down.position.x in (width / 3f)..(width * 2f / 3f)) {
                                 onToggle()
                             } else if (begin(down.position.x > width / 2f, true)) {

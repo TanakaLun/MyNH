@@ -206,7 +206,8 @@ fun ReaderScreen(
                         animation = readerAnimation,
                         resolveImageUrl = viewModel::resolveImageUrl,
                         onPageCommit = { index -> pagedPage.intValue = index + 1 },
-                        onToggleControls = { viewModel.toggleControls() }
+                        onToggleControls = { viewModel.toggleControls() },
+                        onLongPress = { showSaveDialog = currentPage }
                     )
                 } else {
                     LazyColumn(
@@ -351,6 +352,7 @@ private fun PagedReaderContent(
     resolveImageUrl: (String) -> String,
     onPageCommit: (Int) -> Unit,
     onToggleControls: () -> Unit,
+    onLongPress: () -> Unit,
 ) {
     val density = LocalDensity.current
     val index = (page - 1).coerceIn(0, (pages.size - 1).coerceAtLeast(0))
@@ -372,6 +374,7 @@ private fun PagedReaderContent(
             onCommit = onPageCommit,
             onBoundary = {},
             onToggle = onToggleControls,
+            onLongPress = onLongPress,
             onActive = {},
             content = { pageIndex ->
                 val item = pages.getOrNull(pageIndex)
