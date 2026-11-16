@@ -88,6 +88,7 @@ fun AccountScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val event by viewModel.events.collectAsState()
+    val bindError by viewModel.bindError.collectAsState()
     val openGallery by viewModel.openGallery.collectAsState()
 
     val context = LocalContext.current
@@ -110,6 +111,7 @@ fun AccountScreen(
             if (current.messageRes == R.string.account_bound_success && showKeyDialog) {
                 showKeyDialog = false
                 keyInput = TextFieldValue("")
+                viewModel.clearBindError()
             }
             viewModel.dismissEvent()
         }
@@ -134,7 +136,10 @@ fun AccountScreen(
         OverlayDialog(
             show = true,
             title = stringResource(R.string.account_key_title),
-            onDismissRequest = { showKeyDialog = false }
+            onDismissRequest = {
+                showKeyDialog = false
+                viewModel.clearBindError()
+            }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
@@ -144,7 +149,10 @@ fun AccountScreen(
                 )
                 TextField(
                     value = keyInput,
-                    onValueChange = { keyInput = it },
+                    onValueChange = {
+                        keyInput = it
+                        if (bindError != null) viewModel.clearBindError()
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     label = stringResource(R.string.account_key_label),
                     useLabelAsPlaceholder = true,
@@ -155,6 +163,31 @@ fun AccountScreen(
                         imeAction = ImeAction.Done
                     )
                 )
+                val error = bindError
+                if (error != null) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MiuixTheme.colorScheme.errorContainer)
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(error.messageRes),
+                            style = MiuixTheme.textStyles.body2,
+                            color = MiuixTheme.colorScheme.onErrorContainer
+                        )
+                        error.detail?.takeIf { it.isNotBlank() }?.let { detail ->
+                            Text(
+                                text = detail,
+                                style = MiuixTheme.textStyles.footnote2,
+                                color = MiuixTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextButton(
                         text = stringResource(R.string.account_paste),
@@ -310,7 +343,10 @@ fun AccountScreen(
                 if (account == null) {
                     item {
                         UnboundSection(
-                            onBind = { showKeyDialog = true },
+                            onBind = {
+                                viewModel.clearBindError()
+                                showKeyDialog = true
+                            },
                             onOpenApiKeyPage = { openApiKeyPage(context) }
                         )
                     }
@@ -335,7 +371,10 @@ fun AccountScreen(
                                         )
                                         TextButton(
                                             text = stringResource(R.string.account_rebind),
-                                            onClick = { showKeyDialog = true },
+                                            onClick = {
+                                                viewModel.clearBindError()
+                                                showKeyDialog = true
+                                            },
                                             colors = ButtonDefaults.textButtonColorsPrimary()
                                         )
                                     }
@@ -439,7 +478,10 @@ fun AccountScreen(
                             ) {
                                 ArrowPreference(
                                     title = stringResource(R.string.account_change_key),
-                                    onClick = { showKeyDialog = true }
+                                    onClick = {
+                                        viewModel.clearBindError()
+                                        showKeyDialog = true
+                                    }
                                 )
                                 ArrowPreference(
                                     title = stringResource(R.string.account_get_key),

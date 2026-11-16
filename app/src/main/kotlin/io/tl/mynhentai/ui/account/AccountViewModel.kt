@@ -53,6 +53,9 @@ class AccountViewModel(
     private val _events = MutableStateFlow<AccountEvent?>(null)
     val events: StateFlow<AccountEvent?> = _events.asStateFlow()
 
+    private val _bindError = MutableStateFlow<AccountEvent?>(null)
+    val bindError: StateFlow<AccountEvent?> = _bindError.asStateFlow()
+
     private val _openGallery = MutableStateFlow<Long?>(null)
     val openGallery: StateFlow<Long?> = _openGallery.asStateFlow()
 
@@ -115,12 +118,14 @@ class AccountViewModel(
 
     fun bind(rawKey: String) {
         if (_binding.value) return
+        _bindError.value = null
         viewModelScope.launch {
             _binding.value = true
             val result = accountRepository.bind(rawKey)
             _binding.value = false
             result.fold(
                 onSuccess = {
+                    _bindError.value = null
                     _events.value = AccountEvent(R.string.account_bound_success)
                     _mergePrompt.value = settings.accountMergePending
                     if (!settings.accountMergePending) {
@@ -128,10 +133,14 @@ class AccountViewModel(
                     }
                 },
                 onFailure = { error ->
-                    _events.value = AccountEvent(bindErrorRes(error), error.message)
+                    _bindError.value = AccountEvent(bindErrorRes(error), error.message)
                 }
             )
         }
+    }
+
+    fun clearBindError() {
+        _bindError.value = null
     }
 
     fun confirmMerge(mergeLocal: Boolean) {
