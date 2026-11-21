@@ -49,8 +49,9 @@ import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.AccountProfile
 import io.tl.mynhentai.data.repository.SyncPhase
 import io.tl.mynhentai.data.repository.SyncProgress
-import io.tl.mynhentai.ui.components.BlurredBar
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppTopBar
+import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -69,7 +70,6 @@ import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -98,8 +98,7 @@ fun AccountScreen(
     var keyInput by remember { mutableStateOf(TextFieldValue("")) }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     LaunchedEffect(event?.id) {
         event?.let { current ->
@@ -298,24 +297,18 @@ fun AccountScreen(
         contentWindowInsets = WindowInsets(0.dp),
         snackbarHost = { SnackbarHost(state = snackbarHostState) },
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = stringResource(R.string.account),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = stringResource(R.string.account),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor,
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
-                        }
-                    }
-                )
-            }
+                navigationIcon = {
+                    AppIconButton(
+                        onClick = onBack,
+                        icon = MiuixIcons.Back,
+                        contentDescription = stringResource(R.string.back)
+                    )
+                }
+            )
         }
     ) { innerPadding ->
         Box(

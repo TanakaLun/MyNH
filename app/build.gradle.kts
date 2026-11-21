@@ -7,7 +7,11 @@ plugins {
 
 android {
     namespace = "io.tl.mynhentai"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "io.tl.mynhentai"
@@ -82,6 +86,8 @@ dependencies {
     implementation(libs.miuix.blur)
     implementation(libs.miuix.icons)
     implementation(libs.miuix.preference)
+    implementation(libs.miuix.glass)
+    implementation(libs.miuix.glass.icons)
     
     implementation(libs.retrofit)
     implementation(libs.okhttp)

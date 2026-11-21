@@ -26,9 +26,9 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.SettingsHelper
-import io.tl.mynhentai.ui.components.BlurredNavbar
+import io.tl.mynhentai.ui.components.AppNavigationBar
 import io.tl.mynhentai.ui.components.NavbarItem
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import io.tl.mynhentai.ui.detail.DetailScreen
 import io.tl.mynhentai.ui.account.AccountScreen
 import io.tl.mynhentai.ui.history.HistoryScreen
@@ -253,7 +253,6 @@ private fun MainScreenBackHandler(
 @Composable
 private fun MainTabs(navigator: Navigator) {
     val settings: SettingsHelper = koinInject()
-    val enableBlur by settings.enableBlurFlow.collectAsState()
     val useFloatingNavbar by settings.useFloatingNavbarFlow.collectAsState()
     val floatingNavbarStyle by settings.floatingNavbarStyleFlow.collectAsState()
     val floatingNavbarPosition by settings.floatingNavbarPositionFlow.collectAsState()
@@ -272,12 +271,12 @@ private fun MainTabs(navigator: Navigator) {
     }
     MainScreenBackHandler(mainState = mainPagerState, navigator = navigator)
 
-    val backdrop = rememberBlurBackdrop(enableBlur = enableBlur)
+    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         bottomBar = {
-            BlurredNavbar(
+            AppNavigationBar(
                 items = items,
                 currentRoute = items.getOrNull(mainPagerState.selectedPage)?.route,
                 onNavigate = { route ->

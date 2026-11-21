@@ -63,15 +63,29 @@ class SettingsHelper(private val appContext: Context) {
             _backAnimStyleFlow.value = value
         }
 
-    private val _enableBlurFlow = MutableStateFlow(prefs.getBoolean(KEY_BLUR_ENABLED, true))
-    val enableBlurFlow: StateFlow<Boolean> = _enableBlurFlow.asStateFlow()
+    private val _surfaceEffectFlow = MutableStateFlow(readSurfaceEffect())
+    val surfaceEffectFlow: StateFlow<Int> = _surfaceEffectFlow.asStateFlow()
 
-    var enableBlur: Boolean
-        get() = _enableBlurFlow.value
+    var surfaceEffect: Int
+        get() = _surfaceEffectFlow.value
         set(value) {
-            prefs.edit().putBoolean(KEY_BLUR_ENABLED, value).apply()
-            _enableBlurFlow.value = value
+            val coerced = value.coerceIn(SURFACE_EFFECT_NONE, SURFACE_EFFECT_GLASS)
+            prefs.edit().putInt(KEY_SURFACE_EFFECT, coerced).apply()
+            _surfaceEffectFlow.value = coerced
         }
+
+    private fun readSurfaceEffect(): Int {
+        if (prefs.contains(KEY_SURFACE_EFFECT)) {
+            return prefs.getInt(KEY_SURFACE_EFFECT, SURFACE_EFFECT_BLUR)
+                .coerceIn(SURFACE_EFFECT_NONE, SURFACE_EFFECT_GLASS)
+        }
+        // Migrate the legacy blur switch: on -> blur, off -> none.
+        return if (prefs.getBoolean(KEY_BLUR_ENABLED, true)) {
+            SURFACE_EFFECT_BLUR
+        } else {
+            SURFACE_EFFECT_NONE
+        }
+    }
 
     private val _useFloatingNavbarFlow = MutableStateFlow(prefs.getBoolean(KEY_USE_FLOATING_NAVBAR, false))
     val useFloatingNavbarFlow: StateFlow<Boolean> = _useFloatingNavbarFlow.asStateFlow()
@@ -231,7 +245,7 @@ class SettingsHelper(private val appContext: Context) {
     private fun reloadFlows() {
         _monetEnabledFlow.value = prefs.getBoolean(KEY_MONET_ENABLED, false)
         _backAnimStyleFlow.value = prefs.getString(KEY_BACK_ANIM_STYLE, "slide") ?: "slide"
-        _enableBlurFlow.value = prefs.getBoolean(KEY_BLUR_ENABLED, true)
+        _surfaceEffectFlow.value = readSurfaceEffect()
         _useFloatingNavbarFlow.value = prefs.getBoolean(KEY_USE_FLOATING_NAVBAR, false)
         _floatingNavbarStyleFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_STYLE, 0)
         _floatingNavbarPositionFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0)
@@ -331,11 +345,16 @@ class SettingsHelper(private val appContext: Context) {
         const val DOWNLOAD_NOTIFY_DISABLED = 0
         const val DOWNLOAD_NOTIFY_NORMAL = 1
         const val DOWNLOAD_NOTIFY_LIVE = 2
+
+        const val SURFACE_EFFECT_NONE = 0
+        const val SURFACE_EFFECT_BLUR = 1
+        const val SURFACE_EFFECT_GLASS = 2
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
         private const val KEY_MONET_ENABLED = "monet_enabled"
         private const val KEY_BACK_ANIM_STYLE = "back_anim_style"
         private const val KEY_BLUR_ENABLED = "blur_enabled"
+        private const val KEY_SURFACE_EFFECT = "surface_effect"
         private const val KEY_USE_FLOATING_NAVBAR = "use_floating_navbar"
         private const val KEY_FLOATING_NAVBAR_STYLE = "floating_navbar_style"
         private const val KEY_FLOATING_NAVBAR_POSITION = "floating_navbar_position"

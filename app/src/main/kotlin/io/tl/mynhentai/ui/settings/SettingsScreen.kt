@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -50,8 +49,8 @@ import io.tl.mynhentai.data.local.AccountStore
 import io.tl.mynhentai.ui.reader.turn.PageAnimation
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.ui.account.AccountAvatar
-import io.tl.mynhentai.ui.components.BlurredBar
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppTopBar
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.basic.Card
@@ -67,11 +66,11 @@ import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Ok
+import top.yukonga.miuix.kmp.glass.GlassDropdownPreference
 import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
@@ -105,7 +104,7 @@ fun SettingsScreen(
     val offlineCacheSize by viewModel.offlineCacheSize.collectAsState()
     val backAnimStyle by viewModel.backAnimStyle.collectAsState()
     val monetEnabled by viewModel.monetEnabled.collectAsState()
-    val enableBlur by viewModel.enableBlur.collectAsState()
+    val surfaceEffect by viewModel.surfaceEffect.collectAsState()
     val powerSaveModeTracker: PowerSaveModeTracker = koinInject()
     val isPowerSaveMode by powerSaveModeTracker.isPowerSaveMode.collectAsState()
     val accountStore: AccountStore = koinInject()
@@ -474,8 +473,7 @@ fun SettingsScreen(
     }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -486,19 +484,11 @@ fun SettingsScreen(
             )
         },
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = stringResource(R.string.settings),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = stringResource(R.string.settings),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor
-                )
-            }
+            )
         }
     ) { innerPadding ->
         Box(
@@ -744,16 +734,23 @@ fun SettingsScreen(
                             title = stringResource(R.string.monet),
                             summary = stringResource(R.string.monet_summary)
                         )
-                        SwitchPreference(
-                            checked = enableBlur && !isPowerSaveMode,
-                            onCheckedChange = { viewModel.setEnableBlur(it) },
-                            title = stringResource(R.string.enable_blur),
+                        val effectOptions = listOf(
+                            stringResource(R.string.surface_effect_none),
+                            stringResource(R.string.surface_effect_blur),
+                            stringResource(R.string.surface_effect_glass)
+                        )
+                        GlassDropdownPreference(
+                            title = stringResource(R.string.surface_effect),
+                            items = effectOptions,
+                            selectedIndex = surfaceEffect.coerceIn(0, effectOptions.size - 1),
+                            backdrop = backdrop,
+                            enabled = !isPowerSaveMode,
                             summary = if (isPowerSaveMode) {
                                 stringResource(R.string.blur_disabled_power_save)
                             } else {
                                 null
                             },
-                            enabled = !isPowerSaveMode
+                            onSelectedIndexChange = { viewModel.setSurfaceEffect(it) }
                         )
                                                 SwitchPreference(
                             title = stringResource(R.string.use_floating_navbar),

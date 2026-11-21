@@ -40,8 +40,8 @@ class SettingsViewModel(
     private val _backAnimStyle = MutableStateFlow(settings.backAnimStyle)
     val backAnimStyle: StateFlow<String> = _backAnimStyle.asStateFlow()
 
-    private val _enableBlur = MutableStateFlow(settings.enableBlur)
-    val enableBlur: StateFlow<Boolean> = _enableBlur.asStateFlow()
+    private val _surfaceEffect = MutableStateFlow(settings.surfaceEffect)
+    val surfaceEffect: StateFlow<Int> = _surfaceEffect.asStateFlow()
 
     private val _useFloatingNavbar = MutableStateFlow(settings.useFloatingNavbar)
     val useFloatingNavbar: StateFlow<Boolean> = _useFloatingNavbar.asStateFlow()
@@ -92,9 +92,9 @@ class SettingsViewModel(
         _backAnimStyle.value = style
     }
 
-    fun setEnableBlur(enabled: Boolean) {
-        settings.enableBlur = enabled
-        _enableBlur.value = enabled
+    fun setSurfaceEffect(effect: Int) {
+        settings.surfaceEffect = effect
+        _surfaceEffect.value = settings.surfaceEffect
     }
 
     fun setUseFloatingNavbar(enabled: Boolean) {
@@ -169,7 +169,7 @@ class SettingsViewModel(
         _languageFilterEnabled.value = settings.languageFilterEnabled
         _monetEnabled.value = settings.monetEnabled
         _backAnimStyle.value = settings.backAnimStyle
-        _enableBlur.value = settings.enableBlur
+        _surfaceEffect.value = settings.surfaceEffect
         _useFloatingNavbar.value = settings.useFloatingNavbar
         _floatingNavbarStyle.value = settings.floatingNavbarStyle
         _floatingNavbarPosition.value = settings.floatingNavbarPosition

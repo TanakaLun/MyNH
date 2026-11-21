@@ -48,11 +48,12 @@ import coil.compose.AsyncImage
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaSummary
 import io.tl.mynhentai.data.model.Tag
-import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.TagChip
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Button
@@ -68,7 +69,6 @@ import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -105,48 +105,37 @@ fun DetailScreen(
     }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         snackbarHost = { SnackbarHost(state = snackbarHostState) },
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = stringResource(R.string.detail),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = stringResource(R.string.detail),
-                    titleColor = MiuixTheme.colorScheme.onBackground,
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor,
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
-                        }
-                    },
-                    actions = {
-                        IconButton(
-                            onClick = {
-                                copyMangaLink(context, galleryId)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        context.getString(R.string.link_copied)
-                                    )
-                                }
+                navigationIcon = {
+                    AppIconButton(
+                        onClick = onBack,
+                        icon = MiuixIcons.Back,
+                        contentDescription = stringResource(R.string.back)
+                    )
+                },
+                actions = {
+                    AppIconButton(
+                        onClick = {
+                            copyMangaLink(context, galleryId)
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    context.getString(R.string.link_copied)
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = MiuixIcons.Share,
-                                contentDescription = stringResource(R.string.share)
-                            )
-                        }
-                    }
-                )
-            }
+                        },
+                        icon = MiuixIcons.Share,
+                        contentDescription = stringResource(R.string.share)
+                    )
+                }
+            )
         }
     ) { innerPadding ->
         if (blacklistTag != null) {

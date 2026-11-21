@@ -31,8 +31,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
-import io.tl.mynhentai.ui.components.BlurredBar
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppTopBar
+import io.tl.mynhentai.ui.components.LocalSurfaceEffect
+import io.tl.mynhentai.ui.components.SurfaceEffect
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import io.tl.mynhentai.ui.statistics.components.ActivityTrailCard
 import io.tl.mynhentai.ui.statistics.components.DailyBarChart
 import io.tl.mynhentai.ui.statistics.components.HabitCard
@@ -47,8 +49,9 @@ import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
+import top.yukonga.miuix.kmp.glass.GlassSegmentedTabRow
+import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -63,25 +66,20 @@ fun StatisticsScreen(
     val listState = rememberLazyListState()
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
+    val effect = LocalSurfaceEffect.current
+    val surfaceColor = MiuixTheme.colorScheme.surface
+    // Flat recording layer used by the in-list segmented tab row so it never samples itself.
+    val glassTabBackdrop = rememberLayerBackdrop { drawRect(surfaceColor) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = stringResource(R.string.statistics),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = stringResource(R.string.statistics),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor
-                )
-            }
+            )
         }
     ) { innerPadding ->
         Box(
@@ -89,6 +87,10 @@ fun StatisticsScreen(
                 .fillMaxSize()
                 .then(
                     if (backdrop != null) Modifier.layerBackdrop(backdrop)
+                    else Modifier
+                )
+                .then(
+                    if (effect == SurfaceEffect.GLASS) Modifier.layerBackdrop(glassTabBackdrop)
                     else Modifier
                 )
         ) {
@@ -135,9 +137,26 @@ fun StatisticsScreen(
                                 text = stringResource(R.string.stats_daily),
                                 modifier = Modifier.weight(1f)
                             )
-                            RangeSelector(
-                                selected = state.rangeDays,
-                                onSelect = viewModel::setRangeDays
+                            if (effect != SurfaceEffect.GLASS) {
+                                RangeSelector(
+                                    selected = state.rangeDays,
+                                    onSelect = viewModel::setRangeDays
+                                )
+                            }
+                        }
+                        if (effect == SurfaceEffect.GLASS) {
+                            GlassSegmentedTabRow(
+                                tabs = listOf(
+                                    stringResource(R.string.stats_range_7),
+                                    stringResource(R.string.stats_range_30)
+                                ),
+                                selectedIndex = if (state.rangeDays == 7) 0 else 1,
+                                onSelect = { index -> viewModel.setRangeDays(if (index == 0) 7 else 30) },
+                                backdrop = glassTabBackdrop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                surfaceAlpha = 1f
                             )
                         }
                         ChartCard {

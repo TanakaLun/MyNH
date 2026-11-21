@@ -20,10 +20,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
-import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -32,7 +33,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -65,8 +65,7 @@ fun SearchResultsScreen(
     val currentSort by viewModel.currentSort.collectAsState()
     val listState = rememberLazyListState()
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     LaunchedEffect(query) {
         viewModel.search(query)
@@ -98,32 +97,26 @@ fun SearchResultsScreen(
 
     Scaffold(
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = stringResource(R.string.search_results),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = stringResource(R.string.search_results),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor,
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(MiuixIcons.Back, contentDescription = stringResource(R.string.back))
-                        }
-                    },
-                    actions = {
-                        OverlayIconDropdownMenu(entries = sortMenuEntries) {
-                            Icon(
-                                MiuixIcons.Filter,
-                                contentDescription = stringResource(R.string.sort)
-                            )
-                        }
+                navigationIcon = {
+                    AppIconButton(
+                        onClick = onBack,
+                        icon = MiuixIcons.Back,
+                        contentDescription = stringResource(R.string.back)
+                    )
+                },
+                actions = {
+                    OverlayIconDropdownMenu(entries = sortMenuEntries) {
+                        Icon(
+                            MiuixIcons.Filter,
+                            contentDescription = stringResource(R.string.sort)
+                        )
                     }
-                )
-            }
+                }
+            )
         }
     ) { innerPadding ->
         Box(

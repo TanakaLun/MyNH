@@ -26,15 +26,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaSummary
-import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.SelectionToolbar
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
@@ -52,25 +51,16 @@ fun HistoryScreen(
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.history),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.history),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor
-                )
-            }
+            )
         },
         floatingToolbar = {
             SelectionToolbar(

@@ -1,10 +1,12 @@
 package io.tl.mynhentai.ui.theme
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import io.tl.mynhentai.data.local.SettingsHelper
+import io.tl.mynhentai.ui.components.LocalSurfaceEffect
 import org.koin.compose.koinInject
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -16,12 +18,15 @@ fun MyNHentaiTheme(
 ) {
     val settings: SettingsHelper = koinInject()
     val monetEnabled by settings.monetEnabledFlow.collectAsState()
+    val surfaceEffect by settings.surfaceEffectFlow.collectAsState()
     val colorSchemeMode = if (monetEnabled) ColorSchemeMode.MonetSystem else ColorSchemeMode.System
     val controller = remember(colorSchemeMode) {
         ThemeController(colorSchemeMode = colorSchemeMode)
     }
-    MiuixTheme(
-        controller = controller,
-        content = content
-    )
+    CompositionLocalProvider(LocalSurfaceEffect provides surfaceEffect) {
+        MiuixTheme(
+            controller = controller,
+            content = content
+        )
+    }
 }

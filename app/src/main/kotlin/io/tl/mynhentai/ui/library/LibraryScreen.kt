@@ -28,10 +28,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaSummary
-import io.tl.mynhentai.ui.components.BlurredBar
+import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.SelectionToolbar
-import io.tl.mynhentai.ui.components.rememberBlurBackdrop
+import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -40,7 +41,6 @@ import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Favorites
@@ -83,45 +83,31 @@ fun LibraryScreen(
     }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberBlurBackdrop()
-    val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
+    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         snackbarHost = { SnackbarHost(state = snackbarHostState) },
         topBar = {
-            BlurredBar(
+            AppTopBar(
+                title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.favorites),
                 backdrop = backdrop,
-                blurEnabled = true,
-                blurStyle = 1,
                 scrollBehavior = topAppBarScrollBehavior,
-            ) {
-                TopAppBar(
-                    title = if (selectionMode) "Selected ${selectedIds.size}" else stringResource(R.string.favorites),
-                    defaultWindowInsetsPadding = false,
-                    scrollBehavior = topAppBarScrollBehavior,
-                    color = barColor,
-                    actions = {
-                        if (bound) {
-                            IconButton(
-                                onClick = { viewModel.syncNow() },
-                                enabled = !syncing
-                            ) {
-                                Icon(
-                                    imageVector = MiuixIcons.Refresh,
-                                    contentDescription = stringResource(R.string.account_sync_now)
-                                )
-                            }
-                            IconButton(onClick = { viewModel.randomFavorite() }) {
-                                Icon(
-                                    imageVector = MiuixIcons.Favorites,
-                                    contentDescription = stringResource(R.string.account_random_favorite)
-                                )
-                            }
-                        }
+                actions = {
+                    if (bound) {
+                        AppIconButton(
+                            onClick = { viewModel.syncNow() },
+                            icon = MiuixIcons.Refresh,
+                            contentDescription = stringResource(R.string.account_sync_now)
+                        )
+                        AppIconButton(
+                            onClick = { viewModel.randomFavorite() },
+                            icon = MiuixIcons.Favorites,
+                            contentDescription = stringResource(R.string.account_random_favorite)
+                        )
                     }
-                )
-            }
+                }
+            )
         },
         floatingToolbar = {
             SelectionToolbar(
