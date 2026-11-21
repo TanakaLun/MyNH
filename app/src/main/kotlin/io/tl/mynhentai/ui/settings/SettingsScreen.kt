@@ -117,6 +117,7 @@ fun SettingsScreen(
     val statisticsRecordQueries by viewModel.statisticsRecordQueries.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showClearStatisticsDialog by remember { mutableStateOf(false) }
+    val backdrop = rememberSurfaceBackdrop()
 
     var showExportSheet by remember { mutableStateOf(false) }
     var showImportSheet by remember { mutableStateOf(false) }
@@ -473,7 +474,6 @@ fun SettingsScreen(
     }
 
     val topAppBarScrollBehavior = MiuixScrollBehavior()
-    val backdrop = rememberSurfaceBackdrop()
 
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
