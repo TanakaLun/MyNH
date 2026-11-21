@@ -143,8 +143,8 @@
     <string name="monet_summary">Use system wallpaper colors</string>
     <string name="surface_effect">Surface effect</string>
     <string name="surface_effect_none">None</string>
-    <string name="surface_effect_blur">miuix blur</string>
-    <string name="surface_effect_glass">miuix glass</string>
+    <string name="surface_effect_blur">Blur</string>
+    <string name="surface_effect_glass">Glass</string>
     <string name="enable_blur">Enable Blur Effect</string>
     <string name="blur_disabled_power_save">Disabled while battery saver is on</string>
 

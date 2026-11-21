@@ -14,17 +14,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.model.MangaDetail
-import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.blur.Backdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun DownloadDialog(
     detail: MangaDetail,
     archiveAvailable: Boolean,
+    backdrop: Backdrop?,
     onDismiss: () -> Unit,
     onDownload: (filename: String, path: String) -> Unit,
     onArchive: (filename: String, format: String) -> Unit,
@@ -32,9 +31,10 @@ fun DownloadDialog(
 ) {
     var filename by remember { mutableStateOf(detail.title.pretty ?: detail.title.english ?: "gallery_${detail.id}") }
 
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = stringResource(R.string.download_manga),
+        backdrop = backdrop,
         onDismissRequest = onDismiss
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -62,18 +62,16 @@ fun DownloadDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppDialogButton(
+                        text = stringResource(R.string.download_as_cbz),
                         onClick = { onArchive(filename, "cbz") },
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.download_as_cbz))
-                    }
-                    Button(
+                    )
+                    AppDialogButton(
+                        text = stringResource(R.string.download_as_zip),
                         onClick = { onArchive(filename, "zip") },
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Text(stringResource(R.string.download_as_zip))
-                    }
+                    )
                 }
             }
 
@@ -81,21 +79,20 @@ fun DownloadDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
+                AppDialogButton(
+                    text = stringResource(R.string.download_pages_zip),
                     onClick = { onDownload(filename, DownloadManager.defaultDownloadPath) },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.download_pages_zip))
-                }
-                Button(
+                    modifier = Modifier.weight(1f),
+                    primary = true
+                )
+                AppDialogButton(
+                    text = stringResource(R.string.cache_download),
                     onClick = { onCache() },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.cache_download))
-                }
+                )
             }
 
-            TextButton(
+            AppDialogButton(
                 text = stringResource(R.string.close),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()

@@ -50,6 +50,8 @@ import io.tl.mynhentai.data.model.AccountProfile
 import io.tl.mynhentai.data.repository.SyncPhase
 import io.tl.mynhentai.data.repository.SyncProgress
 import io.tl.mynhentai.ui.components.AppTopBar
+import io.tl.mynhentai.ui.components.AppDialog
+import io.tl.mynhentai.ui.components.AppDialogButton
 import io.tl.mynhentai.ui.components.AppIconButton
 import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import java.time.Instant
@@ -73,7 +75,6 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -132,9 +133,10 @@ fun AccountScreen(
     }
 
     if (showKeyDialog) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.account_key_title),
+            backdrop = backdrop,
             onDismissRequest = {
                 showKeyDialog = false
                 viewModel.clearBindError()
@@ -188,7 +190,7 @@ fun AccountScreen(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(
+                    AppDialogButton(
                         text = stringResource(R.string.account_paste),
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -202,7 +204,7 @@ fun AccountScreen(
                         },
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(
+                    AppDialogButton(
                         text = if (state.binding) {
                             stringResource(R.string.account_binding)
                         } else {
@@ -210,7 +212,7 @@ fun AccountScreen(
                         },
                         onClick = { viewModel.bind(keyInput.text) },
                         enabled = keyInput.text.isNotBlank() && !state.binding,
-                        colors = ButtonDefaults.textButtonColorsPrimary(),
+                        primary = true,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -219,7 +221,7 @@ fun AccountScreen(
                     style = MiuixTheme.textStyles.footnote2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.account_get_key),
                     onClick = { openApiKeyPage(context) },
                     modifier = Modifier.fillMaxWidth()
@@ -229,9 +231,10 @@ fun AccountScreen(
     }
 
     if (showUnbindDialog) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.account_unbind),
+            backdrop = backdrop,
             onDismissRequest = { showUnbindDialog = false }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -240,31 +243,29 @@ fun AccountScreen(
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.cancel),
                     onClick = { showUnbindDialog = false },
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.account_unbind),
                     onClick = {
                         showUnbindDialog = false
                         viewModel.unbind()
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        color = MiuixTheme.colorScheme.errorContainer,
-                        textColor = MiuixTheme.colorScheme.onErrorContainer
-                    )
+                    destructive = true
                 )
             }
         }
     }
 
     if (state.mergePrompt) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.account_merge_title),
+            backdrop = backdrop,
             onDismissRequest = { viewModel.dismissMergePrompt() }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -273,18 +274,18 @@ fun AccountScreen(
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.account_merge_upload),
                     onClick = { viewModel.confirmMerge(true) },
-                    colors = ButtonDefaults.textButtonColorsPrimary(),
+                    primary = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.account_merge_pull),
                     onClick = { viewModel.confirmMerge(false) },
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.account_merge_later),
                     onClick = { viewModel.dismissMergePrompt() },
                     modifier = Modifier.fillMaxWidth()

@@ -49,6 +49,10 @@ import io.tl.mynhentai.data.local.AccountStore
 import io.tl.mynhentai.ui.reader.turn.PageAnimation
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
 import io.tl.mynhentai.ui.account.AccountAvatar
+import io.tl.mynhentai.ui.components.AppBottomSheet
+import io.tl.mynhentai.ui.components.AppDialog
+import io.tl.mynhentai.ui.components.AppDialogButton
+import io.tl.mynhentai.ui.components.AppDropdownPreference
 import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
@@ -70,11 +74,7 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.icon.extended.Ok
-import top.yukonga.miuix.kmp.glass.GlassDropdownPreference
-import top.yukonga.miuix.kmp.overlay.OverlayBottomSheet
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
 import top.yukonga.miuix.kmp.preference.SliderPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -208,9 +208,10 @@ fun SettingsScreen(
     }
 
     if (showBlacklistDialog) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.blacklist_management),
+            backdrop = backdrop,
             onDismissRequest = { showBlacklistDialog = false }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -253,7 +254,7 @@ fun SettingsScreen(
                         }
                     }
                 }
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.close),
                     onClick = { showBlacklistDialog = false },
                     modifier = Modifier.fillMaxWidth()
@@ -263,9 +264,10 @@ fun SettingsScreen(
     }
 
     if (showClearStatisticsDialog) {
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.statistics_clear),
+            backdrop = backdrop,
             onDismissRequest = { showClearStatisticsDialog = false }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -274,30 +276,28 @@ fun SettingsScreen(
                     style = MiuixTheme.textStyles.body2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.cancel),
                     onClick = { showClearStatisticsDialog = false },
                     modifier = Modifier.fillMaxWidth()
                 )
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.confirm),
                     onClick = {
                         viewModel.clearStatistics()
                         showClearStatisticsDialog = false
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        color = MiuixTheme.colorScheme.errorContainer,
-                        textColor = MiuixTheme.colorScheme.onErrorContainer
-                    )
+                    destructive = true
                 )
             }
         }
     }
 
-    OverlayBottomSheet(
+    AppBottomSheet(
         show = showExportSheet,
         title = stringResource(R.string.export_items),
+        backdrop = backdrop,
         onDismissRequest = { showExportSheet = false },
         startAction = {
             IconButton(onClick = { showExportSheet = false }) {
@@ -379,9 +379,10 @@ fun SettingsScreen(
     }
 
     pendingImport?.let { backup ->
-        OverlayBottomSheet(
+        AppBottomSheet(
             show = showImportSheet,
             title = stringResource(R.string.import_items),
+            backdrop = backdrop,
             onDismissRequest = { showImportSheet = false },
             onDismissFinished = { pendingImport = null },
             startAction = {
@@ -518,9 +519,10 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 12.dp),
                         insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
                     ) {
-                        OverlaySpinnerPreference(
+                        AppDropdownPreference(
                             title = stringResource(R.string.language_filter),
-                            items = languageLabels.values.toList().map { label -> DropdownItem(text = label) },
+                            items = languageLabels.values.toList(),
+                            backdrop = backdrop,
                             selectedIndex = languageLabels.values.toList().indexOf(languageLabels[languageFilter] ?: "All"),
                             onSelectedIndexChange = { index ->
                                 val selected = languageLabels.values.toList()[index]
@@ -608,11 +610,10 @@ fun SettingsScreen(
                         insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
                     ) {
                         val animations = PageAnimation.entries
-                        OverlaySpinnerPreference(
+                        AppDropdownPreference(
                             title = stringResource(R.string.reader_page_animation),
-                            items = animations.map { animation ->
-                                DropdownItem(text = stringResource(readerAnimationLabelRes(animation)))
-                            },
+                            items = animations.map { animation -> stringResource(readerAnimationLabelRes(animation)) },
+                            backdrop = backdrop,
                             selectedIndex = animations
                                 .indexOf(PageAnimation.fromName(readerPageAnimation))
                                 .coerceAtLeast(0),
@@ -631,13 +632,14 @@ fun SettingsScreen(
                         modifier = Modifier.padding(horizontal = 12.dp),
                         insideMargin = androidx.compose.foundation.layout.PaddingValues(0.dp)
                     ) {
-                        OverlaySpinnerPreference(
+                        AppDropdownPreference(
                             title = stringResource(R.string.download_notification),
                             items = listOf(
-                                DropdownItem(text = stringResource(R.string.download_notification_disabled)),
-                                DropdownItem(text = stringResource(R.string.download_notification_normal)),
-                                DropdownItem(text = stringResource(R.string.download_notification_live))
+                                stringResource(R.string.download_notification_disabled),
+                                stringResource(R.string.download_notification_normal),
+                                stringResource(R.string.download_notification_live)
                             ),
+                            backdrop = backdrop,
                             selectedIndex = downloadNotificationMode.coerceIn(0, 2),
                             onSelectedIndexChange = { viewModel.setDownloadNotificationMode(it) }
                         )
@@ -734,7 +736,7 @@ fun SettingsScreen(
                             stringResource(R.string.surface_effect_blur),
                             stringResource(R.string.surface_effect_glass)
                         )
-                        GlassDropdownPreference(
+                        AppDropdownPreference(
                             title = stringResource(R.string.surface_effect),
                             items = effectOptions,
                             selectedIndex = surfaceEffect.coerceIn(0, effectOptions.size - 1),
@@ -753,16 +755,18 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setUseFloatingNavbar(it) }
                         )
                         androidx.compose.animation.AnimatedVisibility(visible = useFloatingNavbar) {
-                            OverlaySpinnerPreference(
+                            AppDropdownPreference(
                                 title = stringResource(R.string.floating_navbar_position),
-                                items = positionOptions.map { position -> DropdownItem(text = position) },
+                                items = positionOptions,
+                                backdrop = backdrop,
                                 selectedIndex = floatingNavbarPosition.coerceIn(0, positionOptions.size - 1),
                                 onSelectedIndexChange = { viewModel.setFloatingNavbarPosition(it) }
                             )
                         }
-                        OverlaySpinnerPreference(
+                        AppDropdownPreference(
                             title = stringResource(R.string.back_animation),
-                            items = animNames.map { name -> DropdownItem(text = name) },
+                            items = animNames,
+                            backdrop = backdrop,
                             selectedIndex = currentAnimIndex,
                             onSelectedIndexChange = { index ->
                                 viewModel.setBackAnimStyle(animValues[index])

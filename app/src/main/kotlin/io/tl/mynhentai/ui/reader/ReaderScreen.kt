@@ -46,6 +46,8 @@ import coil.compose.SubcomposeAsyncImage
 import io.tl.mynhentai.R
 import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.model.MangaPage
+import io.tl.mynhentai.ui.components.AppDialog
+import io.tl.mynhentai.ui.components.AppDialogButton
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.PreloadPages
 import io.tl.mynhentai.ui.reader.turn.PageAnimation
@@ -61,7 +63,6 @@ import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
 @Composable
@@ -146,14 +147,16 @@ fun ReaderScreen(
 
     if (showSaveDialog != null) {
         val pageNum = showSaveDialog!!
-        OverlayDialog(
+        AppDialog(
             show = true,
             title = stringResource(R.string.save_page_title, pageNum),
             summary = stringResource(R.string.save_page_confirm),
+            backdrop = null,
             onDismissRequest = { showSaveDialog = null }
         ) {
-            TextButton(
+            AppDialogButton(
                 text = stringResource(R.string.save),
+                primary = true,
                 onClick = {
                     val state = uiState
                     if (state is ReaderUiState.Success) {
@@ -166,7 +169,7 @@ fun ReaderScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            TextButton(
+            AppDialogButton(
                 text = stringResource(R.string.cancel),
                 onClick = { showSaveDialog = null },
                 modifier = Modifier.fillMaxWidth()

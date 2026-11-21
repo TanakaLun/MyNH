@@ -52,6 +52,8 @@ import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.DownloadDialog
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.TagChip
+import io.tl.mynhentai.ui.components.AppDialog
+import io.tl.mynhentai.ui.components.AppDialogButton
 import io.tl.mynhentai.ui.components.AppIconButton
 import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import kotlinx.coroutines.launch
@@ -76,7 +78,6 @@ import top.yukonga.miuix.kmp.icon.extended.Favorites
 import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
 import top.yukonga.miuix.kmp.icon.extended.Play
 import top.yukonga.miuix.kmp.icon.extended.Share
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -139,25 +140,27 @@ fun DetailScreen(
         }
     ) { innerPadding ->
         if (blacklistTag != null) {
-            OverlayDialog(
+            AppDialog(
                 show = true,
                 title = stringResource(R.string.blacklist_tag),
                 summary = stringResource(R.string.blacklist_tag_confirm, blacklistTag?.name ?: ""),
+                backdrop = backdrop,
                 onDismissRequest = { blacklistTag = null }
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    TextButton(
+                    AppDialogButton(
                         text = stringResource(R.string.blacklist),
                         onClick = {
                             blacklistTag?.let { viewModel.blacklistTag(it) }
                             blacklistTag = null
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        destructive = true
                     )
-                    TextButton(
+                    AppDialogButton(
                         text = stringResource(R.string.cancel),
                         onClick = { blacklistTag = null },
                         modifier = Modifier.weight(1f)
@@ -172,6 +175,7 @@ fun DetailScreen(
                 DownloadDialog(
                     detail = state.detail,
                     archiveAvailable = archiveAvailable,
+                    backdrop = backdrop,
                     onDismiss = { showDownloadDialog = false },
                     onDownload = { filename, path ->
                         viewModel.startDownload(context, state.detail, filename, path)
@@ -191,9 +195,10 @@ fun DetailScreen(
 
         val archiveFailure = archiveError
         if (archiveFailure != null) {
-            OverlayDialog(
+            AppDialog(
                 show = true,
                 title = stringResource(R.string.download_failed_title),
+                backdrop = backdrop,
                 onDismissRequest = { viewModel.consumeArchiveError() }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -205,7 +210,7 @@ fun DetailScreen(
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
-                    TextButton(
+                    AppDialogButton(
                         text = stringResource(R.string.close),
                         onClick = { viewModel.consumeArchiveError() },
                         modifier = Modifier.fillMaxWidth()
@@ -218,6 +223,7 @@ fun DetailScreen(
         if (errorState != null) {
             NetworkErrorDialog(
                 error = errorState.error,
+                backdrop = backdrop,
                 onRetry = { viewModel.load(galleryId) },
                 onExit = onBack,
             )

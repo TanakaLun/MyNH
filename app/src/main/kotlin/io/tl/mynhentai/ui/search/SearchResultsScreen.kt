@@ -24,6 +24,9 @@ import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.AppMenuOverlay
+import io.tl.mynhentai.ui.components.AppMenuTrigger
+import io.tl.mynhentai.ui.components.rememberAppMenuState
 import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownEntry
@@ -37,7 +40,6 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Filter
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -77,6 +79,7 @@ fun SearchResultsScreen(
             error = errorState.error,
             onRetry = { viewModel.search(query) },
             onExit = onBack,
+            backdrop = backdrop,
         )
     }
 
@@ -95,6 +98,8 @@ fun SearchResultsScreen(
         )
     }
 
+    val menuState = rememberAppMenuState()
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         topBar = {
             AppTopBar(
@@ -109,12 +114,12 @@ fun SearchResultsScreen(
                     )
                 },
                 actions = {
-                    OverlayIconDropdownMenu(entries = sortMenuEntries) {
-                        Icon(
-                            MiuixIcons.Filter,
-                            contentDescription = stringResource(R.string.sort)
-                        )
-                    }
+                    AppMenuTrigger(
+                        state = menuState,
+                        entries = sortMenuEntries,
+                        icon = MiuixIcons.Filter,
+                        contentDescription = stringResource(R.string.sort),
+                    )
                 }
             )
         }
@@ -167,5 +172,12 @@ fun SearchResultsScreen(
                 }
             }
         }
+    }
+    AppMenuOverlay(
+        state = menuState,
+        entries = sortMenuEntries,
+        icon = MiuixIcons.Filter,
+        backdrop = backdrop,
+    )
     }
 }

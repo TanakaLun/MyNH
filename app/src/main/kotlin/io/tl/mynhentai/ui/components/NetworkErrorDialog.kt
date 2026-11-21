@@ -13,10 +13,8 @@ import androidx.compose.ui.unit.dp
 import io.tl.mynhentai.R
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
-import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.blur.Backdrop
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
@@ -27,28 +25,30 @@ fun NetworkErrorDialog(
     error: Throwable,
     onRetry: () -> Unit,
     onExit: () -> Unit,
+    backdrop: Backdrop? = null,
 ) {
     val context = LocalContext.current
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = stringResource(R.string.error_load_failed),
         summary = remember(error) { error.toUserMessage(context) },
+        backdrop = backdrop,
         onDismissRequest = onExit,
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(
+            AppDialogButton(
+                text = stringResource(R.string.retry),
                 onClick = onRetry,
                 modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.retry))
-            }
-            TextButton(
+                primary = true
+            )
+            AppDialogButton(
                 text = stringResource(R.string.error_exit),
                 onClick = onExit,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f)
             )
         }
     }

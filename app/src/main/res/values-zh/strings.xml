@@ -141,8 +141,8 @@
     <string name="monet_summary">使用系统壁纸颜色</string>
     <string name="surface_effect">质感效果</string>
     <string name="surface_effect_none">无</string>
-    <string name="surface_effect_blur">miuix blur</string>
-    <string name="surface_effect_glass">miuix glass</string>
+    <string name="surface_effect_blur">Blur</string>
+    <string name="surface_effect_glass">Glass</string>
     <string name="enable_blur">启用模糊效果</string>
     <string name="blur_disabled_power_save">省电模式下已禁用</string>
 

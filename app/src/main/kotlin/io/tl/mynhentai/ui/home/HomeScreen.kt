@@ -32,6 +32,9 @@ import io.tl.mynhentai.ui.components.AppTopBar
 import io.tl.mynhentai.ui.components.MangaListItem
 import io.tl.mynhentai.ui.components.NetworkErrorDialog
 import io.tl.mynhentai.ui.components.AppIconButton
+import io.tl.mynhentai.ui.components.AppMenuOverlay
+import io.tl.mynhentai.ui.components.AppMenuTrigger
+import io.tl.mynhentai.ui.components.rememberAppMenuState
 import io.tl.mynhentai.ui.components.rememberSurfaceBackdrop
 import org.koin.androidx.compose.koinViewModel
 import top.yukonga.miuix.kmp.basic.DropdownEntry
@@ -51,7 +54,6 @@ import top.yukonga.miuix.kmp.icon.extended.ChevronBackward
 import top.yukonga.miuix.kmp.icon.extended.ChevronForward
 import top.yukonga.miuix.kmp.icon.extended.Search
 import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -113,9 +115,12 @@ fun HomeScreen(
             error = errorState.error,
             onRetry = { viewModel.retry() },
             onExit = { errorDismissed = true },
+            backdrop = backdrop,
         )
     }
 
+    val menuState = rememberAppMenuState()
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -124,9 +129,12 @@ fun HomeScreen(
                 backdrop = backdrop,
                 scrollBehavior = topAppBarScrollBehavior,
                 actions = {
-                    OverlayIconDropdownMenu(entries = sortMenuEntries) {
-                        Icon(MiuixIcons.Sort, contentDescription = "Sort")
-                    }
+                    AppMenuTrigger(
+                        state = menuState,
+                        entries = sortMenuEntries,
+                        icon = MiuixIcons.Sort,
+                        contentDescription = "Sort",
+                    )
                     AppIconButton(
                         onClick = onSearchClick,
                         icon = MiuixIcons.Search,
@@ -230,5 +238,12 @@ fun HomeScreen(
                 }
             }
         }
+    }
+    AppMenuOverlay(
+        state = menuState,
+        entries = sortMenuEntries,
+        icon = MiuixIcons.Sort,
+        backdrop = backdrop,
+    )
     }
 }
