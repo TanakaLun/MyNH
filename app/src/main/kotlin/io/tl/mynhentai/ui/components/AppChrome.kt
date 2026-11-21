@@ -23,7 +23,6 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.blur.isRuntimeShaderSupported as isBlurRuntimeShaderSupported
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.glass.GlassIconButton
 import top.yukonga.miuix.kmp.glass.GlassNavigationBar
@@ -35,7 +34,7 @@ import top.yukonga.miuix.kmp.icon.glass.FavoriteOutline
 import top.yukonga.miuix.kmp.icon.glass.HomeOutline
 import top.yukonga.miuix.kmp.icon.glass.Report
 import top.yukonga.miuix.kmp.icon.glass.SettingsOutline
-import top.yukonga.miuix.kmp.material.isRuntimeShaderSupported as isGlassRuntimeShaderSupported
+import top.yukonga.miuix.kmp.material.isRuntimeShaderSupported
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** Surface effect selected in the settings. Values match [SettingsHelper]. */
@@ -60,8 +59,7 @@ fun rememberSurfaceBackdrop(): LayerBackdrop? {
     val isPowerSaveMode by powerSaveModeTracker.isPowerSaveMode.collectAsState()
     if (isPowerSaveMode) return null
 
-    if (effect == SurfaceEffect.GLASS && !isGlassRuntimeShaderSupported()) return null
-    if (effect == SurfaceEffect.BLUR && !isBlurRuntimeShaderSupported()) return null
+    if (!isRuntimeShaderSupported()) return null
 
     val surfaceColor = MiuixTheme.colorScheme.surface
     return rememberLayerBackdrop {
@@ -153,7 +151,6 @@ fun AppNavigationBar(
     onNavigate: (String) -> Unit,
     backdrop: LayerBackdrop?,
     useFloating: Boolean,
-    floatingStyle: Int,
     floatingPosition: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -184,7 +181,6 @@ fun AppNavigationBar(
             onNavigate = onNavigate,
             backdrop = backdrop,
             useFloating = useFloating,
-            floatingStyle = floatingStyle,
             floatingPosition = floatingPosition,
             modifier = modifier,
         )

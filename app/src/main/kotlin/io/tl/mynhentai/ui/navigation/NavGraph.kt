@@ -254,7 +254,6 @@ private fun MainScreenBackHandler(
 private fun MainTabs(navigator: Navigator) {
     val settings: SettingsHelper = koinInject()
     val useFloatingNavbar by settings.useFloatingNavbarFlow.collectAsState()
-    val floatingNavbarStyle by settings.floatingNavbarStyleFlow.collectAsState()
     val floatingNavbarPosition by settings.floatingNavbarPositionFlow.collectAsState()
     val statisticsEnabled by settings.statisticsEnabledFlow.collectAsState()
 
@@ -285,7 +284,6 @@ private fun MainTabs(navigator: Navigator) {
                 },
                 backdrop = backdrop,
                 useFloating = useFloatingNavbar,
-                floatingStyle = floatingNavbarStyle,
                 floatingPosition = floatingNavbarPosition,
             )
         }

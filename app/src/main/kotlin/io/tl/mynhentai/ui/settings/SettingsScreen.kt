@@ -110,7 +110,6 @@ fun SettingsScreen(
     val accountStore: AccountStore = koinInject()
     val accountState by accountStore.state.collectAsState()
     val useFloatingNavbar by viewModel.useFloatingNavbar.collectAsState()
-    val floatingNavbarStyle by viewModel.floatingNavbarStyle.collectAsState()
     val floatingNavbarPosition by viewModel.floatingNavbarPosition.collectAsState()
     val downloadNotificationMode by viewModel.downloadNotificationMode.collectAsState()
     val readerPageAnimation by viewModel.readerPageAnimation.collectAsState()
@@ -706,10 +705,6 @@ fun SettingsScreen(
             }
 
             item {
-                val styleOptions = listOf(
-                    stringResource(R.string.floating_navbar_style_default),
-                    stringResource(R.string.floating_navbar_style_ios)
-                )
                 val positionOptions = listOf(
                     stringResource(R.string.floating_navbar_position_center),
                     stringResource(R.string.floating_navbar_position_start),
@@ -758,22 +753,12 @@ fun SettingsScreen(
                             onCheckedChange = { viewModel.setUseFloatingNavbar(it) }
                         )
                         androidx.compose.animation.AnimatedVisibility(visible = useFloatingNavbar) {
-                            Column {
-                                OverlaySpinnerPreference(
-                                    title = stringResource(R.string.floating_navbar_style),
-                                    items = styleOptions.map { style -> DropdownItem(text = style) },
-                                    selectedIndex = floatingNavbarStyle.coerceIn(0, styleOptions.size - 1),
-                                    onSelectedIndexChange = { viewModel.setFloatingNavbarStyle(it) }
-                                )
-                                androidx.compose.animation.AnimatedVisibility(visible = floatingNavbarStyle == 0) {
-                                    OverlaySpinnerPreference(
-                                        title = stringResource(R.string.floating_navbar_position),
-                                        items = positionOptions.map { position -> DropdownItem(text = position) },
-                                        selectedIndex = floatingNavbarPosition.coerceIn(0, positionOptions.size - 1),
-                                        onSelectedIndexChange = { viewModel.setFloatingNavbarPosition(it) }
-                                    )
-                                }
-                            }
+                            OverlaySpinnerPreference(
+                                title = stringResource(R.string.floating_navbar_position),
+                                items = positionOptions.map { position -> DropdownItem(text = position) },
+                                selectedIndex = floatingNavbarPosition.coerceIn(0, positionOptions.size - 1),
+                                onSelectedIndexChange = { viewModel.setFloatingNavbarPosition(it) }
+                            )
                         }
                         OverlaySpinnerPreference(
                             title = stringResource(R.string.back_animation),
