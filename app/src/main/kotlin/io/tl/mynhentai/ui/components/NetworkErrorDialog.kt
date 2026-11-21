@@ -26,6 +26,7 @@ fun NetworkErrorDialog(
     onRetry: () -> Unit,
     onExit: () -> Unit,
     backdrop: Backdrop? = null,
+    renderInRootScaffold: Boolean = true,
 ) {
     val context = LocalContext.current
     AppDialog(
@@ -33,6 +34,7 @@ fun NetworkErrorDialog(
         title = stringResource(R.string.error_load_failed),
         summary = remember(error) { error.toUserMessage(context) },
         backdrop = backdrop,
+        renderInRootScaffold = renderInRootScaffold,
         onDismissRequest = onExit,
     ) {
         Row(

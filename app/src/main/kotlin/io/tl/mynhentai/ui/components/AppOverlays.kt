@@ -116,6 +116,7 @@ fun AppDialog(
     onDismissRequest: () -> Unit,
     backdrop: Backdrop?,
     summary: String? = null,
+    renderInRootScaffold: Boolean = true,
     onDismissFinished: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
@@ -126,6 +127,7 @@ fun AppDialog(
             backdrop = backdrop,
             title = title,
             summary = summary,
+            renderInRootScaffold = renderInRootScaffold,
             onDismissFinished = onDismissFinished,
             content = content,
         )
@@ -135,6 +137,7 @@ fun AppDialog(
             title = title,
             summary = summary,
             onDismissRequest = onDismissRequest,
+            renderInRootScaffold = renderInRootScaffold,
             onDismissFinished = onDismissFinished,
             content = content,
         )

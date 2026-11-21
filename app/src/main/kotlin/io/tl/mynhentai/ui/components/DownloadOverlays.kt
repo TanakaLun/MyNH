@@ -22,12 +22,9 @@ import io.tl.mynhentai.data.local.DownloadError
 import io.tl.mynhentai.data.local.DownloadKind
 import io.tl.mynhentai.data.local.DownloadStateHolder
 import org.koin.compose.koinInject
-import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.SnackbarHost
 import top.yukonga.miuix.kmp.basic.SnackbarHostState
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.MiuixPopupUtils.Companion.MiuixPopupHost
 
@@ -73,7 +70,7 @@ private fun DownloadRetryDialog(holder: DownloadStateHolder, onRetry: (DownloadE
     val errors by holder.errors.collectAsState()
     val error = errors.firstOrNull() ?: return
 
-    OverlayDialog(
+    AppDialog(
         show = true,
         title = stringResource(
             if (error.kind == DownloadKind.CACHE) {
@@ -83,6 +80,8 @@ private fun DownloadRetryDialog(holder: DownloadStateHolder, onRetry: (DownloadE
             }
         ),
         summary = stringResource(R.string.download_failed_body, error.message),
+        backdrop = null,
+        renderInRootScaffold = false,
         onDismissRequest = { holder.dismissError(error.taskId) },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -96,20 +95,20 @@ private fun DownloadRetryDialog(holder: DownloadStateHolder, onRetry: (DownloadE
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (error.retryable) {
-                    Button(
+                    AppDialogButton(
+                        text = stringResource(R.string.retry),
                         onClick = {
                             onRetry(error)
                             holder.dismissError(error.taskId)
                         },
                         modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.retry))
-                    }
+                        primary = true
+                    )
                 }
-                TextButton(
+                AppDialogButton(
                     text = stringResource(R.string.cancel),
                     onClick = { holder.dismissError(error.taskId) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f)
                 )
             }
         }

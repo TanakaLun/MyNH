@@ -152,6 +152,7 @@ fun ReaderScreen(
             title = stringResource(R.string.save_page_title, pageNum),
             summary = stringResource(R.string.save_page_confirm),
             backdrop = null,
+            renderInRootScaffold = false,
             onDismissRequest = { showSaveDialog = null }
         ) {
             AppDialogButton(
@@ -183,6 +184,7 @@ fun ReaderScreen(
             error = errorState.error,
             onRetry = { viewModel.load(galleryId) },
             onExit = onBack,
+            renderInRootScaffold = false,
         )
     }
 
