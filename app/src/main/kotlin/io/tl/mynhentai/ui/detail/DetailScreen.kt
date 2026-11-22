@@ -77,7 +77,7 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.icon.extended.Favorites
 import top.yukonga.miuix.kmp.icon.extended.FavoritesFill
 import top.yukonga.miuix.kmp.icon.extended.Play
-import top.yukonga.miuix.kmp.icon.extended.Share
+import top.yukonga.miuix.kmp.icon.extended.Link
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 
@@ -132,7 +132,7 @@ fun DetailScreen(
                                 )
                             }
                         },
-                        icon = MiuixIcons.Share,
+                        icon = MiuixIcons.Link,
                         contentDescription = stringResource(R.string.share)
                     )
                 }
