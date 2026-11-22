@@ -177,7 +177,7 @@ val repositoryModule = module {
     single { SettingsHelper(androidContext()) }
     single { DownloadStateHolder() }
     single { PowerSaveModeTracker(androidContext()) }
-    single { UsageRepository(get()) }
+    single { UsageRepository(get(), get()) }
     single { UsageTracker(get(), get()) }
     single { BackupHelper(androidContext(), get(), get(), get()) }
     single { SecretStore(androidContext()) }

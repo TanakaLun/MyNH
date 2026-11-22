@@ -1,6 +1,7 @@
 package io.tl.mynhentai.data.repository
 
 import io.tl.mynhentai.data.local.ReadingRecordEntity
+import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.data.local.UsageDao
 import io.tl.mynhentai.data.local.UsageEventEntity
 import io.tl.mynhentai.data.model.ActivityItem
@@ -19,25 +20,28 @@ import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 /**
  * Aggregates the raw usage tables into [UsageStats] for the statistics screen.
  *
- * Everything is computed locally in memory: the 400-day window holds at most a few
- * thousand rows, which is cheaper than maintaining extra aggregate tables.
+ * Everything is computed locally in memory. The retention window is configured in the
+ * statistics settings (week / month / year / unlimited) and rows outside it are pruned by
+ * the tracker, so the in-memory scan stays small.
  */
-class UsageRepository(private val dao: UsageDao) {
+class UsageRepository(
+    private val dao: UsageDao,
+    private val settings: SettingsHelper,
+) {
 
     private val zone: ZoneId = ZoneId.systemDefault()
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun observeStats(): Flow<UsageStats> {
-        val since = System.currentTimeMillis() - RETENTION_DAYS * MILLIS_PER_DAY
-        return combine(
-            dao.observeEventsSince(since),
-            dao.observeReadingsSince(since),
-        ) { events, readings -> buildStats(events, readings) }
-    }
+    fun observeStats(): Flow<UsageStats> = combine(
+        dao.observeEventsSince(0L),
+        dao.observeReadingsSince(0L),
+        settings.statisticsRangeDaysFlow,
+    ) { events, readings, rangeDays -> buildStats(events, readings, rangeDays) }
 
     suspend fun clearAll() {
         dao.clearEvents()
@@ -57,9 +61,17 @@ class UsageRepository(private val dao: UsageDao) {
     private fun buildStats(
         events: List<UsageEventEntity>,
         readings: List<ReadingRecordEntity>,
+        rangeDays: Int,
     ): UsageStats {
         val today = LocalDate.now(zone)
-        val firstDay = today.minusDays((WINDOW_DAYS - 1).toLong())
+        val firstDay = if (rangeDays > 0) {
+            today.minusDays((rangeDays - 1).toLong())
+        } else {
+            val earliest = (events.map { dateOf(it.startAt) } + readings.map { dateOf(it.startedAt) })
+                .minOrNull()
+            earliest ?: today
+        }
+        val dayCount = ChronoUnit.DAYS.between(firstDay, today).toInt().coerceAtLeast(0) + 1
 
         val dayAccum = HashMap<LocalDate, DayAccum>()
         fun accumOf(date: LocalDate): DayAccum? {
@@ -80,7 +92,7 @@ class UsageRepository(private val dao: UsageDao) {
             acc.readingMillis += record.durationMillis
         }
 
-        val daily = (0 until WINDOW_DAYS).map { offset ->
+        val daily = (0 until dayCount).map { offset ->
             val date = firstDay.plusDays(offset.toLong())
             val acc = dayAccum[date] ?: DayAccum()
             DailyUsage(
@@ -245,9 +257,6 @@ class UsageRepository(private val dao: UsageDao) {
     }
 
     private companion object {
-        const val RETENTION_DAYS = 400L
-        const val WINDOW_DAYS = 365
-        const val MILLIS_PER_DAY = 86_400_000L
         const val TOP_TAGS = 12
         const val TOP_SEARCHES = 12
         const val RECENT_SEARCHES = 10

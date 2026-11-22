@@ -197,6 +197,12 @@
     <string name="statistics_clear">Clear statistics</string>
     <string name="statistics_clear_confirm">This permanently deletes all recorded usage and reading data. Continue?</string>
     <string name="statistics_data">Statistics</string>
+    <string name="statistics_range">Statistics range</string>
+    <string name="statistics_range_summary">Data outside the range is deleted automatically</string>
+    <string name="statistics_range_week">1 week</string>
+    <string name="statistics_range_month">1 month</string>
+    <string name="statistics_range_year">1 year</string>
+    <string name="statistics_range_unlimited">Unlimited</string>
     <string name="confirm">Confirm</string>
     <string name="stats_overview">Overview</string>
     <string name="stats_today">Today</string>

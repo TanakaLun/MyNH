@@ -195,6 +195,12 @@
     <string name="statistics_clear">清除统计数据</string>
     <string name="statistics_clear_confirm">将永久删除全部使用记录与阅读记录，确定继续吗？</string>
     <string name="statistics_data">统计数据</string>
+    <string name="statistics_range">统计范围</string>
+    <string name="statistics_range_summary">超出范围的数据会被自动删除</string>
+    <string name="statistics_range_week">一周</string>
+    <string name="statistics_range_month">一月</string>
+    <string name="statistics_range_year">一年</string>
+    <string name="statistics_range_unlimited">不限</string>
     <string name="confirm">确定</string>
     <string name="stats_overview">概览</string>
     <string name="stats_today">今日</string>

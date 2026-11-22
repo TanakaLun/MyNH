@@ -23,6 +23,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Records how long the app is in the foreground, how long each gallery is read and
@@ -60,7 +62,6 @@ class UsageTracker(
         get() = settings.statisticsEnabled
 
     fun install() {
-        prune()
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) = onForeground()
 
@@ -73,6 +74,10 @@ class UsageTracker(
                     .isAtLeast(Lifecycle.State.STARTED)
                 if (enabled && started) onForeground() else if (!enabled) onBackground()
             }
+        }
+        // Prune immediately on install and whenever the retention window changes.
+        scope.launch {
+            settings.statisticsRangeDaysFlow.collect { pruneOutsideRange() }
         }
     }
 
@@ -288,11 +293,17 @@ class UsageTracker(
         }
     }
 
-    private fun prune() {
+    private fun pruneOutsideRange() {
+        val days = settings.statisticsRangeDays
+        if (days <= 0) return
         launchSafe {
-            val cutoff = System.currentTimeMillis() - RETENTION_DAYS * MILLIS_PER_DAY
-            dao.deleteEventsBefore(cutoff)
-            dao.deleteReadingsBefore(cutoff)
+            val startOfWindow = LocalDate.now()
+                .minusDays((days - 1).toLong())
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+            dao.deleteEventsBefore(startOfWindow)
+            dao.deleteReadingsBefore(startOfWindow)
         }
     }
 
@@ -311,8 +322,6 @@ class UsageTracker(
     private companion object {
         const val CHECKPOINT_INTERVAL = 30_000L
         const val MIN_COMMIT_MILLIS = 1_000L
-        const val RETENTION_DAYS = 400L
-        const val MILLIS_PER_DAY = 86_400_000L
         const val MAX_QUERY_LENGTH = 120
     }
 }

@@ -127,6 +127,22 @@ class SettingsHelper(private val appContext: Context) {
             _statisticsEnabledFlow.value = value
         }
 
+    private val _statisticsRangeDaysFlow = MutableStateFlow(readStatisticsRangeDays())
+    val statisticsRangeDaysFlow: StateFlow<Int> = _statisticsRangeDaysFlow.asStateFlow()
+
+    /** Statistics retention window in days; 0 means unlimited. */
+    var statisticsRangeDays: Int
+        get() = _statisticsRangeDaysFlow.value
+        set(value) {
+            val normalized = if (value <= 0) 0 else value
+            prefs.edit().putInt(KEY_STATISTICS_RANGE_DAYS, normalized).apply()
+            _statisticsRangeDaysFlow.value = normalized
+        }
+
+    private fun readStatisticsRangeDays(): Int =
+        prefs.getInt(KEY_STATISTICS_RANGE_DAYS, STATISTICS_RANGE_YEAR)
+            .let { if (it <= 0) 0 else it }
+
     private val _statisticsRecordQueriesFlow = MutableStateFlow(prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true))
     val statisticsRecordQueriesFlow: StateFlow<Boolean> = _statisticsRecordQueriesFlow.asStateFlow()
 
@@ -251,6 +267,7 @@ class SettingsHelper(private val appContext: Context) {
         _floatingNavbarPositionFlow.value = prefs.getInt(KEY_FLOATING_NAVBAR_POSITION, 0)
         _statisticsEnabledFlow.value = prefs.getBoolean(KEY_STATISTICS_ENABLED, true)
         _statisticsRecordQueriesFlow.value = prefs.getBoolean(KEY_STATISTICS_RECORD_QUERIES, true)
+        _statisticsRangeDaysFlow.value = readStatisticsRangeDays()
         _favoritesSyncEnabledFlow.value = prefs.getBoolean(KEY_FAVORITES_SYNC, true)
         _blacklistSyncEnabledFlow.value = prefs.getBoolean(KEY_BLACKLIST_SYNC, true)
         _downloadNotificationModeFlow.value =
@@ -349,6 +366,11 @@ class SettingsHelper(private val appContext: Context) {
         const val SURFACE_EFFECT_NONE = 0
         const val SURFACE_EFFECT_BLUR = 1
         const val SURFACE_EFFECT_GLASS = 2
+
+        const val STATISTICS_RANGE_WEEK = 7
+        const val STATISTICS_RANGE_MONTH = 30
+        const val STATISTICS_RANGE_YEAR = 365
+        const val STATISTICS_RANGE_UNLIMITED = 0
         private const val KEY_LANGUAGE = "language_filter"
         private const val KEY_LANG_FILTER_ENABLED = "language_filter_enabled"
         private const val KEY_MONET_ENABLED = "monet_enabled"
@@ -360,6 +382,7 @@ class SettingsHelper(private val appContext: Context) {
         private const val KEY_FLOATING_NAVBAR_POSITION = "floating_navbar_position"
         private const val KEY_STATISTICS_ENABLED = "statistics_enabled"
         private const val KEY_STATISTICS_RECORD_QUERIES = "statistics_record_queries"
+        private const val KEY_STATISTICS_RANGE_DAYS = "statistics_range_days"
         private const val KEY_FAVORITES_SYNC = "favorites_sync_enabled"
         private const val KEY_BLACKLIST_SYNC = "blacklist_sync_enabled"
         private const val KEY_DOWNLOAD_NOTIFICATION_MODE = "download_notification_mode"

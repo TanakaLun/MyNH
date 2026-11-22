@@ -48,6 +48,7 @@ import io.tl.mynhentai.data.local.BackupData
 import io.tl.mynhentai.data.local.AccountStore
 import io.tl.mynhentai.ui.reader.turn.PageAnimation
 import io.tl.mynhentai.data.local.PowerSaveModeTracker
+import io.tl.mynhentai.data.local.SettingsHelper
 import io.tl.mynhentai.ui.account.AccountAvatar
 import io.tl.mynhentai.ui.components.AppBottomSheet
 import io.tl.mynhentai.ui.components.AppDialog
@@ -115,6 +116,7 @@ fun SettingsScreen(
     val readerPageAnimation by viewModel.readerPageAnimation.collectAsState()
     val statisticsEnabled by viewModel.statisticsEnabled.collectAsState()
     val statisticsRecordQueries by viewModel.statisticsRecordQueries.collectAsState()
+    val statisticsRangeDays by viewModel.statisticsRangeDays.collectAsState()
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showClearStatisticsDialog by remember { mutableStateOf(false) }
     val backdrop = rememberSurfaceBackdrop()
@@ -592,6 +594,27 @@ fun SettingsScreen(
                             title = stringResource(R.string.statistics_record_queries),
                             summary = stringResource(R.string.statistics_record_queries_summary),
                             enabled = statisticsEnabled
+                        )
+                        val rangeOptions = listOf(
+                            stringResource(R.string.statistics_range_week),
+                            stringResource(R.string.statistics_range_month),
+                            stringResource(R.string.statistics_range_year),
+                            stringResource(R.string.statistics_range_unlimited)
+                        )
+                        val rangeDays = listOf(
+                            SettingsHelper.STATISTICS_RANGE_WEEK,
+                            SettingsHelper.STATISTICS_RANGE_MONTH,
+                            SettingsHelper.STATISTICS_RANGE_YEAR,
+                            SettingsHelper.STATISTICS_RANGE_UNLIMITED
+                        )
+                        AppDropdownPreference(
+                            title = stringResource(R.string.statistics_range),
+                            items = rangeOptions,
+                            selectedIndex = rangeDays.indexOf(statisticsRangeDays).coerceAtLeast(0),
+                            backdrop = backdrop,
+                            enabled = statisticsEnabled,
+                            summary = stringResource(R.string.statistics_range_summary),
+                            onSelectedIndexChange = { viewModel.setStatisticsRangeIndex(it) }
                         )
                         ArrowPreference(
                             title = stringResource(R.string.statistics_clear),

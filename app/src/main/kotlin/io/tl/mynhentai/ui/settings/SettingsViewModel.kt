@@ -64,6 +64,9 @@ class SettingsViewModel(
     private val _statisticsRecordQueries = MutableStateFlow(settings.statisticsRecordQueries)
     val statisticsRecordQueries: StateFlow<Boolean> = _statisticsRecordQueries.asStateFlow()
 
+    private val _statisticsRangeDays = MutableStateFlow(settings.statisticsRangeDays)
+    val statisticsRangeDays: StateFlow<Int> = _statisticsRangeDays.asStateFlow()
+
     val blacklistedTags: StateFlow<List<BlacklistedTagEntity>> = repository.getAllBlacklistedTags()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -132,6 +135,12 @@ class SettingsViewModel(
         _statisticsRecordQueries.value = enabled
     }
 
+    fun setStatisticsRangeIndex(index: Int) {
+        val days = STATISTICS_RANGE_DAYS.getOrElse(index) { SettingsHelper.STATISTICS_RANGE_YEAR }
+        settings.statisticsRangeDays = days
+        _statisticsRangeDays.value = days
+    }
+
     fun clearStatistics() {
         viewModelScope.launch {
             usageRepository.clearAll()
@@ -177,6 +186,7 @@ class SettingsViewModel(
         _readerPageAnimation.value = settings.readerPageAnimation
         _statisticsEnabled.value = settings.statisticsEnabled
         _statisticsRecordQueries.value = settings.statisticsRecordQueries
+        _statisticsRangeDays.value = settings.statisticsRangeDays
     }
 
     fun removeBlacklistedTag(tagId: Long) {
@@ -205,5 +215,14 @@ class SettingsViewModel(
     fun refreshCacheSizes() {
         _coilCacheSize.value = settings.coilCacheSize()
         _offlineCacheSize.value = settings.offlineCacheSize()
+    }
+
+    private companion object {
+        val STATISTICS_RANGE_DAYS = listOf(
+            SettingsHelper.STATISTICS_RANGE_WEEK,
+            SettingsHelper.STATISTICS_RANGE_MONTH,
+            SettingsHelper.STATISTICS_RANGE_YEAR,
+            SettingsHelper.STATISTICS_RANGE_UNLIMITED,
+        )
     }
 }

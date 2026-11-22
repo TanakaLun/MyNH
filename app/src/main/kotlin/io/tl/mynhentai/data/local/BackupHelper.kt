@@ -3,6 +3,8 @@ package io.tl.mynhentai.data.local
 import android.content.Context
 import android.net.Uri
 import java.io.IOException
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -74,6 +76,19 @@ class BackupHelper(
             usageDao.clearReadings()
             data.usageEvents?.takeIf { it.isNotEmpty() }?.let { usageDao.insertEvents(it) }
             data.readingRecords?.takeIf { it.isNotEmpty() }?.let { usageDao.insertReadings(it) }
+            pruneStatistics()
         }
+    }
+
+    private suspend fun pruneStatistics() {
+        val days = settingsHelper.statisticsRangeDays
+        if (days <= 0) return
+        val cutoff = LocalDate.now()
+            .minusDays((days - 1).toLong())
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+        usageDao.deleteEventsBefore(cutoff)
+        usageDao.deleteReadingsBefore(cutoff)
     }
 }
